@@ -1893,3 +1893,72 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
 .project-access-component .project-role-static {
   font-size: var(--lumo-font-size-s);
 }
+
+/* Two-factor authentication settings (MILESTONE-MFA M3-3).
+   Reuses the card chrome the pinned-project and PAT lists already use: 1px contrast border and
+   rounded corners, no drop shadow. The grid is sized in `ch` so the fixed-width recovery codes keep
+   their columns on any font size. */
+.mfa-summary {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.mfa-factor-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.mfa-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.mfa-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+}
+
+.mfa-card__name {
+  font-weight: 600;
+}
+
+.mfa-card__meta {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.mfa-setup-key-row {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.mfa-enrol-body,
+.mfa-recovery-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+.mfa-recovery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(12ch, 1fr));
+  gap: var(--lumo-space-s);
+}
+
+.mfa-recovery-code {
+  font-family: var(--lumo-font-family-monospace, monospace);
+  font-size: var(--lumo-font-size-m);
+  letter-spacing: 0.05em;
+  padding: var(--lumo-space-xs) var(--lumo-space-s);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-s);
+  text-align: center;
+}

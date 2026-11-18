@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import life.qbic.datamanager.views.account.ExternalProvidersMain;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
+import life.qbic.datamanager.views.account.TwoFactorAuthenticationMain;
 import life.qbic.datamanager.views.account.UserProfileMain;
 
 /**
@@ -32,6 +33,7 @@ public class SettingsNavigationComponent extends Div {
     tabs.addClassName("settings-navigation-tabs");
     tabs.getElement().setAttribute("orientation", "vertical");
     addTab("Profile", VaadinIcon.USER, UserProfileMain.class);
+    addTab("Two-factor authentication", VaadinIcon.SHIELD, TwoFactorAuthenticationMain.class);
     addTab("API Tokens", VaadinIcon.KEY, PersonalAccessTokenMain.class);
     addTab("External Providers", VaadinIcon.DATABASE, ExternalProvidersMain.class);
     add(tabs);

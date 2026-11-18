@@ -15,9 +15,10 @@
 | Config | `qbic.security.vault.second-factor.key-alias` (`application.properties`, template) | — |
 
 | Recovery codes | `RecoveryCodes`, `RecoveryCodeEncoder`, `RecoveryCodeService` (M3-4) | 43 assertions + a JPA round trip |
+| Settings page | `views/account/TwoFactorAuthentication{Main,Component}`, `TotpEnrolmentDialog`, `RecoveryCodesDialog`, nav tab (M3-3) | compiles; **no automated UI test** (views are excluded from coverage in this repo) |
 
-**Still not wired to any UI or filter.** The end-to-end journey on a running build (scan → enter code
-→ factor row → print recovery codes) needs M3-3's settings surface; the services are what it will call.
+The journey is now reachable in a browser: **Settings → Two-factor authentication**. Nothing is wired
+into the *login* path yet — that is M4, and until then an enrolled factor is simply not asked for.
 
 ## 2. Decisions worth knowing
 
@@ -56,7 +57,7 @@ hashed outside this path, ADR 0011 B1) but it does invalidate every TOTP factor.
 
 | Task | Depends on | Note |
 |---|---|---|
-| **M3-3 settings surface** | this slice | "Two-factor authentication" section: begin → render QR (Vaadin `Image` from the URI via a QR encoder, or the URI as copy-paste fallback) → confirm → list/rename/disable factors. The `PendingTotpEnrolment` belongs in the Vaadin session; it carries ciphertext, not the seed |
+| M3-3 settings surface | **done 2026-11-17** | `/settings/two-factor`: enrol (setup key + copy, code confirmation), factor list with remove, recovery-code generation with the one-time sheet. See the gaps below |
 | M3-2 WebAuthn spike | — | optional per ADR 0011 W1; needs §1a prerequisites |
 
 ### M3-4 recovery codes — done (2026-11-17)
@@ -74,6 +75,18 @@ Two decisions worth keeping:
   `RECOVERY_CODE_PEPPER`). That is what keeps ADR 0011 B1 true: a lost vault key must not take the
   recovery codes with it. It must be backed up with the config; a rotated pepper invalidates every
   outstanding code.
+
+## 4a. M3-3 gaps, stated rather than hidden
+
+1. **No QR image.** Rendering one needs a QR encoder library through `datamanager-bom`, which has a PGP
+   signature check (milestone §6). The dialog shows the Base32 setup key with a copy action instead;
+   that is functional but not what the milestone's exit criterion describes. Next dependency decision,
+   not a bug.
+2. **No rename in the UI.** `SecondFactor.rename` exists and is tested; a label field in the factor card
+   is a small follow-up.
+3. **No WebAuthn entry point.** Correct while M3-2 has not shipped (ADR 0011 W1).
+4. **No policy banner.** The mode (off/optional/required) arrives with M4; a countdown banner before
+   then would announce a deadline nothing enforces.
 
 ## 5. Open issue / drift reminder
 
