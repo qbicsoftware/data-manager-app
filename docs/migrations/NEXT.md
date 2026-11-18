@@ -39,10 +39,191 @@ For the migration documentation structure, see [`README.md`](README.md).
 
 | # | Script | Description | Risk |
 |---|---|---|---|
-| — | *(no schema changes yet)* | The hardening release added `user_verification_token` and `auth_attempt`; those are documented in [`released/v1.20.4.md`](released/v1.20.4.md). | — |
+| 1 | [`mfa-second-factor.sql`](../../sql/migrations/drafts/mfa-second-factor.sql) | Create `user_second_factor`, `user_recovery_code` and `user_mfa_grace` for the self-governed second factor (MILESTONE-MFA M2-1). No existing table is altered | Medium — three additive tables; destructive to roll back once factors exist |
 
 Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
+
+The hardening release's `user_verification_token` and `auth_attempt` are documented in
+[`released/v1.20.4.md`](released/v1.20.4.md); nothing in this release changes them.
+
+---
+
+## Migration 1 — second-factor storage and the enforcement grace window
+
+> **Status: staging/test only.** The DDL is in `sql/migrations/drafts/` on purpose — it is runnable
+> and reviewable, but **not approved for production until the AGENTS.md §12 sign-off is recorded**
+> (tracked on the MFA slice PR). Nothing in the running application reads these tables until the login
+> challenge (M4) ships, so applying it early is harmless: no behaviour changes, no downtime, no
+> existing table touched.
+
+| Field | Value |
+|---|---|
+| **Story** | [MILESTONE-MFA](https://github.com/qbicsoftware/data-manager-app/milestone/1) — M2-1 |
+| **Feature** | [FEAT-MFA-ENRL](https://github.com/qbicsoftware/data-manager-app/milestone/1) |
+| **ADRs** | [ADR 0011](../adr/0011-mfa-authentication-authority.md) |
+| **Scope** | Three new tables: `user_second_factor`, `user_recovery_code`, `user_mfa_grace` |
+| **Script** | `sql/migrations/drafts/mfa-second-factor.sql` |
+| **Target datasource** | `data_management` |
+
+### What it does
+
+1. **`user_second_factor`** — one row per enrolled credential: a TOTP seed as AES-GCM ciphertext, or a
+   WebAuthn public credential. A row is either one or the other (`chk_user_second_factor_shape`
+   enforces it) and removals are soft deletes, so the audit trail keeps showing that a factor existed
+   and when it stopped working.
+2. **`user_recovery_code`** — single-use break-glass codes, stored as keyed hashes. The hash is
+   globally unique because the login path resolves a code without knowing the account.
+3. **`user_mfa_grace`** — one row per account: the window during which an unenrolled account may still
+   sign in after the policy switches to `required`. **A missing row means "grant a window", never
+   "deny"** — see *Operator notes*.
+
+There is deliberately **no `users` change** and **no per-account policy override**: an override value
+can express "not required for this account", which is the permanent exemption
+[AUTH-R-01](../requirements.md) rules out (ADR 0011 item 3).
+
+### Vault and configuration provisioning — before the first enrolment
+
+Two secrets are involved, and they must **not** be the same value.
+
+**1. `second-factor-master-key` — the AES-256 key that encrypts TOTP seeds.**
+
+```bash
+# 32 bytes, Base64-encoded (44 chars). Do NOT use hex: the application Base64-decodes
+# the entry and rejects anything that is not exactly 32 bytes.
+openssl rand -base64 32
+
+# Store it once, on one node — the keystore file is shared, like the existing vault entries.
+keytool -importpass \
+    -alias second-factor-master-key \
+    -keystore /path/to/shared/keystore.p12 \
+    -storepass "$DATAMANAGER_VAULT_KEY"
+```
+
+Deploy the keystore to every node, and make sure the alias matches
+`qbic.security.vault.second-factor.key-alias` (`second-factor-master-key` by default).
+
+This key is **separate from `external-credential-master-key`** on purpose: factor material must be
+rotatable and restorable without touching stored Invenio credentials, and vice versa.
+
+**2. `RECOVERY_CODE_PEPPER` — the secret that hashes recovery codes.**
+
+```bash
+# At least 32 characters; 48 random bytes in Base64 is plenty.
+openssl rand -base64 48
+```
+
+Set it as an environment variable (or `qbic.security.recovery-code.pepper`). It must **not** be the
+vault key: ADR 0011 B1 requires recovery codes to keep working when the vault key is lost, which is the
+whole point of having them outside the encrypted-seed path. **Back it up with the application
+configuration** — a lost or rotated pepper invalidates every outstanding recovery code.
+
+> **The application still starts if neither secret is provisioned.** The protector resolves its key on
+> first use, so a missing alias fails *the enrolment* (closed) rather than the process. That changes in
+> M4, when the login path starts depending on factors: provision both secrets **before** the release
+> that enables the challenge.
+
+### Pre-flight
+
+```sql
+-- 1. MariaDB 10.2 or newer: the shape CHECK constraint is enforced from 10.2.1 on.
+SELECT VERSION();
+
+-- 2. None of the three tables exist yet (expected: three rows, each 0).
+SELECT 'user_second_factor' AS t, COUNT(*) AS existing FROM information_schema.tables
+ WHERE table_schema = DATABASE() AND table_name = 'user_second_factor'
+UNION ALL SELECT 'user_recovery_code', COUNT(*) FROM information_schema.tables
+ WHERE table_schema = DATABASE() AND table_name = 'user_recovery_code'
+UNION ALL SELECT 'user_mfa_grace', COUNT(*) FROM information_schema.tables
+ WHERE table_schema = DATABASE() AND table_name = 'user_mfa_grace';
+
+-- 3. The FK target exists with the same charset/collation, or the three foreign keys fail.
+SELECT table_name, table_collation
+  FROM information_schema.tables
+ WHERE table_schema = DATABASE() AND table_name = 'users';
+-- Expected: utf8mb4_unicode_ci (matches what the script declares)
+```
+
+### Apply
+
+```bash
+mysql -u <user> -h <host> -P <port> data_management \
+    < sql/migrations/drafts/mfa-second-factor.sql
+```
+
+The script is idempotent (`CREATE TABLE IF NOT EXISTS`, named constraints), so re-running it against a
+partially applied database is safe.
+
+### Verify
+
+```sql
+-- 1. All three tables exist with the expected collation.
+SELECT table_name, table_collation
+  FROM information_schema.tables
+ WHERE table_schema = DATABASE()
+   AND table_name IN ('user_second_factor','user_recovery_code','user_mfa_grace');
+-- Expected: 3 rows, utf8mb4_unicode_ci
+
+-- 2. The users foreign keys are in place (expected: 3 rows).
+SELECT constraint_name, table_name
+  FROM information_schema.key_column_usage
+ WHERE table_schema = DATABASE()
+   AND referenced_table_name = 'users'
+   AND table_name IN ('user_second_factor','user_recovery_code','user_mfa_grace');
+
+-- 3. The one-factor-shape CHECK is registered (expected: 1).
+SELECT COUNT(*) AS check_present
+  FROM information_schema.check_constraints
+ WHERE constraint_schema = DATABASE()
+   AND constraint_name = 'chk_user_second_factor_shape';
+
+-- 4. Behavioural probe: a TOTP row without a secret must be refused by the database.
+--    (Run in a transaction and roll back — it is expected to fail.)
+START TRANSACTION;
+INSERT INTO user_second_factor (userId, type, displayName, createdAt)
+SELECT id, 'TOTP', 'probe', NOW(6) FROM users LIMIT 1;   -- must fail: CHECK violation
+ROLLBACK;
+```
+
+After the first enrolment (M3 page: *Settings → Two-factor authentication*):
+
+```sql
+-- 5. Nothing that could be a plaintext seed ended up in the table.
+--    A raw Base32 seed is exactly 32 characters from A-Z2-7; ciphertext is Base64 and much longer.
+SELECT id, type, CHAR_LENGTH(secretCiphertext) AS length
+  FROM user_second_factor
+ WHERE type = 'TOTP'
+   AND (secretCiphertext IS NULL
+        OR secretCiphertext REGEXP '^[A-Z2-7]{32}$'
+        OR CHAR_LENGTH(secretCiphertext) < 40);
+-- Expected: 0 rows
+```
+
+### Rollback
+
+```sql
+DROP TABLE IF EXISTS `user_mfa_grace`;
+DROP TABLE IF EXISTS `user_recovery_code`;
+DROP TABLE IF EXISTS `user_second_factor`;
+```
+
+**Safe while nothing is enrolled**, destructive afterwards: every enrolled user must re-enrol, and a
+user with no recovery code cannot sign in until an administrator re-enrols them (M6-1). If you have to
+roll back with a populated table, copy `user_second_factor` first.
+
+### Operator notes
+
+- **The grace row is the lockout guard.** Do not insert rows by hand. When the policy is `required`,
+  an account with **no** row is *granted* a fresh window at its next login; an account with a row whose
+  `graceUntil` is in the past is *denied*. A hand-written past date therefore locks a user out, and a
+  hand-written future date silently exempts them until it expires.
+- **Recovery-code hashes are unique across the whole table**, not per user — the redemption path looks
+  a code up without knowing the account. A manual import that reuses a hash will fail.
+- **Removed factors are kept** (`disabledAt` set). They stop counting as enrolment immediately but stay
+  in their owner's list, and they are not purged: they are the audit trail AUTH-R-04 asks for.
+- **Rotation:** rotating the second-factor AES key makes every TOTP factor undecryptable (users fall
+  back to recovery codes or admin re-enrolment); rotating `RECOVERY_CODE_PEPPER` invalidates every
+  outstanding recovery code. Plan both as user-visible events, not background maintenance.
 
 ---
 
@@ -165,7 +346,17 @@ have attached to their accounts, and they are not recoverable by the user in bul
 *Document any new, removed, or renamed `application.properties` entries here.
 If there are none this release, delete this section.*
 
-### No new keys — but one behaviour change for error notification mail
+### New keys: two MFA secrets, plus one behaviour change for error notification mail
+
+| Property | Environment variable | Purpose |
+|---|---|---|
+| `qbic.security.vault.second-factor.key-alias` | — (defaults to `second-factor-master-key`) | Vault alias of the AES-256 key that encrypts TOTP seeds |
+| `qbic.security.recovery-code.pepper` | `RECOVERY_CODE_PEPPER` | Secret that hashes recovery codes; must **not** be the vault key (ADR 0011 B1) |
+
+Both are documented with provisioning commands under *Migration 1* above. Neither is validated at
+startup: a missing key fails the second-factor operation (closed), not the process.
+
+### Behaviour change for error notification mail
 
 `spring.mail.*` and `qbic.mail.verify-connection-on-startup` are unchanged. What changes is what the
 **logback error-notification appender** does when the SMTP server will not upgrade to TLS.

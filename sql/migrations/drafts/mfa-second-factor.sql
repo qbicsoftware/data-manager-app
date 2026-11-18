@@ -5,10 +5,11 @@
 -- ADRs:     0011 (MFA authentication authority: the application owns the second factor)
 -- Datasource: data_management
 --
--- Status:   DRAFT — DO NOT APPLY.
---           Requires AGENTS.md §12 sign-off (schema change) and the M2 PR review. The ADR
---           is accepted; this DDL is not yet approved for production. Move the file to
---           `sql/migrations/` and complete the promotion checklist below when it is.
+-- Status:   DRAFT — staging/test only. NOT approved for production.
+--           Runbook, provisioning and verification: docs/migrations/NEXT.md §"Migration 1".
+--           Production requires the AGENTS.md §12 sign-off (schema change) and the M2 PR
+--           review; the ADR is accepted, the DDL is not yet. When it is: move the file to
+--           `sql/migrations/`, add the index row, and complete the checklist below.
 --
 -- Purpose: persist self-governed second factors for the `identity` bounded context, the
 -- recovery codes that make a lost device survivable, and the per-account grace window that

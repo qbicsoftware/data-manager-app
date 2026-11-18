@@ -5,9 +5,9 @@ It is organized in **three tiers**, each with a distinct audience and purpose:
 
 | Tier | Location | Audience | Purpose |
 |---|---|---|---|
-| **1. Runnable DDL** | [`sql/migrations/<name>.sql`](../sql/migrations/) | Developers / SREs | Individual, idempotent DDL scripts, one per schema change |
+| **1. Runnable DDL** | [`sql/migrations/<name>.sql`](../../sql/migrations/) | Developers / SREs | Individual, idempotent DDL scripts, one per schema change |
 | **2. Operator guide per release** | `released/v<version>.md` or [`NEXT.md`](NEXT.md) | Operators | One file per release listing every migration to apply when upgrading to that version |
-| **3. Index** | this file + [`sql/migrations/README.md`](../sql/migrations/README.md) | Everyone | Points to the right place depending on what you're trying to do |
+| **3. Index** | this file + [`sql/migrations/README.md`](../../sql/migrations/README.md) | Everyone | Points to the right place depending on what you're trying to do |
 
 All three tiers together answer every question an operator or developer might
 have during a schema change: *what's the change*, *where's the script*, *what
@@ -79,7 +79,7 @@ When you add a schema change (new table, altered column, new index, new view, â€
 
 3. **Do not touch `released/`** â€” that directory is only edited at release cut.
 
-See [`sql/migrations/README.md`](../sql/migrations/README.md) for the incremental
+See [`sql/migrations/README.md`](../../sql/migrations/README.md) for the incremental
 script naming convention and header format.
 
 ---
@@ -109,7 +109,7 @@ release is cut.
 | Incremental script | `sql/migrations/<kebab-case>.sql` | `create-associated-dataset.sql` |
 | Released operator guide | `docs/migrations/released/v<major>.<minor>.<patch>.md` | `released/v1.13.0.md` |
 | Next-release draft | `docs/migrations/NEXT.md` | (always this name) |
-| Migration header comment | `-- Story:`, `-- Feature:`, `-- ADR:`, `-- Date:` | see [`create-associated-dataset.sql`](../sql/migrations/create-associated-dataset.sql) |
+| Migration header comment | `-- Story:`, `-- Feature:`, `-- ADR:`, `-- Date:` | see [`create-associated-dataset.sql`](../../sql/migrations/create-associated-dataset.sql) |
 
 ---
 
