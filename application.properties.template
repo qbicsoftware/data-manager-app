@@ -61,6 +61,15 @@ qbic.security.vault.second-factor.key-alias=second-factor-master-key
 # up with the application configuration.
 qbic.security.recovery-code.pepper=<CHANGE_ME>
 
+# Second-factor posture (MILESTONE-MFA, ADR 0011 P1). OFF | OPTIONAL | REQUIRED.
+# Default OFF: deploying the login challenge must not change behaviour until the
+# rollout decides it should. OPTIONAL challenges users who enrolled and lets
+# everyone else in; REQUIRED denies an unenrolled account after its grace window.
+# `grace` is an ISO-8601 duration (PT48H = 48 hours) granted per account at its
+# first login under REQUIRED.
+qbic.security.mfa.mode=OFF
+qbic.security.mfa.grace=PT48H
+
 ###############################################################################
 ### Datasources ###############################################################
 ###############################################################################
