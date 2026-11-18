@@ -13,6 +13,8 @@ import life.qbic.identity.application.mfa.MfaLoginGuard;
 import life.qbic.identity.domain.model.mfa.MfaGateDecision;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
+import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -54,7 +56,17 @@ public class MfaLoginSuccessHandler implements AuthenticationSuccessHandler {
   private final MfaLoginGuard loginGuard;
   private final AuthenticationSuccessHandler delegate;
 
-  public MfaLoginSuccessHandler(MfaLoginGuard loginGuard, RequestCache requestCache) {
+  /**
+   * Spring's constructor. Explicit {@code @Autowired} because the class has a second, package-private
+   * constructor for tests; without it Spring finds two candidates and falls back to looking for a
+   * no-arg constructor, which fails at startup.
+   *
+   * <p>The cache is {@link VaadinDefaultRequestCache} rather than the {@code RequestCache} interface on
+   * purpose: it is the very instance the filter chain uses, so the challenge and the login page agree
+   * on where the user was going.</p>
+   */
+  @Autowired
+  public MfaLoginSuccessHandler(MfaLoginGuard loginGuard, VaadinDefaultRequestCache requestCache) {
     this(loginGuard, requestCache, savedRequestAware(requestCache));
   }
 

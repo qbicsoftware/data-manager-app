@@ -34,7 +34,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.savedrequest.RequestCache;
+import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
 
 /**
  * <b>The second-factor step (M4-1)</b>
@@ -69,7 +69,7 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
 
   private final transient SecondFactorVerificationService verificationService;
   private final transient UserDetailsService userDetailsService;
-  private final transient RequestCache requestCache;
+  private final transient VaadinDefaultRequestCache requestCache;
 
   private final TextField code = new TextField("Six-digit code");
   private final Span error = new Span();
@@ -79,7 +79,7 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
   private MfaPendingLogin pending;
 
   public SecondFactorView(SecondFactorVerificationService verificationService,
-      UserDetailsService userDetailsService, RequestCache requestCache) {
+      UserDetailsService userDetailsService, VaadinDefaultRequestCache requestCache) {
     this.verificationService = requireNonNull(verificationService,
         "verificationService must not be null");
     this.userDetailsService = requireNonNull(userDetailsService,
