@@ -1903,6 +1903,10 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   font-size: var(--lumo-font-size-s);
 }
 
+.mfa-policy-note {
+  font-size: var(--lumo-font-size-s);
+}
+
 .mfa-factor-list {
   display: flex;
   flex-direction: column;

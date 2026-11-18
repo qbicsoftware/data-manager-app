@@ -17,6 +17,7 @@ import java.time.format.FormatStyle;
 import java.util.List;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.settings.SettingsSection;
+import life.qbic.identity.domain.model.mfa.MfaPolicyMode;
 import life.qbic.identity.domain.model.mfa.SecondFactor;
 import life.qbic.identity.domain.model.mfa.SecondFactorType;
 
@@ -47,6 +48,7 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
   private final Span factorSummary = new Span();
   private final Div factorList = new Div();
   private final Span recoverySummary = new Span();
+  private final Span policyNote = new Span();
   private final Button enrolButton = new Button("Set up authenticator app");
   private final Button generateRecoveryCodesButton = new Button("Generate recovery codes");
 
@@ -59,8 +61,9 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
     enrolButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     factorSection.addAction(enrolButton);
     factorSummary.addClassName("mfa-summary");
+    policyNote.addClassName("mfa-policy-note");
     factorList.addClassName("mfa-factor-list");
-    factorSection.addContent(factorSummary, factorList);
+    factorSection.addContent(factorSummary, policyNote, factorList);
 
     SettingsSection recoverySection = new SettingsSection("Recovery codes",
         "Single-use codes to get back in if you lose your phone. They are shown once and "
@@ -98,6 +101,27 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
             .formatted(factors.size()));
     enrolButton.setText("Set up another authenticator app");
     factors.forEach(factor -> factorList.add(buildFactorCard(factor)));
+  }
+
+  /**
+   * States whether the deployment currently asks for a factor at sign-in.
+   *
+   * <p>Without this a user who enrolled has no way to know whether the step is simply not enforced
+   * yet — and "I set it up and nothing happened" is the most common question the feature can produce.
+   * It is also the quickest way for an operator to confirm which posture the running application
+   * actually read, without opening a log.</p>
+   *
+   * @param mode the posture the application started with
+   */
+  public void setPolicyMode(MfaPolicyMode mode) {
+    switch (mode) {
+      case OFF -> policyNote.setText(
+          "Two-factor authentication is currently not required at sign-in for this installation.");
+      case OPTIONAL -> policyNote.setText(
+          "You will be asked for a code at sign-in, because this account has set up a factor.");
+      case REQUIRED -> policyNote.setText(
+          "Two-factor authentication is required at sign-in for every account.");
+    }
   }
 
   /**

@@ -16,6 +16,7 @@ import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.general.dialog.DialogAction;
 import life.qbic.datamanager.views.settings.SettingsMainLayout;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.identity.application.mfa.MfaPolicy;
 import life.qbic.identity.application.mfa.RecoveryCodeService;
 import life.qbic.identity.application.mfa.SecondFactorService;
 import life.qbic.identity.application.mfa.TotpEnrolmentService;
@@ -52,12 +53,14 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
   private final transient SecondFactorService secondFactorService;
   private final transient TotpEnrolmentService totpEnrolmentService;
   private final transient RecoveryCodeService recoveryCodeService;
+  private final transient MfaPolicy mfaPolicy;
   private final transient UserInformationService userInformationService;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
 
   public TwoFactorAuthenticationMain(SecondFactorService secondFactorService,
       TotpEnrolmentService totpEnrolmentService,
       RecoveryCodeService recoveryCodeService,
+      MfaPolicy mfaPolicy,
       UserInformationService userInformationService,
       AuthenticationToUserIdTranslationService userIdTranslator,
       TwoFactorAuthenticationComponent component) {
@@ -67,6 +70,7 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
         "totpEnrolmentService must not be null");
     this.recoveryCodeService = requireNonNull(recoveryCodeService,
         "recoveryCodeService must not be null");
+    this.mfaPolicy = requireNonNull(mfaPolicy, "mfaPolicy must not be null");
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator,
@@ -89,6 +93,7 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
     String userId = currentUserId();
     component.setFactors(secondFactorService.activeFactors(userId));
     component.setRecoveryCodeCount(recoveryCodeService.remaining(userId));
+    component.setPolicyMode(mfaPolicy.mode());
   }
 
   private void onEnrolRequested() {
