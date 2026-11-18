@@ -27,6 +27,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.Serial;
 import java.time.Instant;
 import life.qbic.datamanager.security.mfa.MfaPendingLogin;
+import life.qbic.datamanager.security.mfa.MfaSessionState;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.identity.application.mfa.SecondFactorVerificationService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -165,7 +166,11 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     HttpServletRequest request = currentHttpRequest();
     HttpServletResponse response = (HttpServletResponse) VaadinService.getCurrentResponse();
     new HttpSessionSecurityContextRepository().saveContext(context, request, response);
-    MfaPendingLogin.clear(request.getSession(false));
+    var session = request.getSession(false);
+    // Marks this session as having passed the step, so the enforcement filter does not ask again on
+    // every request. Without it the filter would re-decide here and start a challenge loop.
+    MfaSessionState.store(session, pending.userId(), Instant.now());
+    MfaPendingLogin.clear(session);
 
     // Deep links survive the challenge: Spring saved the original request when it redirected to the
     // login page, and that is where the user wanted to go (M4-4, for free).

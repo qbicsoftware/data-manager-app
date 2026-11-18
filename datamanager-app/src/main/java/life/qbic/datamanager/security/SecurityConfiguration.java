@@ -42,6 +42,7 @@ public class SecurityConfiguration {
   private final life.qbic.identity.api.OidcLinkService oidcLinkService;
   private final org.springframework.security.oauth2.client.OAuth2AuthorizedClientService authorizedClientService;
   private final life.qbic.datamanager.security.mfa.MfaLoginSuccessHandler mfaLoginSuccessHandler;
+  private final life.qbic.identity.application.mfa.MfaLoginGuard mfaLoginGuard;
 
   /**
    * Held directly, not injected.
@@ -91,7 +92,8 @@ public class SecurityConfiguration {
       @Autowired AuthAttemptThrottle authAttemptThrottle,
       @Autowired life.qbic.identity.api.OidcLinkService oidcLinkService,
       @Autowired org.springframework.security.oauth2.client.OAuth2AuthorizedClientService authorizedClientService,
-      @Autowired life.qbic.datamanager.security.mfa.MfaLoginSuccessHandler mfaLoginSuccessHandler) {
+      @Autowired life.qbic.datamanager.security.mfa.MfaLoginSuccessHandler mfaLoginSuccessHandler,
+      @Autowired life.qbic.identity.application.mfa.MfaLoginGuard mfaLoginGuard) {
     this.defaultRequestCache = requireNonNull(defaultRequestCache,
         "defaultRequestCache must not be null");
     this.authAttemptThrottle = requireNonNull(authAttemptThrottle,
@@ -101,6 +103,7 @@ public class SecurityConfiguration {
         "authorizedClientService must not be null");
     this.mfaLoginSuccessHandler = requireNonNull(mfaLoginSuccessHandler,
         "mfaLoginSuccessHandler must not be null");
+    this.mfaLoginGuard = requireNonNull(mfaLoginGuard, "mfaLoginGuard must not be null");
   }
 
   /**
@@ -219,7 +222,7 @@ public class SecurityConfiguration {
     // exists while a login is still pending a factor, it is withdrawn and the challenge is required.
     // Registered BEFORE the password filter on purpose — the freshly minted authentication on the
     // login POST must be left to the success handler, which knows whether to withhold it.
-    http.addFilterBefore(new MfaChallengeEnforcementFilter(),
+    http.addFilterBefore(new MfaChallengeEnforcementFilter(mfaLoginGuard),
         UsernamePasswordAuthenticationFilter.class);
 
     http.with(vaadin(), vaadin -> vaadin

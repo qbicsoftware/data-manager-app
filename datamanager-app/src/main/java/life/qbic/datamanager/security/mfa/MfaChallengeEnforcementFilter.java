@@ -9,7 +9,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.time.Instant;
+import life.qbic.identity.application.mfa.MfaLoginGuard;
+import life.qbic.identity.domain.model.mfa.MfaGateDecision;
 import life.qbic.logging.api.Logger;
+import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,20 +21,32 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * <b>Belt and braces: no session survives the challenge on a later request (M4-1, M4-5)</b>
+ * <b>Enforces the second factor on every request, independent of the login configuration (M4-1)</b>
  *
- * <p>{@link MfaLoginSuccessHandler} is the primary mechanism and the thing that makes the property
- * true. This filter re-checks it on every request that is <em>not</em> the login POST, so a future
- * addition (another login filter, a remember-me variant, a mis-ordered handler) cannot silently
- * resurrect password-only access. When it fires it removes the authentication and sends the client to
- * the challenge, so the failure mode is "ask for the factor", never "let them in".</p>
+ * <p>The success handler is the intended place to withhold the authentication, but it is only reached
+ * if the login filter chain keeps it — and a framework configurer can replace it. That is exactly what
+ * happened on the first real deployment: the policy was {@code OPTIONAL}, the account was enrolled, and
+ * nothing was asked. A security control must not depend on winning that argument.</p>
  *
- * <p>It is registered <b>before</b> {@code UsernamePasswordAuthenticationFilter}: on the login POST the
- * freshly created authentication must not be stripped by a filter that cannot yet tell whether the
- * success handler will withhold it. Later requests have no such ambiguity.</p>
+ * <p>So the rule is enforced here, on every authenticated request:</p>
+ * <ol>
+ *   <li>no authenticated principal → pass (login, challenge and anonymous traffic live downstream);</li>
+ *   <li>this session already passed the step for that account ({@link MfaSessionState}) → pass, which
+ *       is the normal case and costs one session lookup;</li>
+ *   <li>a pending login exists → the password produced a session anyway, so strip it and send the user
+ *       to the challenge;</li>
+ *   <li>otherwise ask {@link MfaLoginGuard} once: {@code Challenge} strips the session and starts the
+ *       challenge, {@code GraceExpired} denies, and everything else marks the session satisfied.</li>
+ * </ol>
  *
- * <p>The filter is a no-op unless a pending login exists, so it costs one session lookup per request
- * and nothing when the feature is off.</p>
+ * <p><b>Why not simply use a success handler only:</b> because "the challenge did not appear" is
+ * indistinguishable from "no factor is configured" — the failure mode is silent. A filter that runs on
+ * every request makes the property hold no matter which login path created the session, including a
+ * future remember-me or a second filter chain.</p>
+ *
+ * <p>Registered <b>before</b> {@code UsernamePasswordAuthenticationFilter}: on the login POST the
+ * freshly created authentication belongs to the success handler, which may withhold it with more
+ * context than this filter has.</p>
  *
  * @since 1.0.0
  */
@@ -38,36 +54,85 @@ public class MfaChallengeEnforcementFilter extends OncePerRequestFilter {
 
   private static final Logger log = logger(MfaChallengeEnforcementFilter.class);
 
+  private final MfaLoginGuard loginGuard;
+
+  public MfaChallengeEnforcementFilter(MfaLoginGuard loginGuard) {
+    this.loginGuard = requireNonNull(loginGuard, "loginGuard must not be null");
+  }
+
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
       FilterChain filterChain) throws ServletException, IOException {
+
     HttpSession session = request.getSession(false);
-    if (session == null || MfaPendingLogin.from(session).isEmpty()) {
-      filterChain.doFilter(request, response);
-      return;
-    }
-
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication == null
+    if (session == null
+        || authentication == null
         || !authentication.isAuthenticated()
-        || authentication instanceof AnonymousAuthenticationToken) {
-      // The expected state while a challenge is pending: nothing to strip.
+        || authentication instanceof AnonymousAuthenticationToken
+        || isChallengeOrLoginRequest(request)) {
       filterChain.doFilter(request, response);
       return;
     }
 
-    if (isChallengeOrLoginRequest(request)) {
+    String userId = userIdOf(authentication);
+    if (userId == null || MfaSessionState.satisfies(session, userId)) {
       filterChain.doFilter(request, response);
       return;
     }
 
-    log.warn(
-        "An authenticated session existed while a second factor was pending (user %s); "
-            + "the authentication has been withdrawn and the challenge is required"
-            .formatted(authentication.getName()));
+    if (MfaPendingLogin.from(session).isPresent()) {
+      // The password produced an authenticated session even though a factor is pending. Withdraw it.
+      log.warn(("An authenticated session existed while a second factor was pending (user %s); "
+          + "the authentication has been withdrawn and the challenge is required")
+          .formatted(userId));
+      withdraw(session);
+      response.sendRedirect(contextPathOf(request) + MfaLoginSuccessHandler.CHALLENGE_PATH);
+      return;
+    }
+
+    MfaGateDecision decision = loginGuard.decide(userId, Instant.now());
+    switch (decision) {
+      case MfaGateDecision.Challenge challenge -> {
+        log.info("Second factor required for user %s; session withheld at the request boundary"
+            .formatted(userId));
+        MfaPendingLogin.store(request, new MfaPendingLogin(userId, emailOf(authentication),
+            Instant.now()));
+        withdraw(session);
+        response.sendRedirect(contextPathOf(request) + MfaLoginSuccessHandler.CHALLENGE_PATH);
+      }
+      case MfaGateDecision.GraceExpired expired -> {
+        log.info("Login denied for user %s: second-factor grace expired at %s"
+            .formatted(userId, expired.graceUntil()));
+        withdraw(session);
+        response.sendRedirect(
+            contextPathOf(request) + MfaLoginSuccessHandler.CHALLENGE_PATH + "?graceExpired");
+      }
+      // NotRequired / GraceGranted / GraceActive: this account may use the session. GraceGranted was
+      // already persisted by the guard, so it has a deadline from now on.
+      default -> {
+        MfaSessionState.store(session, userId, Instant.now());
+        filterChain.doFilter(request, response);
+      }
+    }
+  }
+
+  /** Removes the authentication from the thread and from the session (see the success handler). */
+  private static void withdraw(HttpSession session) {
     SecurityContextHolder.clearContext();
     session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-    response.sendRedirect(contextPathOf(request) + MfaLoginSuccessHandler.CHALLENGE_PATH);
+  }
+
+  private static String userIdOf(Authentication authentication) {
+    return authentication.getPrincipal() instanceof QbicUserDetails details
+        ? details.getUserId()
+        : null;
+  }
+
+  private static String emailOf(Authentication authentication) {
+    return authentication.getPrincipal() instanceof QbicUserDetails details
+        ? details.getEmailAddress()
+        : "";
   }
 
   private static boolean isChallengeOrLoginRequest(HttpServletRequest request) {
@@ -81,6 +146,7 @@ public class MfaChallengeEnforcementFilter extends OncePerRequestFilter {
   }
 
   private static String contextPathOf(HttpServletRequest request) {
-    return requireNonNull(request.getContextPath() == null ? "" : request.getContextPath());
+    String contextPath = request.getContextPath();
+    return contextPath == null ? "" : contextPath;
   }
 }

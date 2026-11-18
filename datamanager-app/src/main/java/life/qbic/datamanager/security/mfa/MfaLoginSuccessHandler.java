@@ -105,7 +105,12 @@ public class MfaLoginSuccessHandler implements AuthenticationSuccessHandler {
       }
       // NotRequired / GraceGranted / GraceActive: the session may exist. GraceGranted was already
       // persisted by the guard, so the account has a deadline from now on.
-      default -> delegate.onAuthenticationSuccess(request, response, authentication);
+      default -> {
+        // Remember the answer for this session so the enforcement filter does not have to ask the
+        // database on every request.
+        MfaSessionState.store(request.getSession(false), principal.getUserId(), Instant.now());
+        delegate.onAuthenticationSuccess(request, response, authentication);
+      }
     }
   }
 

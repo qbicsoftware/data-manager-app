@@ -14,8 +14,23 @@
 | `SecondFactorVerificationService` | same | the only place a code is accepted; `VERIFIED` / `REJECTED` / `NO_FACTOR` / `UNAVAILABLE` |
 | `MfaLoginSuccessHandler` | `datamanager-app/…/security/mfa` | third success handler: on `Challenge`, stores a pending login and **removes the authentication from thread and session** |
 | `MfaPendingLogin` | same | session record (user id, email, timestamp), 5-minute lifetime, not an `Authentication` |
-| `MfaChallengeEnforcementFilter` | same | belt and braces: an authenticated session that coexists with a pending factor loses its auth on the next request |
+| `MfaChallengeEnforcementFilter` | same | **authoritative**: decides per authenticated request (once per session) and withdraws the session when a factor is due |
+| `MfaSessionState` | same | session marker "this login passed the step", bound to the user id, so the filter does not query the database on every request |
 | `SecondFactorView` | `datamanager-app/…/views/login` | `/login/second-factor`: code entry, uniform refusal message, replays the saved request on success |
+
+## 1a. Why the filter, and not only the success handler (learned on the first deployment)
+
+The success handler is the intended place, but it is only reached if the login filter chain keeps it —
+and on the first real deployment it did not: mode `OPTIONAL`, account enrolled, no challenge, and no
+`Second-factor gate` log line at all, i.e. the handler never ran (a framework configurer replaced it).
+
+So enforcement moved to the filter, which runs on every request and cannot be configured away:
+no marker for this session → ask `MfaLoginGuard` once → `Challenge` withholds the session and starts
+the challenge, `GraceExpired` denies, everything else marks the session satisfied. The success handler
+remains as the primary path (it saves one redirect) but nothing depends on it any more.
+
+Consequence worth knowing: the marker is per session, so a policy/grace change only affects sessions
+created after it (30-minute session timeout bounds the difference).
 
 ## 2. Why the authentication is removed twice
 
