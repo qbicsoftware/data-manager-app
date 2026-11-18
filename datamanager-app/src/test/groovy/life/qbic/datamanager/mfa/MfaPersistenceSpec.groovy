@@ -327,6 +327,38 @@ class MfaPersistenceSpec extends Specification {
         inTransaction { em -> recoveryCodes(em).countUsableByUserId(USER) } == 0
     }
 
+    def "a generated recovery-code set works against the real store, exactly once"() {
+        given: "the service, the encoder and the JPA adapter wired as production will wire them"
+        def encoder = new life.qbic.identity.domain.model.mfa.RecoveryCodeEncoder(
+                "p".repeat(life.qbic.identity.domain.model.mfa.RecoveryCodeEncoder.MIN_PEPPER_LENGTH))
+
+        when: "a set is generated"
+        def set = inTransaction { em ->
+            new life.qbic.identity.application.mfa.RecoveryCodeService(
+                    recoveryCodes(em), encoder).generate(USER, NOW)
+        }
+
+        then: "only hashes reached the store"
+        inTransaction { em -> recoveryCodes(em).countUsableByUserId(USER) } ==
+                life.qbic.identity.domain.model.mfa.RecoveryCodes.SET_SIZE
+
+        and: "a printed code redeems by hash alone, without the account"
+        inTransaction { em ->
+            new life.qbic.identity.application.mfa.RecoveryCodeService(recoveryCodes(em), encoder)
+                    .redeem(set.formattedCodes()[0].toLowerCase(), NOW.plusSeconds(60))
+        }
+
+        and: "and never again"
+        !inTransaction { em ->
+            new life.qbic.identity.application.mfa.RecoveryCodeService(recoveryCodes(em), encoder)
+                    .redeem(set.codes()[0], NOW.plusSeconds(120))
+        }
+
+        and: "the count reflects it"
+        inTransaction { em -> recoveryCodes(em).countUsableByUserId(USER) } ==
+                life.qbic.identity.domain.model.mfa.RecoveryCodes.SET_SIZE - 1
+    }
+
     // ---------------------------------------------------------------- 3. grace window
 
     def "a grace window is written once and never moved by a later login"() {

@@ -56,6 +56,11 @@ qbic.security.vault.external-credential.key-alias=external-credential-master-key
 # application still starts); see docs/plans/HANDOVER-mfa-m3-totp-enrolment.md.
 qbic.security.vault.second-factor.key-alias=second-factor-master-key
 
+# Pepper for hashing recovery codes (AUTH-R-03, ADR 0011 B1). NOT the vault key, on
+# purpose: recovery codes must survive vault-key loss. At least 32 characters; back it
+# up with the application configuration.
+qbic.security.recovery-code.pepper=<CHANGE_ME>
+
 ###############################################################################
 ### Datasources ###############################################################
 ###############################################################################

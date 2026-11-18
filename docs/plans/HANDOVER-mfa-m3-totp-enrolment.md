@@ -14,8 +14,10 @@
 | Secret protection | `SecondFactorSecretProtector` port + `AesGcmSecondFactorSecretProtector` + `MfaConfiguration` | 10 assertions: round trip, fresh nonce, tamper/wrong-key/missing-key all fail closed |
 | Config | `qbic.security.vault.second-factor.key-alias` (`application.properties`, template) | — |
 
+| Recovery codes | `RecoveryCodes`, `RecoveryCodeEncoder`, `RecoveryCodeService` (M3-4) | 43 assertions + a JPA round trip |
+
 **Still not wired to any UI or filter.** The end-to-end journey on a running build (scan → enter code
-→ factor row) needs M3-3's settings surface; the service is the piece it will call.
+→ factor row → print recovery codes) needs M3-3's settings surface; the services are what it will call.
 
 ## 2. Decisions worth knowing
 
@@ -55,8 +57,23 @@ hashed outside this path, ADR 0011 B1) but it does invalidate every TOTP factor.
 | Task | Depends on | Note |
 |---|---|---|
 | **M3-3 settings surface** | this slice | "Two-factor authentication" section: begin → render QR (Vaadin `Image` from the URI via a QR encoder, or the URI as copy-paste fallback) → confirm → list/rename/disable factors. The `PendingTotpEnrolment` belongs in the Vaadin session; it carries ciphertext, not the seed |
-| **M3-4 recovery codes** | this slice + M2 store | 10 high-entropy codes per set, hashed with a per-code salt, **verified without the vault key** (B1), regeneration calls `invalidateAllFor` in the same transaction as `saveAll` |
 | M3-2 WebAuthn spike | — | optional per ADR 0011 W1; needs §1a prerequisites |
+
+### M3-4 recovery codes — done (2026-11-17)
+
+Ten codes per set, 12 Base32 characters each (60 bits), printed as `XXXX-XXXX-XXXX`. Generation returns
+the plaintext set **once** and stores HMAC-SHA-256 hashes; regeneration retires the previous set in the
+same transaction. Redemption needs no account id: the hash *is* the lookup key.
+
+Two decisions worth keeping:
+
+- **Keyed hash, not a salted one.** A per-code salt would be stronger against offline guessing but makes
+  the hash non-indexable, and the recovery path has no account id to scope by. The pepper provides the
+  "a database dump is not enough" property instead.
+- **The pepper is configuration, not the vault key** (`qbic.security.recovery-code.pepper`, env
+  `RECOVERY_CODE_PEPPER`). That is what keeps ADR 0011 B1 true: a lost vault key must not take the
+  recovery codes with it. It must be backed up with the config; a rotated pepper invalidates every
+  outstanding code.
 
 ## 5. Open issue / drift reminder
 
