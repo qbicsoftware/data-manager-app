@@ -18,6 +18,7 @@ import life.qbic.datamanager.views.register.UserRegistrationComponent.Mode;
 import life.qbic.datamanager.views.register.UserRegistrationComponent.UserRegistrationInformation;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
+import life.qbic.identity.application.throttle.ClientOriginResolver;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,13 +47,15 @@ public class UserRegistrationMain extends Main {
 
   public UserRegistrationMain(@Autowired UserInformationService userInformationService,
       @Autowired RegistrationIdentity registrationIdentity,
-      @Autowired AuthAttemptThrottle authAttemptThrottle) {
+      @Autowired AuthAttemptThrottle authAttemptThrottle,
+      @Autowired ClientOriginResolver clientOriginResolver) {
     this.userInformationService = Objects.requireNonNull(userInformationService,
         "User Information service cannot be null");
     this.registrationSubmission = new RegistrationSubmission(
         Objects.requireNonNull(registrationIdentity, "registrationIdentity must not be null"),
         userInformationService,
-        Objects.requireNonNull(authAttemptThrottle, "authAttemptThrottle must not be null"));
+        Objects.requireNonNull(authAttemptThrottle, "authAttemptThrottle must not be null"),
+        Objects.requireNonNull(clientOriginResolver, "clientOriginResolver must not be null"));
 
     addClassName("user-registration");
     userRegistrationComponent = new UserRegistrationComponent(userInformationService, Mode.LOCAL);

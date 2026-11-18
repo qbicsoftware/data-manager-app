@@ -55,7 +55,7 @@ class ResetPasswordMainSpec extends Specification {
                 Integer.MAX_VALUE, java.time.Duration.ofMinutes(15), java.time.Duration.ofMinutes(15),
                 Integer.MAX_VALUE, java.time.Duration.ofMinutes(15), java.time.Duration.ofMinutes(15))
         view = new ResetPasswordMain(identityService, resetPasswordComponent, resetEmailSentComponent,
-                throttle)
+                throttle, life.qbic.identity.application.throttle.ClientOriginResolver.none())
     }
 
     def cleanup() {
@@ -134,7 +134,7 @@ class ResetPasswordMainSpec extends Specification {
         def throttle = new AuthAttemptThrottle(new AllowingCounter(),
                 10, java.time.Duration.ofMinutes(15), java.time.Duration.ofMinutes(15),
                 maxResends, java.time.Duration.ofMinutes(15), java.time.Duration.ofMinutes(15))
-        return [view: new ResetPasswordMain(identityService, component, sent, throttle), sent: sent]
+        return [view: new ResetPasswordMain(identityService, component, sent, throttle, life.qbic.identity.application.throttle.ClientOriginResolver.none()), sent: sent]
     }
 
     private static String renderedText(component) {

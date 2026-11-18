@@ -61,10 +61,24 @@ disabled and the header strategy is unchanged.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `qbic.auth-throttle.login.origin.enabled` | `false` | Write and consult the per-origin bucket |
-| `qbic.auth-throttle.login.origin.max-attempts` | `60` | Failures from one origin before that origin is blocked |
-| `qbic.auth-throttle.login.origin.window` | `PT15M` | Counting window for the origin bucket |
-| `qbic.auth-throttle.login.origin.block-duration` | `PT10M` | How long an origin block lasts |
+| `qbic.auth-throttle.login.origin.enabled` | `false` | **Single switch for every origin bucket** |
+| `qbic.auth-throttle.login.origin.max-attempts` | `60` | Failed logins per origin before the origin block |
+| `qbic.auth-throttle.login.origin.window` | `PT15M` | Counting window for the login origin bucket |
+| `qbic.auth-throttle.login.origin.block-duration` | `PT10M` | How long a login origin block lasts |
+| `qbic.auth-throttle.mail-origin.max-attempts` | `20` | Link resends per origin before the origin block |
+| `qbic.auth-throttle.mail-origin.window` | `PT15M` | Counting window for the mail origin bucket |
+| `qbic.auth-throttle.mail-origin.block-duration` | `PT15M` | How long a mail origin block lasts |
+| `qbic.auth-throttle.registration-origin.max-attempts` | `100` | Registrations per origin before the origin block |
+| `qbic.auth-throttle.registration-origin.window` | `PT15M` | Counting window for the registration origin bucket |
+| `qbic.auth-throttle.registration-origin.block-duration` | `PT10M` | How long a registration origin block lasts |
+
+> **Origin scope now covers the mail-sending flows, not just login.** Discovered in production: login
+> was throttled per origin, but a single source could still request password resets for arbitrary
+> addresses indefinitely. Account scope cannot bound that — one mail per address means no account
+> bucket is ever reused — so the reset, confirmation-resend and registration flows now each write an
+> origin bucket. The two resend flows share `MAIL_ORIGIN`; registration has its own, larger bucket
+> because it is legitimately bursty. **Still no schema change**: they are more rows in the existing
+> `auth_attempt` table with different `scope` values.
 
 Unchanged but now load-bearing: `server.forward-headers-strategy`. It stays **unset (`NONE`)** in this
 release. Setting `origin.enabled=true` without `server.forward-headers-strategy=native` is a **startup
@@ -130,9 +144,10 @@ There is no migration script, but there is a real way for the feature to be **pr
 the client address is still the proxy. Check the table after a few failed logins on the canary node.
 
 ```sql
--- Must be > 0. If it stays 0, the origin is not being resolved and the feature is doing nothing.
-SELECT COUNT(*) AS origin_buckets
-FROM auth_attempt WHERE scope = 'LOGIN_ORIGIN';
+-- Which origin buckets exist at all. All four scopes must appear once the corresponding flows are
+-- exercised; a flow whose bucket is missing is still account-scoped only, i.e. unbounded.
+SELECT scope, COUNT(*) AS rows_
+FROM auth_attempt WHERE scope LIKE '%ORIGIN' GROUP BY scope;
 
 -- How many distinct origins are being tracked. A handful is healthy; exactly 1 means the whole
 -- deployment is sharing an origin, i.e. getRemoteAddr() is still the proxy -- STOP and roll back.

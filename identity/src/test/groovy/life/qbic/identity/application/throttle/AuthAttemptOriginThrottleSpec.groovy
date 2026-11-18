@@ -403,17 +403,52 @@ class AuthAttemptOriginThrottleSpec extends Specification {
     originLimit << [0, -1]
   }
 
-  def "the resend and registration flows keep account scope only"() {
-    // Deliberate scope decision, not an oversight: a resend costs an email, so its origin threshold
-    // has to be calibrated against the population behind one NAT before it can be switched on.
+  @Unroll
+  def "every mail-sending flow also writes an origin bucket: #scope"() {
+    // This case previously asserted the OPPOSITE — that the resend and registration flows stayed
+    // account-scoped — and that assertion was the vulnerability. Account scope cannot bound these
+    // flows at all: the abuse is "send one mail to a thousand different addresses", and an attacker
+    // who never reuses an address never touches an account bucket, so per-account throttling is
+    // invisible to them while the application sends mail on their behalf.
     when:
     throttled.recordAttempt(scope, 'someone@example.org', ATTACKER_ORIGIN, T0)
 
-    then:
-    counter.scopes() == [scope.name()]
+    then: 'the account bucket and an origin bucket, in one call'
+    counter.scopes().toSet() == [scope.name(), expectedOriginScope] as Set
 
     where:
-    scope << [Scope.EMAIL_CONFIRMATION_RESEND, Scope.PASSWORD_RESET_RESEND, Scope.REGISTRATION]
+    scope                               | expectedOriginScope
+    Scope.EMAIL_CONFIRMATION_RESEND     | Scope.MAIL_ORIGIN.name()
+    Scope.PASSWORD_RESET_RESEND         | Scope.MAIL_ORIGIN.name()
+    Scope.REGISTRATION                  | Scope.REGISTRATION_ORIGIN.name()
+  }
+
+  def "the two resend flows share one origin bucket, so switching between them gains nothing"() {
+    // A shared bucket is the point: an attacker must not get a doubled allowance by alternating
+    // between "resend my reset link" and "resend my confirmation link".
+    when: 'two attempts arrive from one origin, one on each resend flow'
+    throttled.recordAttempt(Scope.PASSWORD_RESET_RESEND, 'a@example.org', ATTACKER_ORIGIN, T0)
+    throttled.recordAttempt(Scope.EMAIL_CONFIRMATION_RESEND, 'b@example.org', ATTACKER_ORIGIN,
+        T0.plusSeconds(1))
+
+    then: 'both landed in the single mail bucket'
+    counter.originCount() == 2
+    counter.originKeys().size() == 1
+  }
+
+  def "registration keeps its own origin bucket, apart from the resend one"() {
+    // Registration is legitimately bursty (a semester start is hundreds of students on one campus
+    // network), so it needs more headroom than a resend. Sharing the bucket would either throttle an
+    // institution or force the resend limit so high it stopped bounding anything.
+    when:
+    throttled.recordAttempt(Scope.REGISTRATION, 'a@example.org', ATTACKER_ORIGIN, T0)
+    throttled.recordAttempt(Scope.PASSWORD_RESET_RESEND, 'b@example.org', ATTACKER_ORIGIN,
+        T0.plusSeconds(1))
+
+    then:
+    counter.originKeys().size() == 2
+    counter.originScopesWritten().toSet() ==
+        [Scope.MAIL_ORIGIN.name(), Scope.REGISTRATION_ORIGIN.name()] as Set
   }
 
   def "originScopeEnabled reports the effective mode"() {
@@ -426,6 +461,8 @@ class AuthAttemptOriginThrottleSpec extends Specification {
   // ---------------------------------------------------------------- helpers
 
   private AuthAttemptThrottle originScoped(int accountLimit, int originLimit) {
+    // The login-focused constructor: the mail and registration buckets share these limits but are not
+    // exercised here — see AuthAttemptMailOriginThrottleSpec.
     return new AuthAttemptThrottle(counter, accountLimit, Duration.ofMinutes(15),
         Duration.ofMinutes(15), 2, Duration.ofMinutes(15), Duration.ofMinutes(15),
         true, originLimit, Duration.ofMinutes(15), Duration.ofMinutes(10))
@@ -475,12 +512,12 @@ class AuthAttemptOriginThrottleSpec extends Specification {
       return writtenScopes
     }
 
-    /** Keys written to the origin scope, which must always be digests. */
+    /** Keys written to any origin scope, which must always be digests. */
     Set<String> originKeys() {
       int i = 0
       def keys = [] as Set
       writtenScopes.each { scope ->
-        if (scope == Scope.LOGIN_ORIGIN.name()) {
+        if (scope.contains('ORIGIN')) {
           keys << writtenKeys[i]
         }
         i++
@@ -488,13 +525,18 @@ class AuthAttemptOriginThrottleSpec extends Specification {
       return keys
     }
 
+    /** The origin scopes actually written, so the bucket mapping can be asserted. */
+    List<String> originScopesWritten() {
+      return writtenScopes.findAll { it.contains('ORIGIN') }
+    }
+
     int originCount() {
-      return counts.findAll { k, v -> k.startsWith(Scope.LOGIN_ORIGIN.name() + '|') }
+      return counts.findAll { k, v -> k.split('\\|')[0].contains('ORIGIN') }
           .values().sum(0) { it[0] } as int
     }
 
     int accountCount() {
-      return counts.findAll { k, v -> k.startsWith(Scope.LOGIN.name() + '|') }
+      return counts.findAll { k, v -> !k.split('\\|')[0].contains('ORIGIN') }
           .values().sum(0) { it[0] } as int
     }
 
