@@ -95,6 +95,48 @@ class MfaPersistenceSpec extends Specification {
     }
 
     /**
+     * Splits a script on {@code ;} while ignoring semicolons inside single-quoted strings.
+     *
+     * <p>A plain {@code split(";")} is wrong the moment a statement contains a string with
+     * punctuation in it — the draft's preflight warning did, and the split produced a statement
+     * that only looked executable. The mysql client understands quoting; this harness has to as
+     * well, or a MariaDB run measures the harness rather than the DDL.</p>
+     */
+    private static final char QUOTE = (char) 39
+    private static final char SEMICOLON = (char) 59
+
+    private static List<String> splitStatements(String sql) {
+        def cleaned = sql.readLines()
+                .findAll { !it.trim().startsWith("--") && !it.trim().isEmpty() }
+                .join("\n")
+        List<String> statements = []
+        StringBuilder current = new StringBuilder()
+        boolean inString = false
+        for (int i = 0; i < cleaned.length(); i++) {
+            char c = cleaned.charAt(i)
+            if (c == QUOTE) {
+                // Two quotes in a row are an escaped quote inside a string, not a delimiter.
+                if (inString && i + 1 < cleaned.length() && cleaned.charAt(i + 1) == QUOTE) {
+                    current.append("''")
+                    i++
+                    continue
+                }
+                inString = !inString
+            }
+            if (c == SEMICOLON && !inString) {
+                statements << current.toString().trim()
+                current.setLength(0)
+                continue
+            }
+            current.append(c)
+        }
+        if (!current.toString().trim().isEmpty()) {
+            statements << current.toString().trim()
+        }
+        return statements.findAll { !it.isEmpty() }
+    }
+
+    /**
      * Applies the migration draft's DDL verbatim, so a MariaDB run exercises the signed-off schema —
      * including the {@code users} foreign key, the shape CHECK constraint and the global unique hash —
      * instead of a Hibernate approximation. Those three are exactly what H2 cannot tell us anything
@@ -106,11 +148,7 @@ class MfaPersistenceSpec extends Specification {
         if (!f.exists()) {
             f = new File("../sql/migrations/drafts/mfa-second-factor.sql")
         }
-        def statements = f.text.readLines()
-                .findAll { !it.trim().startsWith("--") && !it.trim().isEmpty() }
-                .join("\n")
-                .split(";")
-                .findAll { !it.trim().isEmpty() }
+        def statements = splitStatements(f.text)
         inTransaction { EntityManager em ->
             // The FK target, in the charset/collation the real `users` table uses. Production always
             // has it; this is scaffolding for a throwaway database only.

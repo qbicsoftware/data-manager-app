@@ -137,12 +137,29 @@ UNION ALL SELECT 'user_recovery_code', COUNT(*) FROM information_schema.tables
 UNION ALL SELECT 'user_mfa_grace', COUNT(*) FROM information_schema.tables
  WHERE table_schema = DATABASE() AND table_name = 'user_mfa_grace';
 
--- 3. The FK target exists with the same charset/collation, or the three foreign keys fail.
+-- 3. The FK target is in *this* schema, and what its id looks like.
+--    A wrong database or a missing base schema shows up here, not later as errno 150.
+SELECT @db := DATABASE() AS database_you_are_connected_to;
 SELECT table_name, table_collation
   FROM information_schema.tables
  WHERE table_schema = DATABASE() AND table_name = 'users';
--- Expected: utf8mb4_unicode_ci (matches what the script declares)
+-- Expected: one row.
+
+SELECT column_name, column_type, character_set_name, collation_name
+  FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'users' AND column_name = 'id';
+-- Expected: varchar(255) and the charset/collation every second-factor row must match.
 ```
+
+> **The script reads these values itself.** It aligns the three `userId` columns to whatever
+> `users.id` actually uses before adding the foreign keys, because InnoDB rejects an FK whose columns
+> differ in charset *or* collation — and reports that as `errno: 150 "Foreign key constraint is
+> incorrectly formed"`, the same message it gives for a missing parent table. Pinning a collation in
+> the script was the first version and it failed on the first deployment.
+>
+> If the parent is missing or has an unexpected type, the script prints a **WARNING** row, creates the
+> tables **without** foreign keys, and exits successfully. Fix the cause and re-run it; the keys are
+> added then.
 
 ### Apply
 
@@ -171,6 +188,12 @@ SELECT constraint_name, table_name
    AND referenced_table_name = 'users'
    AND table_name IN ('user_second_factor','user_recovery_code','user_mfa_grace');
 
+-- 2b. The child column collations match the parent's (expected: all three equal to users.id's).
+SELECT c.table_name, c.column_name, c.character_set_name, c.collation_name
+  FROM information_schema.columns c
+ WHERE c.table_schema = DATABASE() AND c.column_name = 'userId'
+   AND c.table_name IN ('user_second_factor','user_recovery_code','user_mfa_grace');
+
 -- 3. The one-factor-shape CHECK is registered (expected: 1).
 SELECT COUNT(*) AS check_present
   FROM information_schema.check_constraints
@@ -198,6 +221,14 @@ SELECT id, type, CHAR_LENGTH(secretCiphertext) AS length
         OR CHAR_LENGTH(secretCiphertext) < 40);
 -- Expected: 0 rows
 ```
+
+### Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `errno: 150 "Foreign key constraint is incorrectly formed"` | (a) no `users` table in the schema you are connected to, or (b) a version of this script that pinned a collation | Re-run the current script: it aligns collations from `users.id` and skips the keys with a warning when the parent is missing. Then check *Pre-flight 3* — usually the database is wrong (e.g. a fresh schema instead of the data-management one) |
+| Script printed `WARNING: no users table ... foreign keys are SKIPPED` | the same wrong-database case, caught before the DDL ran | connect to the right schema, re-run; the tables are empty, so nothing is lost |
+| Tables exist but have no foreign keys | created while the parent was unavailable | re-run the script; the keys are added idempotently |
 
 ### Rollback
 

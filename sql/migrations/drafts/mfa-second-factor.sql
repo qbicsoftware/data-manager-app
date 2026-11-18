@@ -54,7 +54,68 @@
 --  4. It expires by comparison against an `Instant` in Java, never against SQL `NOW()` — every
 --     column is `datetime(6)` with no timezone, so a SQL-side comparison would inherit the
 --     database session's zone and disagree with the application by the offset.
+--
+-- WHY THE FOREIGN KEYS ARE ADDED AT THE END, NOT INLINE
+-- ----------------------------------------------------
+-- `users.id` is `varchar(255)`, but its *collation* is a property of the database this script
+-- runs against, not of this repository. InnoDB refuses a foreign key whose columns do not have
+-- exactly the same charset **and** collation, and it reports that refusal as
+-- "errno: 150 Foreign key constraint is incorrectly formed" — indistinguishable from a missing
+-- parent table. Pinning a collation here is therefore only correct on the database this was
+-- written against; doing that was the first version of this script and it failed on the first
+-- real deployment.
+--
+-- So the script does what an operator would do by hand: create the tables, read the parent
+-- column's charset/collation from `information_schema`, align the three `userId` columns to it,
+-- and only then add the constraints. It is idempotent, it tells you when it skipped the keys and
+-- why, and re-running it after fixing the cause completes the job.
 -- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- 0. Preflight: the parent table must be in *this* schema
+-- -----------------------------------------------------------------------------
+-- Reads as a result row rather than failing: the tables themselves are harmless without their
+-- account rows, and an operator who connected to the wrong database should be told so in words,
+-- not with errno 150 at the first CREATE.
+SET @users_present = (
+    SELECT COUNT(*)
+      FROM information_schema.tables
+     WHERE table_schema = DATABASE()
+       AND table_name = 'users');
+
+SET @users_type = (
+    SELECT column_type
+      FROM information_schema.columns
+     WHERE table_schema = DATABASE()
+       AND table_name = 'users'
+       AND column_name = 'id');
+
+SET @users_charset = (
+    SELECT character_set_name
+      FROM information_schema.columns
+     WHERE table_schema = DATABASE()
+       AND table_name = 'users'
+       AND column_name = 'id');
+
+SET @users_collation = (
+    SELECT collation_name
+      FROM information_schema.columns
+     WHERE table_schema = DATABASE()
+       AND table_name = 'users'
+       AND column_name = 'id');
+
+-- 1 = the parent is usable for a foreign key.
+SET @fk_possible = IF(@users_present = 1 AND @users_type = 'varchar(255)', 1, 0);
+
+SELECT IF(@users_present = 0,
+          'WARNING: no `users` table in this schema. Tables are created, foreign keys are SKIPPED. Connect to the data-management database (or apply the base schema), then re-run this script.',
+          IF(@fk_possible = 0,
+             CONCAT('WARNING: users.id is ', COALESCE(@users_type, 'missing'),
+                    ' but these tables use varchar(255) — foreign keys are SKIPPED.'),
+             CONCAT('Preflight OK: users.id is ', @users_type, ' CHARACTER SET ',
+                    @users_charset, ' COLLATE ', @users_collation,
+                    ' — foreign keys are added after column alignment.'))
+       ) AS mfa_preflight;
 
 -- -----------------------------------------------------------------------------
 -- 1. user_second_factor: one row per enrolled credential
@@ -81,16 +142,12 @@ CREATE TABLE IF NOT EXISTS `user_second_factor`
         COMMENT 'Soft delete. A removed factor is never hard-deleted, so the audit trail (AUTH-R-04) keeps showing when it existed and when it stopped.',
 
     KEY `idx_user_second_factor_user` (`userId`, `disabledAt`),
-    CONSTRAINT `FK_user_second_factor_user`
-        FOREIGN KEY (`userId`) REFERENCES `users` (`id`)
-            ON DELETE CASCADE,
     CONSTRAINT `chk_user_second_factor_shape`
         CHECK ((`type` = 'TOTP' AND `secretCiphertext` IS NOT NULL AND `webauthnCredential` IS NULL)
             OR (`type` = 'WEBAUTHN' AND `webauthnCredential` IS NOT NULL AND
                 `secretCiphertext` IS NULL))
 ) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci;
+  DEFAULT CHARSET = utf8mb4;
 
 -- -----------------------------------------------------------------------------
 -- 2. user_recovery_code: single-use break-glass codes (hashed, never plaintext)
@@ -100,7 +157,7 @@ CREATE TABLE IF NOT EXISTS `user_recovery_code`
     `id`            bigint(20)   NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `userId`        varchar(255) NOT NULL,
     `codeHash`      varchar(255) NOT NULL
-        COMMENT 'PBKDF2 hash of a high-entropy code (per-code salt inside the hash string, as the PAT encoder already does). Deliberately NOT encrypted with the vault master key: these must still verify when that key is lost (ADR 0011 B1).',
+        COMMENT 'Keyed HMAC-SHA-256 hex digest of a high-entropy code. Deterministic on purpose: the login path looks a code up by hash without knowing the account. Deliberately NOT encrypted with the vault master key — these must still verify when that key is lost (ADR 0011 B1).',
     `createdAt`     datetime(6)  NOT NULL,
     `usedAt`        datetime(6)  DEFAULT NULL
         COMMENT 'Single use. Set inside the consuming transaction.',
@@ -111,13 +168,9 @@ CREATE TABLE IF NOT EXISTS `user_recovery_code`
     -- the account (that is the point — the account is what the user is trying to reach), so the
     -- hash is the lookup key and two users must not share one.
     UNIQUE KEY `uk_user_recovery_code_hash` (`codeHash`),
-    KEY `idx_user_recovery_code_user` (`userId`),
-    CONSTRAINT `FK_user_recovery_code_user`
-        FOREIGN KEY (`userId`) REFERENCES `users` (`id`)
-            ON DELETE CASCADE
+    KEY `idx_user_recovery_code_user` (`userId`)
 ) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci;
+  DEFAULT CHARSET = utf8mb4;
 
 -- -----------------------------------------------------------------------------
 -- 3. user_mfa_grace: the per-account window that makes a policy flip safe
@@ -128,14 +181,74 @@ CREATE TABLE IF NOT EXISTS `user_mfa_grace`
     `startedAt`  datetime(6)  NOT NULL
         COMMENT 'First login of this account under `required` with no factor enrolled. The window is per account, not per deployment.',
     `graceUntil` datetime(6)  NOT NULL
-        COMMENT 'Absolute deadline (startedAt + configured grace). Absence of this row means "grant a window now", never "deny".',
-
-    CONSTRAINT `FK_user_mfa_grace_user`
-        FOREIGN KEY (`userId`) REFERENCES `users` (`id`)
-            ON DELETE CASCADE
+        COMMENT 'Absolute deadline (startedAt + configured grace). Absence of this row means "grant a window now", never "deny".'
 ) ENGINE = InnoDB
-  DEFAULT CHARSET = utf8mb4
-  COLLATE = utf8mb4_unicode_ci;
+  DEFAULT CHARSET = utf8mb4;
+
+-- -----------------------------------------------------------------------------
+-- 4. Align the three `userId` columns with `users.id`
+-- -----------------------------------------------------------------------------
+-- Only runs when the parent is usable. A no-op ALTER (`DO 0`) keeps the block idempotent and
+-- keeps the script runnable through clients that reject conditionals.
+SET @align_factor = IF(@fk_possible = 1,
+    CONCAT('ALTER TABLE `user_second_factor` MODIFY `userId` varchar(255) CHARACTER SET ',
+           @users_charset, ' COLLATE ', @users_collation, ' NOT NULL'),
+    'DO 0');
+PREPARE stmt FROM @align_factor;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @align_recovery = IF(@fk_possible = 1,
+    CONCAT('ALTER TABLE `user_recovery_code` MODIFY `userId` varchar(255) CHARACTER SET ',
+           @users_charset, ' COLLATE ', @users_collation, ' NOT NULL'),
+    'DO 0');
+PREPARE stmt FROM @align_recovery;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @align_grace = IF(@fk_possible = 1,
+    CONCAT('ALTER TABLE `user_mfa_grace` MODIFY `userId` varchar(255) CHARACTER SET ',
+           @users_charset, ' COLLATE ', @users_collation, ' NOT NULL'),
+    'DO 0');
+PREPARE stmt FROM @align_grace;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- -----------------------------------------------------------------------------
+-- 5. Add the foreign keys, once, when the parent allows it
+-- -----------------------------------------------------------------------------
+SET @fk_factor = IF(@fk_possible = 1
+    AND (SELECT COUNT(*) FROM information_schema.table_constraints
+          WHERE constraint_schema = DATABASE()
+            AND table_name = 'user_second_factor'
+            AND constraint_name = 'FK_user_second_factor_user') = 0,
+    'ALTER TABLE `user_second_factor` ADD CONSTRAINT `FK_user_second_factor_user` FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE CASCADE',
+    'DO 0');
+PREPARE stmt FROM @fk_factor;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @fk_recovery = IF(@fk_possible = 1
+    AND (SELECT COUNT(*) FROM information_schema.table_constraints
+          WHERE constraint_schema = DATABASE()
+            AND table_name = 'user_recovery_code'
+            AND constraint_name = 'FK_user_recovery_code_user') = 0,
+    'ALTER TABLE `user_recovery_code` ADD CONSTRAINT `FK_user_recovery_code_user` FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE CASCADE',
+    'DO 0');
+PREPARE stmt FROM @fk_recovery;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @fk_grace = IF(@fk_possible = 1
+    AND (SELECT COUNT(*) FROM information_schema.table_constraints
+          WHERE constraint_schema = DATABASE()
+            AND table_name = 'user_mfa_grace'
+            AND constraint_name = 'FK_user_mfa_grace_user') = 0,
+    'ALTER TABLE `user_mfa_grace` ADD CONSTRAINT `FK_user_mfa_grace_user` FOREIGN KEY (`userId`) REFERENCES `users` (`id`) ON DELETE CASCADE',
+    'DO 0');
+PREPARE stmt FROM @fk_grace;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- =============================================================================
 -- Rollback
@@ -157,7 +270,8 @@ CREATE TABLE IF NOT EXISTS `user_mfa_grace`
 -- =============================================================================
 -- 1. [ ] Record AGENTS.md §12 sign-off for the three new tables in the PR description.
 -- 2. [ ] Add the three CREATE TABLE blocks to `sql/complete-schema.sql`, so a fresh install
---     matches an upgraded one.
+--     matches an upgraded one. (There the FK can be inline: `users` is created in the same
+--     script with a pinned collation.)
 -- 3. [ ] Add the row to the summary table in `sql/migrations/README.md` and to
 --     `docs/migrations/NEXT.md` with pre-flight / apply / verify / rollback.
 -- 4. [ ] Provision `second-factor-master-key` in the PKCS12 vault on every node before the
