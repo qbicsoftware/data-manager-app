@@ -173,9 +173,15 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     MfaPendingLogin.clear(session);
 
     // Deep links survive the challenge: Spring saved the original request when it redirected to the
-    // login page, and that is where the user wanted to go (M4-4, for free).
+    // login page, and that is where the user wanted to go (M4-4, for free). Its URL already contains
+    // the context path.
+    //
+    // Without a saved request the fallback must be the application root, not the host root: this
+    // deployment runs under a context path (e.g. /dev), and "/" would send the browser outside it —
+    // a working login that lands on a 404.
     var saved = requestCache.getRequest(request, response);
-    String target = saved == null ? "/" : saved.getRedirectUrl();
+    String contextPath = request.getContextPath() == null ? "" : request.getContextPath();
+    String target = saved == null ? contextPath + "/" : saved.getRedirectUrl();
     UI.getCurrent().getPage().setLocation(target);
   }
 
