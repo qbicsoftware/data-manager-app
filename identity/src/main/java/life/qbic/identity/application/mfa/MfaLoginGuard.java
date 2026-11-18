@@ -64,6 +64,11 @@ public class MfaLoginGuard {
         now,
         policy.grace());
 
+    // One line per password login, naming the outcome. Diagnosing "no challenge appeared" needs the
+    // decision, not the absence of one.
+    log.info("Second-factor gate for user %s: %s (mode=%s, grace=%s)"
+        .formatted(userId, decision.getClass().getSimpleName(), policy.mode(), policy.grace()));
+
     if (decision instanceof MfaGateDecision.GraceGranted granted) {
       // First write wins in the adapter, so two concurrent logins cannot move the deadline.
       graceRepository.startIfAbsent(MfaGrace.start(userId, now, policy.grace()));

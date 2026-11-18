@@ -1,10 +1,12 @@
 package life.qbic.identity.application.mfa;
 
 import static java.util.Objects.requireNonNull;
+import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Locale;
+import life.qbic.logging.api.Logger;
 import life.qbic.identity.domain.model.mfa.MfaPolicyMode;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -40,6 +42,8 @@ public class MfaPolicy {
   /** Enough for a user to notice, install an authenticator app and enrol. Configurable (ADR 0011). */
   public static final Duration DEFAULT_GRACE = Duration.ofHours(48);
 
+  private static final Logger log = logger(MfaPolicy.class);
+
   private final MfaPolicyMode mode;
   private final Duration grace;
 
@@ -47,6 +51,10 @@ public class MfaPolicy {
       @Value("${qbic.security.mfa.grace:PT48H}") Duration grace) {
     this.mode = parseMode(mode);
     this.grace = requirePositive(grace);
+    // Logged at startup on purpose: "the factor is not requested" is almost always this value being
+    // OFF, or a stale application.properties in target/classes after an edit. One line removes the
+    // guesswork — and it is not a secret.
+    log.info("Second-factor policy: mode=%s, grace=%s".formatted(this.mode, this.grace));
   }
 
   /**
