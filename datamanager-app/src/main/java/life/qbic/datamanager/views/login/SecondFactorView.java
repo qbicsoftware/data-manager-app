@@ -163,13 +163,19 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     useRecovery.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     useRecovery.addClickListener(event -> showRecoveryMode(!recoverySection.isVisible()));
 
-    // Someone with neither factor has no self-service way back in, and "your data steward" assumes
-    // the user knows an internal role. The support address is the one contact a user can be expected
-    // to find, and it comes from configuration so a deployment can change it.
+    // Someone with neither factor has no self-service way back in. What this paragraph must NOT do is
+    // advertise "email support and they will reset it": the account was created by self-service
+    // registration with nothing but email verification, so that would make control of an inbox the
+    // identity proof for a factor reset — the cheapest way past the requirement, and a social
+    // engineering target aimed at exactly the account an attacker wants.
+    //
+    // So it names a contact, states plainly that email cannot grant a reset, and points at the
+    // identity check that has to happen instead. The address comes from configuration.
     Paragraph noFactorLeft = new Paragraph(
-        "Lost your authenticator app and your recovery codes? Contact QBiC support at ");
+        "Lost your authenticator app and your recovery codes? A reset cannot be granted by email — "
+            + "it requires verifying who you are. Contact QBiC support at ");
     noFactorLeft.add(new Anchor("mailto:" + contactEmail, contactEmail),
-        new Span(" — they can reset the second factor for your account."));
+        new Span(" to find out who can verify you for your group."));
 
     RouterLink useAnotherAccount = new RouterLink("Use a different account", LoginLayout.class);
 

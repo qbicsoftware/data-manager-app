@@ -64,12 +64,30 @@ holds — but say so, because the flow is one redirect uglier and the handler ne
 | M4-5 bypass suite | the unit-level properties are asserted; the HTTP-level suite (second factor required on every route, session fixation, replay) is next |
 | Second-factor throttling | M5-4, on the existing `auth_attempt` table |
 
-## 4a. One promise the page currently makes
+## 4a. The helpdesk is a second-factor bypass until it has an identity check
 
-The challenge now tells a user with neither factor to "ask your data steward to re-enrol you — an
-administrator can reset the second factor". That sentence is a commitment: **M6-1 (administrative
-re-enrolment) must exist before `REQUIRED` is enabled in production**, or the only way an administrator
-can honour it is SQL. If M6-1 slips, soften the copy rather than ship the promise.
+The first version of the challenge told a user with neither factor to "ask your data steward — an
+administrator can reset the second factor". That is not a documentation gap, it is a hole: accounts are
+created by self-service registration with nothing but email verification, so "prove you are this person"
+currently means "control this inbox". An advertised email-reset path therefore hands an attacker the
+cheapest way past the factor — phish the mailbox, ask for a reset — and it targets exactly the accounts
+whose factor was set up to survive that.
+
+The page now says that a reset cannot be granted by email and that identity verification is required,
+and names support only to find out who verifies for a group.
+
+**M6-1 must therefore be more than an admin button.** Before `REQUIRED` is enabled:
+
+1. Identity proofing that does not rest on the mailbox (data steward in person, or an affiliation
+   check against the institution).
+2. Four-eyes or a second approver for a factor reset, since one admin account becomes the
+   highest-value target in the system.
+3. An audit record of who reset whose factor, when, and on what evidence (`AUTH-R-04`).
+4. A helpdesk script that *refuses* an email-only request, with the exact wording (M6-2), so the
+   process is uniform rather than dependent on who answers the ticket.
+
+Until then, recovery codes are the only reset-free way in, which is why their generation must not be
+skippable — see the next item.
 
 Same class of debt for the one-time recovery-code sheet: it lists the codes but offers no
 copy/download/print, so a user must transcribe ten codes by hand — the most likely way to lose them.
