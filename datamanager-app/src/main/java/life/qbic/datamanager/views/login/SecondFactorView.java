@@ -27,6 +27,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.Serial;
 import java.time.Instant;
+import java.util.Locale;
+import life.qbic.identity.domain.model.mfa.RecoveryCodes;
+import life.qbic.identity.domain.model.mfa.Totp;
 import life.qbic.datamanager.security.mfa.MfaPendingLogin;
 import life.qbic.datamanager.security.mfa.MfaSessionState;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
@@ -108,7 +111,10 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
         "pb-l", "pr-l", "pl-l");
 
     code.setWidthFull();
-    code.setMaxLength(8);
+    // Exactly six digits: a longer field lets a typo hide behind a valid prefix, and the verifier
+    // only ever accepts six (Totp.DIGITS).
+    code.setMaxLength(Totp.DIGITS);
+    code.setAllowedCharPattern("\\d");
     code.setAutofocus(true);
     code.setPlaceholder("123456");
 
@@ -120,7 +126,22 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     verify.addClickListener(event -> verifyCode());
 
     recoveryCode.setWidthFull();
+    // 12 characters plus the two grouping hyphens; the pattern blocks characters outside the
+    // alphabet, so 0/1/8/9 cannot be typed into a code that never contains them.
+    recoveryCode.setMaxLength(RecoveryCodes.CODE_LENGTH + RecoveryCodes.CODE_LENGTH / 4 - 1);
+    recoveryCode.setAllowedCharPattern("[A-Za-z2-7\\-]");
     recoveryCode.setPlaceholder("XXXX-XXXX-XXXX");
+    // Group as the user types. Formatting on the server keeps one implementation of the rule (the
+    // same one the encoder normalises with), instead of a second copy in JavaScript.
+    recoveryCode.addValueChangeListener(event -> {
+      if (!event.isFromClient() || event.getValue() == null) {
+        return;
+      }
+      String formatted = formatRecoveryCodeInput(event.getValue());
+      if (!formatted.equals(event.getValue())) {
+        recoveryCode.setValue(formatted);
+      }
+    });
     verifyRecovery.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     verifyRecovery.addClickListener(event -> verifyRecoveryCode());
 
@@ -209,6 +230,35 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
       error.setVisible(false);
       code.focus();
     }
+  }
+
+  /**
+   * Brings a partially typed recovery code into {@code XXXX-XXXX-XXXX} shape.
+   *
+   * <p>Tolerant by design: it runs on every keystroke, so it must accept a value that is still too
+   * short or temporarily carries a half-typed hyphen. Anything that is not alphabet is dropped and the
+   * result is truncated to the code length — the same normalisation {@code RecoveryCodeEncoder} applies
+   * before hashing, just without the strictness that belongs to submission rather than to typing.</p>
+   *
+   * @param raw whatever is currently in the field
+   * @return the grouped, upper-case prefix of a recovery code
+   */
+  static String formatRecoveryCodeInput(String raw) {
+    if (raw == null) {
+      return "";
+    }
+    String characters = raw.replaceAll("[^A-Za-z2-7]", "").toUpperCase(Locale.ROOT);
+    if (characters.length() > RecoveryCodes.CODE_LENGTH) {
+      characters = characters.substring(0, RecoveryCodes.CODE_LENGTH);
+    }
+    StringBuilder formatted = new StringBuilder(characters.length() + 2);
+    for (int index = 0; index < characters.length(); index++) {
+      if (index > 0 && index % 4 == 0) {
+        formatted.append('-');
+      }
+      formatted.append(characters.charAt(index));
+    }
+    return formatted.toString();
   }
 
   private void verifyRecoveryCode() {
