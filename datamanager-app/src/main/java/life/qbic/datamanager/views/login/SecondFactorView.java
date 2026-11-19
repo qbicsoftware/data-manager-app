@@ -138,8 +138,41 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     recoveryCode.setMaxLength(RecoveryCodes.CODE_LENGTH + RecoveryCodes.CODE_LENGTH / 4 - 1);
     recoveryCode.setAllowedCharPattern("[A-Za-z2-7\\-]");
     recoveryCode.setPlaceholder("XXXX-XXXX-XXXX");
-    // Group as the user types. Formatting on the server keeps one implementation of the rule (the
-    // same one the encoder normalises with), instead of a second copy in JavaScript.
+    // Grouping has to happen in the browser: Vaadin's default value-change mode is LAZY, so a
+    // server-side listener only sees the value when the field loses focus — which is precisely the
+    // "formatting applies when I leave the field" behaviour this replaces.
+    //
+    // The server keeps two jobs: the listener below is the fallback for a client where this script
+    // did not attach (it re-groups the same way, idempotently), and RecoveryCodeEncoder normalises
+    // again before hashing, so the stored value never depends on what the browser displayed.
+    recoveryCode.getElement().executeJs("""
+        const field = $0;
+        const input = field.shadowRoot ? field.shadowRoot.querySelector('input') : field;
+        if (!input || input.__qbicRecoveryGrouping) {
+          return;
+        }
+        input.__qbicRecoveryGrouping = true;
+        input.addEventListener('input', () => {
+          const typed = input.value;
+          const characters = typed.replace(/[^A-Za-z2-7]/g, '').toUpperCase().slice(0, 12);
+          let grouped = '';
+          for (let index = 0; index < characters.length; index++) {
+            if (index > 0 && index % 4 === 0) {
+              grouped += '-';
+            }
+            grouped += characters[index];
+          }
+          if (grouped !== typed) {
+            // Setting the component's value (not only the inner input) keeps Vaadin's state in sync,
+            // so submitting without blurring sends the grouped text.
+            field.value = grouped;
+            input.value = grouped;
+            input.setSelectionRange(grouped.length, grouped.length);
+          }
+        });
+        """, recoveryCode.getElement());
+
+    // Fallback: fires on blur/change if the script above could not attach.
     recoveryCode.addValueChangeListener(event -> {
       if (!event.isFromClient() || event.getValue() == null) {
         return;
