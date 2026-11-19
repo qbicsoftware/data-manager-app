@@ -1903,6 +1903,13 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   font-size: var(--lumo-font-size-s);
 }
 
+.second-factor-icon {
+  color: var(--lumo-primary-color);
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+  flex: none;
+}
+
 .mfa-policy-note {
   font-size: var(--lumo-font-size-s);
 }

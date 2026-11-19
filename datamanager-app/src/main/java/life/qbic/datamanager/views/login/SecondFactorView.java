@@ -6,10 +6,13 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -35,6 +38,7 @@ import life.qbic.datamanager.security.mfa.MfaSessionState;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.identity.application.mfa.RecoveryCodeService;
 import life.qbic.identity.application.mfa.SecondFactorVerificationService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -93,7 +97,8 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
 
   public SecondFactorView(SecondFactorVerificationService verificationService,
       RecoveryCodeService recoveryCodeService,
-      UserDetailsService userDetailsService, VaadinDefaultRequestCache requestCache) {
+      UserDetailsService userDetailsService, VaadinDefaultRequestCache requestCache,
+      @Value("${qbic.communication.contact.email}") String contactEmail) {
     this.verificationService = requireNonNull(verificationService,
         "verificationService must not be null");
     this.recoveryCodeService = requireNonNull(recoveryCodeService,
@@ -158,15 +163,24 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     useRecovery.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     useRecovery.addClickListener(event -> showRecoveryMode(!recoverySection.isVisible()));
 
-    // Someone with neither factor has no self-service way back in. Saying who to ask is the
-    // difference between "locked out" and "one email away from a re-enrolment".
+    // Someone with neither factor has no self-service way back in, and "your data steward" assumes
+    // the user knows an internal role. The support address is the one contact a user can be expected
+    // to find, and it comes from configuration so a deployment can change it.
     Paragraph noFactorLeft = new Paragraph(
-        "Lost your authenticator app and your recovery codes? Ask your data steward to re-enrol "
-            + "you — an administrator can reset the second factor for your account.");
+        "Lost your authenticator app and your recovery codes? Contact QBiC support at ");
+    noFactorLeft.add(new Anchor("mailto:" + contactEmail, contactEmail),
+        new Span(" — they can reset the second factor for your account."));
 
     RouterLink useAnotherAccount = new RouterLink("Use a different account", LoginLayout.class);
 
-    form.add(new H2("Second factor"), instructions, codeSection, recoverySection, error,
+    // The heading carries the shield so the step reads as a security checkpoint at a glance, rather
+    // than as one more field on the login page.
+    Icon shield = VaadinIcon.SHIELD.create();
+    shield.addClassName("second-factor-icon");
+    Div heading = new Div(shield, new H2("Second factor"));
+    heading.addClassNames("flex", "items-center", "gap-s");
+
+    form.add(heading, instructions, codeSection, recoverySection, error,
         useRecovery, noFactorLeft, useAnotherAccount);
     form.getStyle().set("max-width", "24rem");
     showRecoveryMode(false);
