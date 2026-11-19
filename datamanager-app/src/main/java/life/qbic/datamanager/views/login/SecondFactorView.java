@@ -80,6 +80,8 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
   private final Span error = new Span();
   private final Button verify = new Button("Verify");
   private final Button verifyRecovery = new Button("Sign in with recovery code");
+  private final Paragraph instructions = new Paragraph();
+  private final Button useRecovery = new Button();
   private final Div codeSection = new Div();
   private final Div recoverySection = new Div();
   private final VerticalLayout form = new VerticalLayout();
@@ -122,31 +124,31 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     verifyRecovery.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     verifyRecovery.addClickListener(event -> verifyRecoveryCode());
 
+    // Enter must submit whichever mode is active: the recovery field is the one a panicking user
+    // fills in, and it must not need a mouse.
+    verifyRecovery.addClickShortcut(Key.ENTER);
+
     codeSection.add(code, verify);
     recoverySection.add(recoveryCode, verifyRecovery);
     recoverySection.setVisible(false);
 
     // The break-glass path (AUTH-R-03, M4-3): a lost or replaced phone must not require an
     // administrator. The codes are single-use and were shown once, at generation.
-    Button useRecovery = new Button("Use a recovery code instead");
     useRecovery.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    useRecovery.addClickListener(event -> {
-      boolean showRecovery = !recoverySection.isVisible();
-      recoverySection.setVisible(showRecovery);
-      codeSection.setVisible(!showRecovery);
-      if (showRecovery) {
-        recoveryCode.focus();
-      } else {
-        code.focus();
-      }
-    });
+    useRecovery.addClickListener(event -> showRecoveryMode(!recoverySection.isVisible()));
+
+    // Someone with neither factor has no self-service way back in. Saying who to ask is the
+    // difference between "locked out" and "one email away from a re-enrolment".
+    Paragraph noFactorLeft = new Paragraph(
+        "Lost your authenticator app and your recovery codes? Ask your data steward to re-enrol "
+            + "you — an administrator can reset the second factor for your account.");
 
     RouterLink useAnotherAccount = new RouterLink("Use a different account", LoginLayout.class);
 
-    form.add(new H2("Second factor"), new Paragraph(
-            "Enter the code from your authenticator app, or use one of your recovery codes "
-                + "if you no longer have access to it."),
-        codeSection, recoverySection, useRecovery, error, useAnotherAccount);
+    form.add(new H2("Second factor"), instructions, codeSection, recoverySection, error,
+        useRecovery, noFactorLeft, useAnotherAccount);
+    form.getStyle().set("max-width", "24rem");
+    showRecoveryMode(false);
     add(form);
   }
 
@@ -180,6 +182,33 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
       return;
     }
     establishSession();
+  }
+
+  /**
+   * Switches between the authenticator code and a recovery code.
+   *
+   * <p>The control, the instruction and the visible field change together: a toggle that keeps saying
+   * "use a recovery code instead" while the recovery field is already on screen is a control that lies
+   * about its current state. Focus moves to the field that just appeared, so keyboard users are not
+   * left behind.</p>
+   *
+   * @param recovery {@code true} for the recovery-code mode
+   */
+  private void showRecoveryMode(boolean recovery) {
+    recoverySection.setVisible(recovery);
+    codeSection.setVisible(!recovery);
+    if (recovery) {
+      instructions.setText("Enter one of the recovery codes you saved when you set up "
+          + "two-factor authentication. Each code works once.");
+      useRecovery.setText("Use the authenticator app instead");
+      error.setVisible(false);
+      recoveryCode.focus();
+    } else {
+      instructions.setText("Enter the six-digit code from your authenticator app.");
+      useRecovery.setText("Use a recovery code instead");
+      error.setVisible(false);
+      code.focus();
+    }
   }
 
   private void verifyRecoveryCode() {
