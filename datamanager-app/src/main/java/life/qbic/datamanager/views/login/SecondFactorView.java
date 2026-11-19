@@ -3,6 +3,7 @@ package life.qbic.datamanager.views.login;
 import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.dependency.CssImport;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -68,6 +69,7 @@ import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
  *
  * @since 1.0.0
  */
+@CssImport("./styles/views/login/login-view.css")
 @PageTitle("Second factor")
 @Route(value = "login/second-factor", layout = LandingPageLayout.class)
 @AnonymousAllowed
@@ -91,7 +93,7 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
   private final Button useRecovery = new Button();
   private final Div codeSection = new Div();
   private final Div recoverySection = new Div();
-  private final VerticalLayout form = new VerticalLayout();
+  private final Div form = new Div();
 
   private MfaPendingLogin pending;
 
@@ -107,13 +109,13 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
         "userDetailsService must not be null");
     this.requestCache = requireNonNull(requestCache, "requestCache must not be null");
 
+    // Top-aligned, not centred: the card is taller than the login card, and centring a too-tall
+    // element pushes it over the footer instead of letting the page scroll.
     setAlignItems(FlexComponent.Alignment.CENTER);
-    setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+    getStyle().set("padding-top", "var(--lumo-space-xl)");
+    getStyle().set("padding-bottom", "var(--lumo-space-xl)");
 
-    form.setPadding(false);
-    form.addClassNames("bg-base", "border", "border-contrast-10", "rounded-m", "box-border",
-        "flex", "flex-col", "w-full", "text-s", "shadow-l", "min-width-300px", "max-width-15vw",
-        "pb-l", "pr-l", "pl-l");
+    form.addClassName("second-factor-card");
 
     code.setWidthFull();
     // Exactly six digits: a longer field lets a typo hide behind a valid prefix, and the verifier
@@ -154,6 +156,8 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     // fills in, and it must not need a mouse.
     verifyRecovery.addClickShortcut(Key.ENTER);
 
+    codeSection.addClassName("second-factor-field");
+    recoverySection.addClassName("second-factor-field");
     codeSection.add(code, verify);
     recoverySection.add(recoveryCode, verifyRecovery);
     recoverySection.setVisible(false);
@@ -172,23 +176,26 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     // So it names a contact, states plainly that email cannot grant a reset, and points at the
     // identity check that has to happen instead. The address comes from configuration.
     Paragraph noFactorLeft = new Paragraph(
-        "Lost your authenticator app and your recovery codes? A reset cannot be granted by email — "
-            + "it requires verifying who you are. Contact QBiC support at ");
-    noFactorLeft.add(new Anchor("mailto:" + contactEmail, contactEmail),
-        new Span(" to find out who can verify you for your group."));
+        "Lost your authenticator app and your recovery codes? A reset needs identity verification "
+            + "and cannot be granted by email. Ask QBiC support who can verify you: ");
+    noFactorLeft.add(new Anchor("mailto:" + contactEmail, contactEmail));
 
     RouterLink useAnotherAccount = new RouterLink("Use a different account", LoginLayout.class);
+    Div footerLink = new Div(useAnotherAccount);
+    footerLink.addClassName("second-factor-footer");
 
     // The heading carries the shield so the step reads as a security checkpoint at a glance, rather
     // than as one more field on the login page.
     Icon shield = VaadinIcon.SHIELD.create();
     shield.addClassName("second-factor-icon");
     Div heading = new Div(shield, new H2("Second factor"));
-    heading.addClassNames("flex", "items-center", "gap-s");
+    heading.addClassName("second-factor-heading");
 
-    form.add(heading, instructions, codeSection, recoverySection, error,
-        useRecovery, noFactorLeft, useAnotherAccount);
-    form.getStyle().set("max-width", "24rem");
+    Div links = new Div(useRecovery);
+    links.addClassName("second-factor-links");
+
+    form.add(heading, instructions, codeSection, recoverySection, error, links, noFactorLeft,
+        footerLink);
     showRecoveryMode(false);
     add(form);
   }

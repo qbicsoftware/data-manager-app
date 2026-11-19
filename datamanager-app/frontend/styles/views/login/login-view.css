@@ -17,3 +17,75 @@
   --vaadin-field-default-width: 100%;
   margin-bottom: 0;
 }
+
+
+/*
+ * Second-factor challenge (MILESTONE-MFA M4-1).
+ *
+ * The login card's column is sized for a two-field form; this card carries a heading, an
+ * instruction, a field, two secondary links and a support note, so it gets its own width and
+ * its own rhythm instead of inheriting `.max-width-15vw`.
+ */
+.second-factor-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 300px;
+  max-width: 24rem;
+  padding: var(--lumo-space-l);
+  background: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-10pct);
+  border-radius: var(--lumo-border-radius-l);
+  box-shadow: var(--lumo-box-shadow-m);
+}
+
+.second-factor-card h2 {
+  margin: 0;
+  font-size: var(--lumo-font-size-xl);
+  line-height: 1.2;
+}
+
+.second-factor-card p {
+  margin: 0;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+  line-height: 1.45;
+}
+
+.second-factor-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.second-factor-icon {
+  width: var(--lumo-icon-size-m);
+  height: var(--lumo-icon-size-m);
+  color: var(--lumo-primary-color);
+  flex: none;
+}
+
+/* Field and its primary action read as one unit, and the action spans the field. */
+.second-factor-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.second-factor-field vaadin-button {
+  width: 100%;
+}
+
+.second-factor-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.second-factor-footer {
+  margin-top: var(--lumo-space-s);
+  padding-top: var(--lumo-space-s);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
