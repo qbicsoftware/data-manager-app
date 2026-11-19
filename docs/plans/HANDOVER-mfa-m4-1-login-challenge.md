@@ -64,6 +64,17 @@ holds — but say so, because the flow is one redirect uglier and the handler ne
 | M4-5 bypass suite | the unit-level properties are asserted; the HTTP-level suite (second factor required on every route, session fixation, replay) is next |
 | Second-factor throttling | M5-4, on the existing `auth_attempt` table |
 
+## 4a. One promise the page currently makes
+
+The challenge now tells a user with neither factor to "ask your data steward to re-enrol you — an
+administrator can reset the second factor". That sentence is a commitment: **M6-1 (administrative
+re-enrolment) must exist before `REQUIRED` is enabled in production**, or the only way an administrator
+can honour it is SQL. If M6-1 slips, soften the copy rather than ship the promise.
+
+Same class of debt for the one-time recovery-code sheet: it lists the codes but offers no
+copy/download/print, so a user must transcribe ten codes by hand — the most likely way to lose them.
+That is a UX defect on the break-glass path, not a nice-to-have.
+
 ## 5. Security notes for review
 
 - The challenge reloads the principal through `UserDetailsService`, so the factor step grants exactly
