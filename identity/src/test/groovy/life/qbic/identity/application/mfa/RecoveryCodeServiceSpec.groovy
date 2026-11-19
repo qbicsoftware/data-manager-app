@@ -163,6 +163,20 @@ class RecoveryCodeServiceSpec extends Specification {
         thrown(NullPointerException)
     }
 
+    // ---------------------------------------------------------------- wiring
+
+    def "every method that consumes a code is transactional"() {
+        // The repository takes a PESSIMISTIC_WRITE lock and flushes; without an active transaction
+        // Hibernate throws "No active transaction" — at runtime, on the login path, which is how this
+        // was found. The fake repository in these specs cannot reproduce it, so assert the annotation.
+        expect:
+        ["generate", "redeem", "redeemFor"].every { name ->
+            def method = RecoveryCodeService.getMethods().find { it.name == name }
+            method != null && method.isAnnotationPresent(
+                    org.springframework.transaction.annotation.Transactional)
+        }
+    }
+
     // ---------------------------------------------------------------- plaintext hygiene
 
     def "the returned set does not print its codes"() {

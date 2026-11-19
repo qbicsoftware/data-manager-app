@@ -81,6 +81,7 @@ public class RecoveryCodeService {
    * @param now           the instant of redemption
    * @return {@code true} if the code was unused and unretired; it has then been spent
    */
+  @Transactional
   public boolean redeem(String presentedCode, Instant now) {
     requireNonNull(presentedCode, "presentedCode must not be null");
     requireNonNull(now, "now must not be null");
@@ -115,6 +116,7 @@ public class RecoveryCodeService {
    * @param now           the instant of redemption
    * @return {@code true} if the code belonged to that account, was unused, and has now been spent
    */
+  @Transactional
   public boolean redeemFor(String userId, String presentedCode, Instant now) {
     requireNonNull(userId, "userId must not be null");
     requireNonNull(presentedCode, "presentedCode must not be null");
