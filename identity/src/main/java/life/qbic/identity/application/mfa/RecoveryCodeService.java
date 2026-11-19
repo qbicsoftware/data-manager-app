@@ -103,6 +103,42 @@ public class RecoveryCodeService {
   }
 
   /**
+   * Redeems a code presented at the login challenge, where the account is already known.
+   *
+   * <p>Same uniform refusal as {@link #redeem}, plus one rule that only exists on this path: the code
+   * must belong to the account that is mid-login. A code from another account must neither
+   * authenticate nor be spent — burning a stranger's code would be a denial of service against
+   * someone who may still need it.</p>
+   *
+   * @param userId        the account whose password was already verified
+   * @param presentedCode the code the user typed
+   * @param now           the instant of redemption
+   * @return {@code true} if the code belonged to that account, was unused, and has now been spent
+   */
+  public boolean redeemFor(String userId, String presentedCode, Instant now) {
+    requireNonNull(userId, "userId must not be null");
+    requireNonNull(presentedCode, "presentedCode must not be null");
+    requireNonNull(now, "now must not be null");
+    String hash;
+    try {
+      hash = recoveryCodeEncoder.hash(presentedCode);
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
+    boolean redeemed = recoveryCodeRepository
+        .consumeIfUsableForUser(hash, userId, now)
+        .isPresent();
+    if (redeemed) {
+      log.info("A recovery code was redeemed at the login challenge for user %s"
+          .formatted(userId));
+    } else {
+      log.warn("A recovery code was refused at the login challenge for user %s"
+          .formatted(userId));
+    }
+    return redeemed;
+  }
+
+  /**
    * @param userId the account
    * @return how many codes are still usable, for the "N codes left" hint (M3-3)
    */

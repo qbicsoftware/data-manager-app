@@ -6,6 +6,7 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
@@ -29,6 +30,7 @@ import java.time.Instant;
 import life.qbic.datamanager.security.mfa.MfaPendingLogin;
 import life.qbic.datamanager.security.mfa.MfaSessionState;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
+import life.qbic.identity.application.mfa.RecoveryCodeService;
 import life.qbic.identity.application.mfa.SecondFactorVerificationService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -69,20 +71,28 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
   private static final long serialVersionUID = 1L;
 
   private final transient SecondFactorVerificationService verificationService;
+  private final transient RecoveryCodeService recoveryCodeService;
   private final transient UserDetailsService userDetailsService;
   private final transient VaadinDefaultRequestCache requestCache;
 
   private final TextField code = new TextField("Six-digit code");
+  private final TextField recoveryCode = new TextField("Recovery code");
   private final Span error = new Span();
   private final Button verify = new Button("Verify");
+  private final Button verifyRecovery = new Button("Sign in with recovery code");
+  private final Div codeSection = new Div();
+  private final Div recoverySection = new Div();
   private final VerticalLayout form = new VerticalLayout();
 
   private MfaPendingLogin pending;
 
   public SecondFactorView(SecondFactorVerificationService verificationService,
+      RecoveryCodeService recoveryCodeService,
       UserDetailsService userDetailsService, VaadinDefaultRequestCache requestCache) {
     this.verificationService = requireNonNull(verificationService,
         "verificationService must not be null");
+    this.recoveryCodeService = requireNonNull(recoveryCodeService,
+        "recoveryCodeService must not be null");
     this.userDetailsService = requireNonNull(userDetailsService,
         "userDetailsService must not be null");
     this.requestCache = requireNonNull(requestCache, "requestCache must not be null");
@@ -107,11 +117,36 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     verify.addClickShortcut(Key.ENTER);
     verify.addClickListener(event -> verifyCode());
 
+    recoveryCode.setWidthFull();
+    recoveryCode.setPlaceholder("XXXX-XXXX-XXXX");
+    verifyRecovery.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    verifyRecovery.addClickListener(event -> verifyRecoveryCode());
+
+    codeSection.add(code, verify);
+    recoverySection.add(recoveryCode, verifyRecovery);
+    recoverySection.setVisible(false);
+
+    // The break-glass path (AUTH-R-03, M4-3): a lost or replaced phone must not require an
+    // administrator. The codes are single-use and were shown once, at generation.
+    Button useRecovery = new Button("Use a recovery code instead");
+    useRecovery.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    useRecovery.addClickListener(event -> {
+      boolean showRecovery = !recoverySection.isVisible();
+      recoverySection.setVisible(showRecovery);
+      codeSection.setVisible(!showRecovery);
+      if (showRecovery) {
+        recoveryCode.focus();
+      } else {
+        code.focus();
+      }
+    });
+
     RouterLink useAnotherAccount = new RouterLink("Use a different account", LoginLayout.class);
 
     form.add(new H2("Second factor"), new Paragraph(
-            "Enter the code from your authenticator app."),
-        code, error, verify, useAnotherAccount);
+            "Enter the code from your authenticator app, or use one of your recovery codes "
+                + "if you no longer have access to it."),
+        codeSection, recoverySection, useRecovery, error, useAnotherAccount);
     add(form);
   }
 
@@ -145,6 +180,21 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
       return;
     }
     establishSession();
+  }
+
+  private void verifyRecoveryCode() {
+    if (pending == null) {
+      return;
+    }
+    if (recoveryCodeService.redeemFor(pending.userId(), recoveryCode.getValue(), Instant.now())) {
+      establishSession();
+      return;
+    }
+    // Same sentence as a wrong TOTP code, on purpose (AUTH-NFR-03): the difference between "unknown",
+    // "used" and "belongs to another account" is only useful to an attacker.
+    error.setText("That recovery code was not accepted. Each code works once.");
+    error.setVisible(true);
+    recoveryCode.setValue("");
   }
 
   /**
@@ -186,8 +236,8 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
   }
 
   private void showGraceExpired() {
-    code.setVisible(false);
-    verify.setVisible(false);
+    codeSection.setVisible(false);
+    recoverySection.setVisible(false);
     error.setVisible(false);
     form.add(new Paragraph(
         "Your enrolment window for two-factor authentication has passed. "

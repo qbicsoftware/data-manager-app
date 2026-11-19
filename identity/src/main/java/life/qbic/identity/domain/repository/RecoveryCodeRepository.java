@@ -67,4 +67,19 @@ public interface RecoveryCodeRepository {
    *     (AUTH-NFR-03) and is therefore not modelled as a result type here
    */
   Optional<RecoveryCode> consumeIfUsable(String codeHash, Instant now);
+
+  /**
+   * Consumes a code only if it belongs to the given account, atomically.
+   *
+   * <p>The login challenge needs this variant: the account is already known from the pending login, and
+   * a code belonging to somebody else must neither authenticate nor be <em>spent</em>. Checking
+   * ownership before consuming in the service would be a race and a denial-of-service against the
+   * legitimate owner — presenting a stranger's code would burn it.</p>
+   *
+   * @param codeHash the hash of the presented code
+   * @param userId   the account the code must belong to
+   * @param now      the consumption instant
+   * @return the consumed code only if it belonged to that account and was usable
+   */
+  Optional<RecoveryCode> consumeIfUsableForUser(String codeHash, String userId, Instant now);
 }

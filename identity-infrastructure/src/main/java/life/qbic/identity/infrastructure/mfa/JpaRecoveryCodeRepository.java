@@ -84,7 +84,21 @@ public class JpaRecoveryCodeRepository implements RecoveryCodeRepository {
    * concurrent consumer succeeds.</p>
    */
   @Override
+  public Optional<RecoveryCode> consumeIfUsableForUser(String codeHash, String userId,
+      Instant now) {
+    return consume(codeHash, userId, now);
+  }
+
+  @Override
   public Optional<RecoveryCode> consumeIfUsable(String codeHash, Instant now) {
+    return consume(codeHash, null, now);
+  }
+
+  /**
+   * Locks the row by hash, then applies the ownership rule (when a user is given) and the usability
+   * rule, then marks it used — all inside the caller's transaction.
+   */
+  private Optional<RecoveryCode> consume(String codeHash, String userId, Instant now) {
     Optional<RecoveryCode> locked = entityManager
         .createQuery("SELECT c FROM RecoveryCode c WHERE c.codeHash = :hash", RecoveryCode.class)
         .setParameter("hash", codeHash)
@@ -95,6 +109,10 @@ public class JpaRecoveryCodeRepository implements RecoveryCodeRepository {
       return Optional.empty();
     }
     RecoveryCode code = locked.get();
+    if (userId != null && !code.userId().equals(userId)) {
+      // Not this account's code: refuse without spending it (the owner may still need it).
+      return Optional.empty();
+    }
     code.consume(now);
     // The instance was loaded by THIS EntityManager, so it is managed and the mutation is tracked.
     // merge() would copy it into a second instance and leave us returning the wrong one.

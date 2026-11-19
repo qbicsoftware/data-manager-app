@@ -120,6 +120,49 @@ class RecoveryCodeServiceSpec extends Specification {
         service.remaining(USER) == RecoveryCodes.SET_SIZE - 1
     }
 
+    // ---------------------------------------------------------------- login challenge (M4-3)
+
+    def "a code of the mid-login account redeems and is spent"() {
+        given:
+        def set = service.generate(USER, NOW)
+
+        expect:
+        service.redeemFor(USER, set.codes()[0], NOW.plusSeconds(30))
+        service.remaining(USER) == RecoveryCodes.SET_SIZE - 1
+
+        and: "and only once"
+        !service.redeemFor(USER, set.codes()[0], NOW.plusSeconds(60))
+    }
+
+    def "another account's code is refused AND not spent — the owner may still need it"() {
+        given: "codes generated for u-2"
+        def other = service.generate("u-2", NOW)
+
+        when: "u-1 is mid-login and presents one of them"
+        def accepted = service.redeemFor("u-1", other.codes()[0], NOW.plusSeconds(30))
+
+        then: "refused, and u-2 still has a working set"
+        !accepted
+        service.remaining("u-2") == RecoveryCodes.SET_SIZE
+
+        and: "the legitimate owner can still use it"
+        service.redeemFor("u-2", other.codes()[0], NOW.plusSeconds(60))
+    }
+
+    def "a malformed recovery code at the challenge is a failed attempt, not an exception"() {
+        expect:
+        !service.redeemFor(USER, "nonsense", NOW)
+        !service.redeemFor(USER, "", NOW)
+    }
+
+    def "the challenge path requires an account"() {
+        when:
+        service.redeemFor(null, "A2B3C4D5E6F7", NOW)
+
+        then:
+        thrown(NullPointerException)
+    }
+
     // ---------------------------------------------------------------- plaintext hygiene
 
     def "the returned set does not print its codes"() {
@@ -180,7 +223,19 @@ class RecoveryCodeServiceSpec extends Specification {
 
         @Override
         Optional<RecoveryCode> consumeIfUsable(String codeHash, Instant now) {
-            def match = codes.find { it.codeHash() == codeHash && it.isUsable() }
+            return consumeFor(codeHash, null, now)
+        }
+
+        @Override
+        Optional<RecoveryCode> consumeIfUsableForUser(String codeHash, String userId, Instant now) {
+            return consumeFor(codeHash, userId, now)
+        }
+
+        private Optional<RecoveryCode> consumeFor(String codeHash, String userId, Instant now) {
+            def match = codes.find {
+                it.codeHash() == codeHash && it.isUsable()
+                        && (userId == null || it.userId() == userId)
+            }
             if (match == null) {
                 return Optional.empty()
             }

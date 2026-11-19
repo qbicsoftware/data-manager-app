@@ -16,7 +16,7 @@
 | `MfaPendingLogin` | same | session record (user id, email, timestamp), 5-minute lifetime, not an `Authentication` |
 | `MfaChallengeEnforcementFilter` | same | **authoritative**: decides per authenticated request (once per session) and withdraws the session when a factor is due |
 | `MfaSessionState` | same | session marker "this login passed the step", bound to the user id, so the filter does not query the database on every request |
-| `SecondFactorView` | `datamanager-app/…/views/login` | `/login/second-factor`: code entry, uniform refusal message, replays the saved request on success |
+| `SecondFactorView` | `datamanager-app/…/views/login` | `/login/second-factor`: TOTP code entry **or a recovery code** (M4-3), uniform refusal message, replays the saved request on success |
 
 ## 1a. Why the filter, and not only the success handler (learned on the first deployment)
 
@@ -59,7 +59,7 @@ holds — but say so, because the flow is one redirect uglier and the handler ne
 | Task | Note |
 |---|---|
 | M4-2 WebAuthn assertions | `SecondFactorVerificationService` skips `WEBAUTHN` factors: a code cannot satisfy them, and nothing creates them yet (M3-2 not shipped) |
-| M4-3 recovery-code login | the codes exist and redeem at service level; the login path for them is not wired. The challenge says "ask an administrator" — true today |
+| M4-3 recovery-code login | **done 2026-11-18**: the challenge has a "Use a recovery code instead" toggle; `RecoveryCodeService.redeemFor` consumes the code only if it belongs to the account that is mid-login, so a stranger's code is refused *without being spent* |
 | M4-4 saved request | actually works already: the view replays Spring's saved request on success |
 | M4-5 bypass suite | the unit-level properties are asserted; the HTTP-level suite (second factor required on every route, session fixation, replay) is next |
 | Second-factor throttling | M5-4, on the existing `auth_attempt` table |

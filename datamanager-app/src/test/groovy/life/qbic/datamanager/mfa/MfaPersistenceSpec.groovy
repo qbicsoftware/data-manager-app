@@ -397,6 +397,32 @@ class MfaPersistenceSpec extends Specification {
                 life.qbic.identity.domain.model.mfa.RecoveryCodes.SET_SIZE - 1
     }
 
+    def "a recovery code presented for another account is refused without being spent"() {
+        given: "a set generated for u-2, and the hash of its first code"
+        def encoder = new life.qbic.identity.domain.model.mfa.RecoveryCodeEncoder(
+                "p".repeat(life.qbic.identity.domain.model.mfa.RecoveryCodeEncoder.MIN_PEPPER_LENGTH))
+        def set = inTransaction { em ->
+            new life.qbic.identity.application.mfa.RecoveryCodeService(
+                    recoveryCodes(em), encoder).generate("u-2", NOW)
+        }
+        def hash = encoder.hash(set.codes()[0])
+
+        when: "u-1 is mid-login and presents it"
+        def foreign = inTransaction { em ->
+            recoveryCodes(em).consumeIfUsableForUser(hash, USER, NOW.plusSeconds(30))
+        }
+
+        then: "refused, and the owner's code is still there"
+        foreign.isEmpty()
+        inTransaction { em -> recoveryCodes(em).countUsableByUserId("u-2") } ==
+                life.qbic.identity.domain.model.mfa.RecoveryCodes.SET_SIZE
+
+        and: "the legitimate owner can still spend it"
+        inTransaction { em ->
+            recoveryCodes(em).consumeIfUsableForUser(hash, "u-2", NOW.plusSeconds(60))
+        }.isPresent()
+    }
+
     // ---------------------------------------------------------------- 3. grace window
 
     def "a grace window is written once and never moved by a later login"() {
