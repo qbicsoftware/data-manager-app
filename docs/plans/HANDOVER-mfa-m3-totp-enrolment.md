@@ -77,10 +77,10 @@ Two decisions worth keeping:
   outstanding code.
 - **The one-time sheet is exportable** (2026-11-19). Copy-all and a dated `.txt` download render the
   same plain-ASCII sheet, including the account and the generation time in UTC, so ten codes no longer
-  have to be transcribed by hand on the one path that has no reset. Copy reuses
-  `CopyToClipBoardComponent`; download is an `Anchor` + `DownloadHandler` (no JavaScript at all).
-  Plain-text only, on purpose: a typed archive format would be one more thing to get wrong on a
-  break-glass screen, and a `.txt` prints from any editor.
+  have to be transcribed by hand on the one path that has no reset. Copy is a `CopyToClipboardButton`
+  (a real button: pointer cursor, keyboard activation, repeatable); download is an `Anchor` +
+  `DownloadHandler` (no JavaScript at all). Plain-text only, on purpose: a typed archive format would be
+  one more thing to get wrong on a break-glass screen, and a `.txt` prints from any editor.
 
 ## 4a. M3-3 gaps, stated rather than hidden
 

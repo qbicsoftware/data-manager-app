@@ -63,6 +63,15 @@ Nothing is enforced until `qbic.security.mfa.mode` is set to `OPTIONAL`/`REQUIRE
 8. **Helpdesk reset is an identity-proofing bypass.** Accounts are self-service + email-verified, so an
    advertised email reset would make mailbox control the way past the factor. The challenge says a reset
    cannot be granted by email. See §5.
+9. **A UI state that hides the click target must not need a timer to come back.** With push off,
+   `UI.accessLater` runs on the *next request*, so the icon-switch in `CopyToClipBoardComponent`
+   (copy icon → check mark, restored by `CompletableFuture` + `accessLater`) left the recovery-code
+   sheet looking used up after the first click: the check stayed, and a second copy looked impossible.
+   The sheet now uses `CopyToClipboardButton` (a real `Button`, so it has a pointer cursor, a focus
+   ring and keyboard activation) with a permanent label, and reports the result in a sibling
+   `role="status"` node whose text carries a time stamp — every click changes the text, so every click
+   is acknowledged, and nothing has to be reset. `CopyToClipBoardComponent` is still the right tool for
+   an inline value (setup key, command, token); it is the wrong tool when the copy *is* the action.
 
 ## 4. Verification you can run
 
@@ -105,10 +114,10 @@ Two facts about this suite that cost time to find out:
 
 **Closed since the previous handover:** the one-time recovery-code sheet now offers *copy all codes* and
 *download as a dated text file* (`RecoveryCodesDialog.codesAsText`, `…fileName`, guarded by
-`RecoveryCodesDialogSpec`). The copy path reuses `CopyToClipBoardComponent` — the only clipboard
-mechanism already proven on a running build — and the download is a plain `Anchor` + `DownloadHandler`,
-so neither adds browser-side JavaScript to a break-glass screen. Not verified visually here (no
-frontend build), so the sheet still needs one look on a deployed instance.
+`RecoveryCodesDialogSpec`). Copy is a real `CopyToClipboardButton` (pointer cursor, keyboard
+activation, repeatable — see §3 trap 9); download is a plain `Anchor` + `DownloadHandler`, so neither
+adds browser-side JavaScript to a break-glass screen. Not verified visually here (no frontend build),
+so the sheet still needs one look on a deployed instance.
 
 Known smaller gaps: no rename field on a factor (domain supports it), no "N codes left" hint at the
 challenge, no per-request rate limiting on the challenge yet.

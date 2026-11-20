@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.account;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AttachmentType;
 import com.vaadin.flow.component.html.Div;
@@ -13,10 +14,11 @@ import com.vaadin.flow.server.streams.DownloadResponse;
 import java.io.ByteArrayInputStream;
 import java.io.Serial;
 import java.nio.charset.StandardCharsets;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
+import life.qbic.datamanager.views.general.CopyToClipboardButton;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
@@ -52,6 +54,9 @@ public class RecoveryCodesDialog extends Div {
   private static final DateTimeFormatter FILE_DATE =
       DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC);
 
+  private static final DateTimeFormatter COPY_CONFIRMATION_TIME =
+      DateTimeFormatter.ofPattern("HH:mm:ss");
+
   private static final String FILE_PREFIX = "data-manager-recovery-codes-";
 
   private final AppDialog dialog;
@@ -82,9 +87,16 @@ public class RecoveryCodesDialog extends Div {
       grid.add(span);
     });
 
-    Div actions = new Div(copyAction(codesAsText(codeSet, accountEmail)),
-        downloadAction(codeSet, accountEmail));
+    Div actions = new Div();
     actions.addClassName("mfa-recovery-actions");
+    // One live region for the copy result. It is a sibling of the buttons, not a state of them: the
+    // buttons stay enabled and unchanged forever, so "copy it again" is always one click away.
+    Span copyStatus = new Span();
+    copyStatus.addClassName("mfa-recovery-feedback");
+    copyStatus.getElement().setAttribute("role", "status");
+    copyStatus.getElement().setAttribute("aria-live", "polite");
+    actions.add(copyAction(codesAsText(codeSet, accountEmail), copyStatus),
+        downloadAction(codeSet, accountEmail), copyStatus);
 
     Div body = new Div(warning, account, grid, actions);
     body.addClassName("mfa-recovery-body");
@@ -101,12 +113,27 @@ public class RecoveryCodesDialog extends Div {
   /**
    * Copies the whole sheet, not only the bare codes: the account and the timestamp are what make a
    * pasted sheet usable later, and a password-manager entry benefits from the same context.
+   *
+   * <p>A {@link CopyToClipboardButton}, not the icon-switching
+   * {@link life.qbic.datamanager.views.general.CopyToClipBoardComponent}: the latter left this action
+   * looking used up after one click on a deployment. See the button's class documentation.</p>
    */
-  private static CopyToClipBoardComponent copyAction(String sheetText) {
-    CopyToClipBoardComponent copyAll = new CopyToClipBoardComponent(sheetText);
-    copyAll.add(new Span("Copy all codes"));
+  private static CopyToClipboardButton copyAction(String sheetText, Span copyStatus) {
+    CopyToClipboardButton copyAll = new CopyToClipboardButton("Copy all codes",
+        VaadinIcon.COPY.create());
+    copyAll.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
     copyAll.addClassName("mfa-recovery-action");
-    copyAll.getElement().setAttribute("title", "Copy the codes and their account to the clipboard");
+    copyAll.setTooltipText("Copies the codes, the account and the generation time");
+    copyAll.addClickListener(event -> {
+      copyAll.copy(sheetText);
+      // The clipboard write is silent, and a server-pushed fade-back is not available here (push is
+      // off, so `ui.accessLater` would only run on the next request — which is how a check-mark
+      // "confirmation" once stayed on screen and made copying look like a one-time action). The
+      // message therefore carries a time stamp: every click changes the text, so every click is
+      // visibly and audibly acknowledged, and the button never enters a state it must be rescued from.
+      copyStatus.setText("Copied to the clipboard at "
+          + LocalTime.now().format(COPY_CONFIRMATION_TIME) + ".");
+    });
     return copyAll;
   }
 

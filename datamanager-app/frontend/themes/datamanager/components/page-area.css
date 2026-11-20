@@ -2005,8 +2005,10 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   font-size: var(--lumo-font-size-s);
 }
 
-/* Both actions of the one-time sheet: copy (an icon that switches to a check) and download
-   (a real anchor). They wrap on narrow screens rather than squeezing the labels. */
+/* Both actions of the one-time sheet: a real button (copy) and a real anchor (download). They wrap
+   on narrow screens rather than squeezing the labels, and both must look clickable: the earlier copy
+   affordance was a bare icon span, so the pointer never changed over the label even though the label
+   was clickable too. */
 .mfa-recovery-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2020,8 +2022,25 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   gap: var(--lumo-space-xs);
   font-size: var(--lumo-font-size-s);
   color: var(--lumo-primary-text-color);
+  cursor: pointer;
+}
+
+/* The anchor gets the button's tertiary look by hand; a Button brings it with its theme. */
+a.mfa-recovery-action {
+  text-decoration: none;
 }
 
 .mfa-recovery-action:hover {
   text-decoration: underline;
+}
+
+/* Announced by screen readers when it changes (`role="status"`), never a state of the buttons. It
+   takes its own line so appearing does not shift the two actions, and empty it takes no space. */
+.mfa-recovery-feedback {
+  flex-basis: 100%;
+}
+
+.mfa-recovery-feedback:not(:empty) {
+  color: var(--lumo-success-text-color);
+  font-size: var(--lumo-font-size-s);
 }
