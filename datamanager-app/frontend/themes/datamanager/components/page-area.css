@@ -1897,7 +1897,14 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
 /* Two-factor authentication settings (MILESTONE-MFA M3-3).
    Reuses the card chrome the pinned-project and PAT lists already use: 1px contrast border and
    rounded corners, no drop shadow. The grid is sized in `ch` so the fixed-width recovery codes keep
-   their columns on any font size. */
+   their columns on any font size.
+
+   Two rules here exist because the page looked wrong on a deployed build (UI review 2026-11-20):
+     - the two settings sections were separated by nothing (`.settings-main-layout .page-area` sets
+       `gap: 0`), so the "Recovery codes" heading visually belonged to the factor card above it;
+     - the account's own state was rendered quieter than the deployment's policy sentence, i.e. the
+       opposite of what the user came for. `.mfa-status` fixes the order of emphasis: state first and
+       at body weight, policy as a quiet footnote below it. */
 .mfa-summary {
   color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-s);
@@ -1910,7 +1917,58 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   flex: none;
 }
 
+/* The account's state and the installation's posture, as one block: icon, then state, then policy. */
+.mfa-status {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lumo-space-s);
+}
+
+.mfa-status__icon {
+  flex: none;
+  color: var(--lumo-secondary-text-color);
+}
+
+.mfa-status--enrolled .mfa-status__icon {
+  color: var(--lumo-success-color);
+}
+
+.mfa-status__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+/* What this account has: the line a visitor came for, so it keeps body weight and colour. */
+.mfa-status__state {
+  font-size: var(--lumo-font-size-m);
+  color: var(--lumo-body-text-color);
+}
+
+/* What the installation asks at sign-in: a deployment fact, and therefore a footnote. */
 .mfa-policy-note {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* The not-set-up state is an invitation, not a grey sentence: it answers "what do I need?" and
+   "how long does it take?" at the one moment the answer decides whether people start at all. */
+.mfa-empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  padding: var(--lumo-space-m);
+  border: 1px dashed var(--lumo-contrast-30pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.mfa-empty-state__title {
+  font-weight: 600;
+}
+
+.mfa-empty-state__hint {
+  color: var(--lumo-secondary-text-color);
   font-size: var(--lumo-font-size-s);
 }
 
@@ -1927,6 +1985,59 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   padding: var(--lumo-space-m);
   border: 1px solid var(--lumo-contrast-20pct);
   border-radius: var(--lumo-border-radius-m);
+}
+
+/* A card that holds one sentence and one action, side by side: the recovery-code half uses the same
+   shape as a factor card so the two halves of the page read as peers. */
+.mfa-card--row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-l);
+  flex-wrap: wrap;
+}
+
+/* Before a factor exists the recovery card is present but inactive: dimmed, because the action is
+   disabled and the codes would be unredeemable anyway. */
+.mfa-card--muted {
+  border-style: dashed;
+  background-color: var(--lumo-contrast-5pct);
+}
+
+.mfa-card__text {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+  min-width: 0;
+}
+
+/* "Generate a new set" is a button, but it read as a *disabled* control on a deployed build (UI
+   review 2026-11-20): Lumo's tertiary look is a pale, page-coloured chip, and next to a solid blue
+   primary it looked unavailable rather than secondary. A secondary action has to look enabled while
+   still ranking below the primary, so it gets a normal button surface and no fill colour argument.
+   Applied only where a section header pairs it with a primary, so the "Remove" text actions inside
+   cards keep their quiet look. */
+.mfa-secondary-action {
+  background-color: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-30pct);
+  color: var(--lumo-primary-text-color);
+  font-weight: 500;
+  border-radius: var(--lumo-border-radius-m);
+  padding: 0 var(--lumo-space-m);
+  min-height: var(--lumo-button-size);
+  cursor: pointer;
+}
+
+.mfa-secondary-action:hover {
+  border-color: var(--lumo-primary-color);
+  background-color: var(--lumo-primary-color-10pct);
+}
+
+.mfa-secondary-action[disabled] {
+  background-color: transparent;
+  border-style: dashed;
+  border-color: var(--lumo-contrast-20pct);
+  color: var(--lumo-disabled-text-color);
+  cursor: not-allowed;
 }
 
 .mfa-card__header {

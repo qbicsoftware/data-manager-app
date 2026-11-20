@@ -8,6 +8,8 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import java.io.Serial;
@@ -31,9 +33,13 @@ import life.qbic.identity.domain.model.mfa.SecondFactorType;
  * never calls a service, so the flows (and their transactions) stay in
  * {@link TwoFactorAuthenticationMain}.</p>
  *
- * <p>There is deliberately no "policy" hint here yet. The mode (off/optional/required) is a
- * deployment setting that lands with the login challenge in M4, and a warning about an enforcement
- * date that nothing enforces would be a promise the product cannot keep.</p>
+ * <p>The page states what this account has and what this installation asks for; both sentences come
+ * from {@link TwoFactorSettingsCopy}, which is a pure function of the mode, the factor state and the
+ * unused code count. That split is deliberate: an earlier version computed each sentence from one
+ * input only, and produced two statements that were false of the page they appeared on.</p>
+ *
+ * <p>Nothing here promises enforcement the deployment does not perform — mode {@code OFF} says
+ * plainly that no code will be asked for, even after enrolment.</p>
  *
  * @since 1.0.0
  */
@@ -47,10 +53,13 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
   private static final DateTimeFormatter DATE =
       DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withZone(ZoneId.systemDefault());
 
-  private final Span factorSummary = new Span();
+  private final Span policyNote = new Span();
+  private final Span statusState = new Span();
+  private final Div status = new Div();
+  private final Div emptyState = new Div();
   private final Div factorList = new Div();
   private final Span recoverySummary = new Span();
-  private final Span policyNote = new Span();
+  private final Div recoveryCard = new Div();
   private final Button enrolButton = new Button("Set up authenticator app");
   private final Button generateRecoveryCodesButton = new Button("Generate recovery codes");
 
@@ -63,22 +72,59 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
   public TwoFactorAuthenticationComponent() {
     addClassName("two-factor-authentication-component");
 
+    /*
+     * Section 1 — the factor. Three parts, in the order a user reads them: what is true of this
+     * account (one emphatic line), what this installation will ask at sign-in (quiet, because it is
+     * a deployment fact and not an account fact), then the factor itself.
+     *
+     * The description is one sentence on purpose: at this column width the previous text wrapped to
+     * "...on your phone is all / you need.", leaving a two-word orphan line and a three-line header
+     * that the right-aligned action could not align with.
+     */
     SettingsSection factorSection = new SettingsSection("Two-factor authentication",
-        "A second step at login, so a stolen password is not enough on its own. "
-            + "An authenticator app on your phone is all you need.");
-    enrolButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        "A second step at login, so a stolen password is not enough on its own.");
     factorSection.addAction(enrolButton);
-    factorSummary.addClassName("mfa-summary");
-    policyNote.addClassName("mfa-policy-note");
-    factorList.addClassName("mfa-factor-list");
-    factorSection.addContent(factorSummary, policyNote, factorList);
 
+    Icon shield = VaadinIcon.SHIELD.create();
+    shield.addClassName("mfa-status__icon");
+    statusState.addClassName("mfa-status__state");
+    policyNote.addClassName("mfa-policy-note");
+    Div statusText = new Div(statusState, policyNote);
+    statusText.addClassName("mfa-status__text");
+    status.add(shield, statusText);
+    status.addClassName("mfa-status");
+
+    // The empty state is a card-shaped invitation rather than a grey sentence: it is the first thing
+    // a new account sees on this page, and it has to carry the answer to "what do I need?" and "how
+    // long does it take?" — the two questions that decide whether people start at all.
+    Span emptyStateTitle = new Span("Nothing set up yet.");
+    emptyStateTitle.addClassName("mfa-empty-state__title");
+    Span emptyStateHint = new Span(
+        "You will need a phone with an authenticator app. Setting one up takes about a minute.");
+    emptyStateHint.addClassName("mfa-empty-state__hint");
+    emptyState.addClassName("mfa-empty-state");
+    emptyState.add(emptyStateTitle, emptyStateHint);
+
+    factorList.addClassName("mfa-factor-list");
+    factorSection.addContent(status, emptyState, factorList);
+
+    /*
+     * Section 2 — recovery codes, rendered as a card like the factor, because it is the same kind of
+     * thing: an item the account holds, with an action that acts on it. Previously it was bare prose
+     * whose action floated in the section header, so the two halves of one page had two different
+     * shapes and the count was the fifth line of the section.
+     */
     SettingsSection recoverySection = new SettingsSection("Recovery codes",
-        "Single-use codes to get back in if you lose your phone. They are shown once and "
-            + "cannot be displayed again.");
-    recoverySection.addAction(generateRecoveryCodesButton);
-    recoverySummary.addClassName("mfa-summary");
-    recoverySection.addContent(recoverySummary);
+        "Single-use codes to get back in if you lose your phone. They are shown once and cannot be "
+            + "displayed again.");
+    recoverySummary.addClassName("mfa-card__text");
+    recoveryCard.addClassName("mfa-card");
+    recoveryCard.addClassName("mfa-card--row");
+    // Secondary, not tertiary: next to a solid primary the tertiary look read as *disabled* on a
+    // deployed build. This reads as an enabled action that still ranks below the primary.
+    generateRecoveryCodesButton.addClassName("mfa-secondary-action");
+    recoveryCard.add(recoverySummary, generateRecoveryCodesButton);
+    recoverySection.addContent(recoveryCard);
 
     add(factorSection, recoverySection);
 
@@ -99,9 +145,6 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
   public void setFactors(List<SecondFactor> factors) {
     factorCount = factors.size();
     factorList.removeAll();
-    enrolButton.setText(factorCount == 0
-        ? "Set up authenticator app"
-        : "Set up another authenticator app");
     factors.forEach(factor -> factorList.add(buildFactorCard(factor)));
     render();
   }
@@ -136,20 +179,43 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
   }
 
   /**
-   * Writes the three sentences and the action states from the current inputs.
+   * Writes the sentences and the action states from the current inputs.
    *
    * <p>Recovery codes are generated after the factor, not before: without a factor there is no
    * challenge, so a generated set could never be redeemed. The action is therefore disabled and the
    * sentence says how to get there.</p>
+   *
+   * <p>The enrolment action is demoted once the account has a factor. With one app set up, "add
+   * another" is the least likely thing a visitor needs, so it must not hold the page's only saturated
+   * button — that made the one action a worried user looks for (new recovery codes) look disabled by
+   * comparison.</p>
    */
   private void render() {
     boolean hasFactor = factorCount > 0;
-    factorSummary.setText(TwoFactorSettingsCopy.factorSummary(factorCount));
+
+    statusState.setText(TwoFactorSettingsCopy.factorSummary(factorCount));
     policyNote.setText(TwoFactorSettingsCopy.policyNote(mode, hasFactor));
+    status.removeClassNames("mfa-status--enrolled", "mfa-status--empty");
+    status.addClassName(hasFactor ? "mfa-status--enrolled" : "mfa-status--empty");
+
+    emptyState.setVisible(!hasFactor);
+    factorList.setVisible(hasFactor);
+
+    enrolButton.setText(hasFactor ? "Add another authenticator app" : "Set up authenticator app");
+    if (hasFactor) {
+      enrolButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    } else {
+      enrolButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    }
+
     recoverySummary.setText(TwoFactorSettingsCopy.recoverySummary(unusedRecoveryCodes, hasFactor));
     generateRecoveryCodesButton.setText(
         TwoFactorSettingsCopy.recoveryActionLabel(unusedRecoveryCodes, hasFactor));
     generateRecoveryCodesButton.setEnabled(hasFactor);
+    recoveryCard.removeClassName("mfa-card--muted");
+    if (!hasFactor) {
+      recoveryCard.addClassName("mfa-card--muted");
+    }
   }
 
   private Div buildFactorCard(SecondFactor factor) {
