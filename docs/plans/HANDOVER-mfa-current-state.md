@@ -43,7 +43,14 @@ Nothing is enforced until `qbic.security.mfa.mode` is set to `OPTIONAL`/`REQUIRE
    session means clearing `SecurityContextHolder` **and**
    `HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY`.
 3. **Vaadin fields are `LAZY` by value-change mode.** Server-side reformatting only runs on blur; the
-   recovery-code grouping is client-side for that reason.
+   recovery-code grouping is therefore client-side. **It still does not work on the deployed build**
+   (typed text stays raw, e.g. `dsadsadasdsa`): the first version executed from the constructor, where
+   the element has no shadow root yet, so `shadowRoot.querySelector('input')` was null and the
+   install-once script silently did nothing. The current version installs on attach and retries until
+   the input exists — **not yet verified on a running build.** If it still fails, the radio silence is
+   the tell: nothing logs, so "no effect" means the listener never attached. Fallbacks in order:
+   (a) a proper `@JsModule` client-side script next to `totpqrcode.js`, (b) `ValueChangeMode.EAGER`
+   with server-side formatting (works, but round-trips per keystroke and jumps the caret).
 4. **Any service that consumes a code needs `@Transactional`** (pessimistic lock + flush otherwise throw
    `No active transaction`). A reflection assertion in `RecoveryCodeServiceSpec` guards this.
 5. **Redirects need `request.getContextPath()`**: a hard-coded `/` lands outside `/dev`.
@@ -73,6 +80,7 @@ the real draft DDL against MariaDB with `-Dmfa.jdbc.url=… -Dmfa.dialect=org.hi
 
 | # | Task | Why it is next |
 |---|---|---|
+| 0 | **Confirm the recovery-code grouping fix** (commit `9c599b842` + the attach/retry follow-up) | The UX request is open until someone types into the field on a running build and sees `ABCD-EFGH-IJKL` appear as they type. Screen-reader and paste paths are equally unverified |
 | 1 | **Copy/download on the one-time recovery-code sheet** | No copy/download/print today: ten codes must be transcribed by hand, the likeliest way to lose the only reset-free path (the helpdesk cannot reset by email) |
 | 2 | **M4-5 bypass suite** (HTTP level) | The properties are unit-tested; the suite proves no route, session reuse or replay gets past the factor |
 | 3 | **M6-1 administrative re-enrolment + ADR 0012** | The challenge's support copy promises identity verification; that needs a process decision (proofing that is not the mailbox, four-eyes, audit) before `REQUIRED` |
