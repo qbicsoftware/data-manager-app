@@ -116,4 +116,12 @@ public final class TwoFactorSettingsCopy {
   static String recoveryActionLabel(long unusedCodes, boolean hasFactor) {
     return hasFactor && unusedCodes > 0 ? "Generate a new set" : "Generate recovery codes";
   }
+
+  /**
+   * @param hasFactor whether the account already has an active factor
+   * @return the label of the enrolment action
+   */
+  static String enrolActionLabel(boolean hasFactor) {
+    return hasFactor ? "Add another authenticator app" : "Set up authenticator app";
+  }
 }

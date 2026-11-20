@@ -19,10 +19,12 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.List;
+import java.util.Map;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.settings.SettingsSection;
 import life.qbic.identity.domain.model.mfa.MfaPolicyMode;
 import life.qbic.identity.domain.model.mfa.SecondFactor;
+import life.qbic.identity.domain.model.mfa.SecondFactorRemoval;
 import life.qbic.identity.domain.model.mfa.SecondFactorType;
 
 /**
@@ -133,19 +135,29 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
     generateRecoveryCodesButton.addClickListener(
         event -> fireEvent(new GenerateRecoveryCodesRequestedEvent(this, event.isFromClient())));
 
-    setFactors(List.of());
+    setFactors(List.of(), Map.of());
     setRecoveryCodeCount(0);
   }
 
   /**
-   * Renders the account's active factors.
+   * Renders the account's active factors together with what removing each of them would do.
    *
-   * @param factors the active factors, newest first; an empty list is the not-set-up state
+   * <p>The outcome is computed by the application layer ({@code SecondFactorService.removalOutcome}),
+   * i.e. by the same decision that performs the removal, so the button state and the server behaviour
+   * cannot drift apart. Without it the page would offer a "Remove" that the server then refuses — the
+   * worst of both worlds, because the user believes they removed their factor.</p>
+   *
+   * @param factors  the active factors, newest first; an empty list is the not-set-up state
+   * @param outcomes what removing each factor would do, by factor id
    */
-  public void setFactors(List<SecondFactor> factors) {
+  public void setFactors(List<SecondFactor> factors,
+      Map<Long, SecondFactorRemoval.Outcome> outcomes) {
+    requireNonNull(factors, "factors must not be null");
+    requireNonNull(outcomes, "outcomes must not be null");
     factorCount = factors.size();
     factorList.removeAll();
-    factors.forEach(factor -> factorList.add(buildFactorCard(factor)));
+    factors.forEach(factor -> factorList.add(buildFactorCard(factor,
+        outcomes.getOrDefault(factor.id(), SecondFactorRemoval.Outcome.NOT_REMOVABLE))));
     render();
   }
 
@@ -201,7 +213,7 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
     emptyState.setVisible(!hasFactor);
     factorList.setVisible(hasFactor);
 
-    enrolButton.setText(hasFactor ? "Add another authenticator app" : "Set up authenticator app");
+    enrolButton.setText(TwoFactorSettingsCopy.enrolActionLabel(hasFactor));
     if (hasFactor) {
       enrolButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
     } else {
@@ -218,7 +230,7 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
     }
   }
 
-  private Div buildFactorCard(SecondFactor factor) {
+  private Div buildFactorCard(SecondFactor factor, SecondFactorRemoval.Outcome outcome) {
     Div card = new Div();
     card.addClassName("mfa-card");
 
@@ -226,15 +238,7 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
     header.addClassName("mfa-card__header");
     Span name = new Span(factor.displayName());
     name.addClassName("mfa-card__name");
-    Button remove = new Button("Remove");
-    remove.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
-    // With two factors on one page, "Remove" alone is not an accessible name: a screen-reader user
-    // cannot tell which factor a button belongs to before activating it.
-    remove.setAriaLabel("Remove " + factor.displayName());
-    remove.addClickListener(
-        event -> fireEvent(new RemoveFactorRequestedEvent(this, event.isFromClient(),
-            factor.id())));
-    header.add(name, remove);
+    header.add(name, removalControl(factor, outcome));
 
     // The card title already names the factor, and for an authenticator app that name *is* the type
     // label — printing both reads as "Authenticator app / Authenticator app · added …".
@@ -246,7 +250,53 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
     meta.addClassName("mfa-card__meta");
 
     card.add(header, meta);
+    if (outcome == SecondFactorRemoval.Outcome.LAST_FACTOR_PROTECTED) {
+      Span blocked = new Span("Two-factor authentication is required on this installation, so at "
+          + "least one authenticator app has to stay set up.");
+      blocked.addClassName("mfa-card__note");
+      card.add(blocked);
+    }
+    if (outcome == SecondFactorRemoval.Outcome.TURNS_OFF_TWO_FACTOR) {
+      Span consequence = new Span("Removing your only authenticator app turns two-factor "
+          + "authentication off for this account and deletes your recovery codes.");
+      consequence.addClassName("mfa-card__note");
+      card.add(consequence);
+    }
     return card;
+  }
+
+  /**
+   * The per-factor action, named for what it actually does.
+   *
+   * <p>A removal that ends enrolment is not called "Remove": it is the account switching two-factor
+   * authentication off, and it takes the recovery codes with it. Under {@code REQUIRED} the same
+   * removal is refused, so the button is disabled with the reason in the card rather than hidden —
+   * a missing button leaves the user guessing why.</p>
+   */
+  private Button removalControl(SecondFactor factor, SecondFactorRemoval.Outcome outcome) {
+    if (outcome == SecondFactorRemoval.Outcome.TURNS_OFF_TWO_FACTOR) {
+      Button turnOff = new Button("Turn off two-factor authentication");
+      turnOff.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
+      turnOff.setAriaLabel("Turn off two-factor authentication for this account");
+      turnOff.addClickListener(event -> fireEvent(
+          new RemoveFactorRequestedEvent(this, event.isFromClient(), factor.id())));
+      return turnOff;
+    }
+
+    Button remove = new Button("Remove");
+    remove.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
+    // With two factors on one page, "Remove" alone is not an accessible name: a screen-reader user
+    // cannot tell which factor a button belongs to before activating it.
+    remove.setAriaLabel("Remove " + factor.displayName());
+    boolean blocked = outcome != SecondFactorRemoval.Outcome.ALLOWED;
+    remove.setEnabled(!blocked);
+    if (blocked) {
+      remove.setTooltipText("At least one authenticator app has to stay set up.");
+    } else {
+      remove.addClickListener(event -> fireEvent(
+          new RemoveFactorRequestedEvent(this, event.isFromClient(), factor.id())));
+    }
+    return remove;
   }
 
   private static String typeLabel(SecondFactorType type) {

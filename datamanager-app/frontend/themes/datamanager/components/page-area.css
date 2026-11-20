@@ -2051,6 +2051,13 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   font-size: var(--lumo-font-size-s);
 }
 
+/* Why a removal is refused, or what a removal would switch off. Inside the card, next to the thing
+   it is about — a tooltip alone is invisible to keyboard and touch users. */
+.mfa-card__note {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xs);
+}
+
 .mfa-qr-block {
   display: flex;
   flex-direction: column;

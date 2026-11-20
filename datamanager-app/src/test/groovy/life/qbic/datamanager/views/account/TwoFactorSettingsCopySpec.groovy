@@ -118,6 +118,12 @@ class TwoFactorSettingsCopySpec extends Specification {
         TwoFactorSettingsCopy.recoveryActionLabel(0, true) == "Generate recovery codes"
     }
 
+    def "the enrolment action names what it will actually do"() {
+        expect:
+        TwoFactorSettingsCopy.enrolActionLabel(false) == "Set up authenticator app"
+        TwoFactorSettingsCopy.enrolActionLabel(true) == "Add another authenticator app"
+    }
+
     @Unroll
     def "no sentence advertises a reset by e-mail or by support (#mode, factor=#hasFactor)"() {
         given: "accounts are self-service and e-mail verified, so mailbox control must never be the way"

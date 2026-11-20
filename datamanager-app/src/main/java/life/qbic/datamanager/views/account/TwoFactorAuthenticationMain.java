@@ -11,6 +11,8 @@ import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.time.Instant;
+import java.util.Map;
+import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.dialog.AlertDialog;
 import life.qbic.datamanager.views.general.dialog.DialogAction;
@@ -20,6 +22,8 @@ import life.qbic.identity.application.mfa.MfaPolicy;
 import life.qbic.identity.application.mfa.RecoveryCodeService;
 import life.qbic.identity.application.mfa.SecondFactorService;
 import life.qbic.identity.application.mfa.TotpEnrolmentService;
+import life.qbic.identity.domain.model.mfa.SecondFactor;
+import life.qbic.identity.domain.model.mfa.SecondFactorRemoval;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -86,12 +90,25 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
 
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
+    // The navigation hides this entry under OFF, but a deep link, a bookmark or an old e-mail would
+    // still reach the route. Under OFF nothing is asked at sign-in, so this page could only offer work
+    // that has no effect — it is not a page, so send the user to the settings hub's first section.
+    if (!SecondFactorRemoval.twoFactorCanBeEnabled(mfaPolicy.mode())) {
+      event.rerouteTo(UserProfileMain.class);
+      return;
+    }
     refresh();
   }
 
   private void refresh() {
     String userId = currentUserId();
-    component.setFactors(secondFactorService.activeFactors(userId));
+    var factors = secondFactorService.activeFactors(userId);
+    // The outcome per factor comes from the same decision the removal itself uses, so the button
+    // state and the server behaviour cannot drift apart.
+    Map<Long, SecondFactorRemoval.Outcome> outcomes = factors.stream().collect(
+        Collectors.toMap(SecondFactor::id,
+            factor -> secondFactorService.removalOutcome(userId, factor.id())));
+    component.setFactors(factors, outcomes);
     component.setRecoveryCodeCount(recoveryCodeService.remaining(userId));
     component.setPolicyMode(mfaPolicy.mode());
   }
@@ -110,16 +127,34 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
   }
 
   private void onRemoveRequested(long factorId) {
+    String userId = currentUserId();
+    SecondFactorRemoval.Outcome outcome = secondFactorService.removalOutcome(userId, factorId);
+
+    if (outcome == SecondFactorRemoval.Outcome.TURNS_OFF_TWO_FACTOR) {
+      // Not a removal: this is the account switching two-factor authentication off, and it destroys
+      // the only reset-free path with it. The consequence is spelled out rather than implied.
+      AlertDialog.danger(this,
+          "Turn off two-factor authentication?",
+          "Your authenticator app will be removed and all recovery codes will be deleted. "
+              + "After that, your password alone gets into this account.",
+          "Turn it off",
+          "Keep it on",
+          () -> removeAndRefresh(factorId)).open();
+      return;
+    }
+
     AlertDialog.danger(this,
         "Remove this authenticator app?",
         "If this is your last one and you have no recovery codes, an administrator will have to "
             + "re-enrol you before you can sign in again.",
         "Remove it",
         "Keep it",
-        () -> {
-          secondFactorService.disable(currentUserId(), factorId, Instant.now());
-          refresh();
-        }).open();
+        () -> removeAndRefresh(factorId)).open();
+  }
+
+  private void removeAndRefresh(long factorId) {
+    secondFactorService.remove(currentUserId(), factorId, Instant.now());
+    refresh();
   }
 
   private void onGenerateRecoveryCodesRequested() {
