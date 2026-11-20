@@ -2005,10 +2005,10 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   font-size: var(--lumo-font-size-s);
 }
 
-/* Both actions of the one-time sheet: a real button (copy) and a real anchor (download). They wrap
-   on narrow screens rather than squeezing the labels, and both must look clickable: the earlier copy
-   affordance was a bare icon span, so the pointer never changed over the label even though the label
-   was clickable too. */
+/* Both actions of the one-time sheet: a real button (copy, styled by copy-action.css) and a real
+   anchor (download). They wrap on narrow screens rather than squeezing the labels, and both must look
+   clickable: the first copy affordance was a bare icon span, so the pointer never changed over the
+   label even though the label was clickable too. */
 .mfa-recovery-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2025,7 +2025,7 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   cursor: pointer;
 }
 
-/* The anchor gets the button's tertiary look by hand; a Button brings it with its theme. */
+/* The anchor gets the button's link look by hand; the copy button brings it from copy-action.css. */
 a.mfa-recovery-action {
   text-decoration: none;
 }
@@ -2034,13 +2034,17 @@ a.mfa-recovery-action {
   text-decoration: underline;
 }
 
-/* Announced by screen readers when it changes (`role="status"`), never a state of the buttons. It
-   takes its own line so appearing does not shift the two actions, and empty it takes no space. */
+/* The copy confirmation is the check mark on the button. This node says the same thing to a screen
+   reader, so it is removed from the visual layout without being removed from the accessibility tree.
+   It takes no space, and appearing cannot shift the two actions. */
 .mfa-recovery-feedback {
-  flex-basis: 100%;
-}
-
-.mfa-recovery-feedback:not(:empty) {
-  color: var(--lumo-success-text-color);
-  font-size: var(--lumo-font-size-s);
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }

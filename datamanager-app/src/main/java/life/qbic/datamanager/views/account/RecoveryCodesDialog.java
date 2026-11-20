@@ -2,7 +2,6 @@ package life.qbic.datamanager.views.account;
 
 import static java.util.Objects.requireNonNull;
 
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.AttachmentType;
 import com.vaadin.flow.component.html.Div;
@@ -89,8 +88,9 @@ public class RecoveryCodesDialog extends Div {
 
     Div actions = new Div();
     actions.addClassName("mfa-recovery-actions");
-    // One live region for the copy result. It is a sibling of the buttons, not a state of them: the
-    // buttons stay enabled and unchanged forever, so "copy it again" is always one click away.
+    // Invisible, but not silent: the check mark tells the eye, this tells a screen reader. It is a
+    // sibling of the buttons, never a state of them, and it carries a time stamp so repeated copies
+    // are announced each time instead of being swallowed as "the same text again".
     Span copyStatus = new Span();
     copyStatus.addClassName("mfa-recovery-feedback");
     copyStatus.getElement().setAttribute("role", "status");
@@ -119,18 +119,14 @@ public class RecoveryCodesDialog extends Div {
    * looking used up after one click on a deployment. See the button's class documentation.</p>
    */
   private static CopyToClipboardButton copyAction(String sheetText, Span copyStatus) {
-    CopyToClipboardButton copyAll = new CopyToClipboardButton("Copy all codes",
-        VaadinIcon.COPY.create());
-    copyAll.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+    CopyToClipboardButton copyAll = new CopyToClipboardButton("Copy all codes");
     copyAll.addClassName("mfa-recovery-action");
-    copyAll.setTooltipText("Copies the codes, the account and the generation time");
+    copyAll.getElement().setAttribute("title",
+        "Copies the codes, the account and the generation time");
     copyAll.addClickListener(event -> {
       copyAll.copy(sheetText);
-      // The clipboard write is silent, and a server-pushed fade-back is not available here (push is
-      // off, so `ui.accessLater` would only run on the next request — which is how a check-mark
-      // "confirmation" once stayed on screen and made copying look like a one-time action). The
-      // message therefore carries a time stamp: every click changes the text, so every click is
-      // visibly and audibly acknowledged, and the button never enters a state it must be rescued from.
+      // The visible confirmation is the button's own check mark, which the browser sets and clears
+      // (see CopyToClipboardButton). This line exists for screen readers only.
       copyStatus.setText("Copied to the clipboard at "
           + LocalTime.now().format(COPY_CONFIRMATION_TIME) + ".");
     });

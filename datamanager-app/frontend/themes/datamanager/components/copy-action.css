@@ -1,0 +1,35 @@
+/* A button that copies (CopyToClipboardButton): the copy icon turns into a check mark for a moment
+   after a click and then returns. The state is the `data-copied` attribute, set in the browser by
+   frontend/javascript/copyfeedback.js — it must not be server state, because restoring it after a
+   delay needs push (see the class documentation). */
+
+.copy-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-primary-text-color);
+  cursor: pointer;
+}
+
+.copy-action:hover,
+.copy-action:focus-visible {
+  text-decoration: underline;
+}
+
+.copy-action .copy-action__icon--copied {
+  display: none;
+  color: var(--lumo-success-text-color);
+}
+
+.copy-action[data-copied] .copy-action__icon--copy {
+  display: none;
+}
+
+.copy-action[data-copied] .copy-action__icon--copied {
+  display: flex;
+}

@@ -67,11 +67,17 @@ Nothing is enforced until `qbic.security.mfa.mode` is set to `OPTIONAL`/`REQUIRE
    `UI.accessLater` runs on the *next request*, so the icon-switch in `CopyToClipBoardComponent`
    (copy icon → check mark, restored by `CompletableFuture` + `accessLater`) left the recovery-code
    sheet looking used up after the first click: the check stayed, and a second copy looked impossible.
-   The sheet now uses `CopyToClipboardButton` (a real `Button`, so it has a pointer cursor, a focus
-   ring and keyboard activation) with a permanent label, and reports the result in a sibling
-   `role="status"` node whose text carries a time stamp — every click changes the text, so every click
-   is acknowledged, and nothing has to be reset. `CopyToClipBoardComponent` is still the right tool for
-   an inline value (setup key, command, token); it is the wrong tool when the copy *is* the action.
+   `CopyToClipboardButton` therefore keeps the copy *function* on the server (proven path) and the
+   confirmation on the **client**: `frontend/javascript/copyfeedback.js` sets `data-copied` on the
+   clicked button and clears it 1.6 s later, and `components/copy-action.css` swaps the two icons.
+   Nothing server-side has to be undone, so nothing can get stuck; the label never changes, so the
+   action stays repeatable. A hidden `role="status"` node carries the same news to screen readers
+   (with a time stamp, so repeated copies are re-announced).
+   Two corollaries: **confirmations are decorations, not state** — put them where they need no undoing;
+   and **install client scripts by delegation on the document**, not per element on attach, which is
+   the install-once race that also defeated the recovery-code field grouping (§3 trap 3).
+   `CopyToClipBoardComponent` is still the right tool for an inline value (setup key, command, token);
+   it is the wrong tool when the copy *is* the action.
 
 ## 4. Verification you can run
 
@@ -114,10 +120,11 @@ Two facts about this suite that cost time to find out:
 
 **Closed since the previous handover:** the one-time recovery-code sheet now offers *copy all codes* and
 *download as a dated text file* (`RecoveryCodesDialog.codesAsText`, `…fileName`, guarded by
-`RecoveryCodesDialogSpec`). Copy is a real `CopyToClipboardButton` (pointer cursor, keyboard
-activation, repeatable — see §3 trap 9); download is a plain `Anchor` + `DownloadHandler`, so neither
-adds browser-side JavaScript to a break-glass screen. Not verified visually here (no frontend build),
-so the sheet still needs one look on a deployed instance.
+`RecoveryCodesDialogSpec`). Copy is `CopyToClipboardButton` — a real `<button>` (pointer cursor,
+keyboard activation) whose copy icon turns into a check mark for a moment, set and cleared in the
+browser (§3 trap 9) — and download is a plain `Anchor` + `DownloadHandler`, so neither adds
+browser-side JavaScript to a break-glass screen beyond the two existing modules. Not verified visually
+here (no frontend build), so the sheet still needs one look on a deployed instance.
 
 Known smaller gaps: no rename field on a factor (domain supports it), no "N codes left" hint at the
 challenge, no per-request rate limiting on the challenge yet.
