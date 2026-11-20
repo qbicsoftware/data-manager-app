@@ -119,6 +119,7 @@ Two facts about this suite that cost time to find out:
 | # | Task | Why it is next |
 |---|---|---|
 | 0 | **Recovery-code live grouping — closed 2026-11-20** | Works as specified: upper case, hyphens added as fillers, backspace behind a hyphen deletes the group's character, pasted codes normalise to themselves. See §3 trap 3 for the pattern (document delegation) and `node datamanager-app/src/test/js/recoverycodeformat.check.mjs` for the check that does not need a browser |
+| 1 | **Settings page hierarchy** (UI review, slice 2 — pending) | The copy now tells the truth (see below), but the page still points its only blue primary at "set up *another* app" while "generate a new set" looks disabled, states the account's state four times, and wraps "Two-factor authentication" onto two lines in the sidebar |
 | 1 | **M4-5 bypass suite** (HTTP level) | The properties are unit-tested; the suite proves no route, session reuse or replay gets past the factor. **Needs infrastructure this workspace does not have** (see §4): plan it against a booted instance, not as a unit spec |
 | 2 | **M6-1 administrative re-enrolment + ADR 0012** | The challenge's support copy promises identity verification; that needs a process decision (proofing that is not the mailbox, four-eyes, audit) before `REQUIRED` |
 | 3 | **M5** — `REQUIRED` for a cohort, audit trail (`AUTH-R-04`), challenge throttling on `auth_attempt` | Enforcement is the milestone's exit gate |
@@ -132,6 +133,19 @@ keyboard activation) whose copy icon turns into a check mark for a moment, set a
 browser (§3 trap 9) — and download is a plain `Anchor` + `DownloadHandler`, so neither adds
 browser-side JavaScript to a break-glass screen beyond the two existing modules. Not verified visually
 here (no frontend build), so the sheet still needs one look on a deployed instance.
+
+**Settings-page copy is now a truth table (2026-11-20).** A UI review found two sentences that were
+false of the page they appeared on: the enrolled summary claimed the app "is required the next time you
+sign in" while the posture line said two-factor authentication is *not required at sign-in* (mode
+`OFF`, where `MfaGate` returns `NotRequired` regardless of the factor), and mode `OPTIONAL` claimed "you
+will be asked for a code, because this account has set up a factor" on accounts with no factor. The
+sentences are now pure functions of *(mode, hasFactor, unusedCodes)* in `TwoFactorSettingsCopy`, pinned
+by `TwoFactorSettingsCopySpec` (24 cases) — including "no sentence may advertise an e-mail/support
+reset". Consequences: recovery codes are **disabled until a factor exists** (a set generated before
+that could never be redeemed, since no factor means no challenge), the card meta no longer repeats the
+card title, and each `Remove` carries the factor name as its accessible label. The review, for the
+record: *the "zero gap between the sections" and "button is vertically centred" findings were
+retracted* once the screenshot was actually read — do not "fix" either.
 
 Known smaller gaps: no rename field on a factor (domain supports it), no "N codes left" hint at the
 challenge, no per-request rate limiting on the challenge yet.

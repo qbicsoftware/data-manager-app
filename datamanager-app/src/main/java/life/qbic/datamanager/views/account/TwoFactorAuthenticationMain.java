@@ -124,6 +124,12 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
 
   private void onGenerateRecoveryCodesRequested() {
     String userId = currentUserId();
+    // Second line of defence: the page disables the action while the account has no factor, because
+    // a code set generated then could never be redeemed (no factor means no challenge). A client that
+    // ignores the disabled state must not get a one-time sheet it cannot use either.
+    if (secondFactorService.activeFactors(userId).isEmpty()) {
+      return;
+    }
     long remaining = recoveryCodeService.remaining(userId);
     DialogAction generate = () -> {
       var codeSet = recoveryCodeService.generate(userId, Instant.now());

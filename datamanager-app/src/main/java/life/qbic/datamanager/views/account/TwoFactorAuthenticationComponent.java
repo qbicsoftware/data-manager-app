@@ -1,5 +1,7 @@
 package life.qbic.datamanager.views.account;
 
+import static java.util.Objects.requireNonNull;
+
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
@@ -52,6 +54,12 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
   private final Button enrolButton = new Button("Set up authenticator app");
   private final Button generateRecoveryCodesButton = new Button("Generate recovery codes");
 
+  // The three inputs the sentences depend on, kept together: each setter stores its input and
+  // re-renders, so a sentence can never be computed without the state it has to be true for.
+  private int factorCount;
+  private long unusedRecoveryCodes;
+  private MfaPolicyMode mode = MfaPolicyMode.OFF;
+
   public TwoFactorAuthenticationComponent() {
     addClassName("two-factor-authentication-component");
 
@@ -89,18 +97,13 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
    * @param factors the active factors, newest first; an empty list is the not-set-up state
    */
   public void setFactors(List<SecondFactor> factors) {
+    factorCount = factors.size();
     factorList.removeAll();
-    if (factors.isEmpty()) {
-      factorSummary.setText("No authenticator app is set up for this account yet.");
-      enrolButton.setText("Set up authenticator app");
-      return;
-    }
-    factorSummary.setText(factors.size() == 1
-        ? "One authenticator app is set up. It is required the next time you sign in."
-        : "%d authenticator apps are set up. Any of them can be used to sign in."
-            .formatted(factors.size()));
-    enrolButton.setText("Set up another authenticator app");
+    enrolButton.setText(factorCount == 0
+        ? "Set up authenticator app"
+        : "Set up another authenticator app");
     factors.forEach(factor -> factorList.add(buildFactorCard(factor)));
+    render();
   }
 
   /**
@@ -111,17 +114,15 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
    * It is also the quickest way for an operator to confirm which posture the running application
    * actually read, without opening a log.</p>
    *
+   * <p>The sentence is computed from the mode <em>and</em> the factor state (see
+   * {@link TwoFactorSettingsCopy#policyNote}): {@code OPTIONAL} asks for nothing when no factor is
+   * enrolled, and {@code OFF} asks for nothing even when one is.</p>
+   *
    * @param mode the posture the application started with
    */
   public void setPolicyMode(MfaPolicyMode mode) {
-    switch (mode) {
-      case OFF -> policyNote.setText(
-          "Two-factor authentication is currently not required at sign-in for this installation.");
-      case OPTIONAL -> policyNote.setText(
-          "You will be asked for a code at sign-in, because this account has set up a factor.");
-      case REQUIRED -> policyNote.setText(
-          "Two-factor authentication is required at sign-in for every account.");
-    }
+    this.mode = requireNonNull(mode, "mode must not be null");
+    render();
   }
 
   /**
@@ -130,16 +131,25 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
    * @param count remaining unused codes
    */
   public void setRecoveryCodeCount(long count) {
-    if (count == 0) {
-      recoverySummary.setText("No unused recovery codes. Generate a set and keep it somewhere safe.");
-      generateRecoveryCodesButton.setText("Generate recovery codes");
-      return;
-    }
-    recoverySummary.setText((count == 1
-        ? "1 unused recovery code left."
-        : "%d unused recovery codes left.".formatted(count))
-        + " Generating a new set invalidates the old one.");
-    generateRecoveryCodesButton.setText("Generate a new set");
+    unusedRecoveryCodes = count;
+    render();
+  }
+
+  /**
+   * Writes the three sentences and the action states from the current inputs.
+   *
+   * <p>Recovery codes are generated after the factor, not before: without a factor there is no
+   * challenge, so a generated set could never be redeemed. The action is therefore disabled and the
+   * sentence says how to get there.</p>
+   */
+  private void render() {
+    boolean hasFactor = factorCount > 0;
+    factorSummary.setText(TwoFactorSettingsCopy.factorSummary(factorCount));
+    policyNote.setText(TwoFactorSettingsCopy.policyNote(mode, hasFactor));
+    recoverySummary.setText(TwoFactorSettingsCopy.recoverySummary(unusedRecoveryCodes, hasFactor));
+    generateRecoveryCodesButton.setText(
+        TwoFactorSettingsCopy.recoveryActionLabel(unusedRecoveryCodes, hasFactor));
+    generateRecoveryCodesButton.setEnabled(hasFactor);
   }
 
   private Div buildFactorCard(SecondFactor factor) {
@@ -152,13 +162,21 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
     name.addClassName("mfa-card__name");
     Button remove = new Button("Remove");
     remove.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
+    // With two factors on one page, "Remove" alone is not an accessible name: a screen-reader user
+    // cannot tell which factor a button belongs to before activating it.
+    remove.setAriaLabel("Remove " + factor.displayName());
     remove.addClickListener(
         event -> fireEvent(new RemoveFactorRequestedEvent(this, event.isFromClient(),
             factor.id())));
     header.add(name, remove);
 
-    Span meta = new Span(typeLabel(factor.type()) + " · added " + DATE.format(factor.createdAt())
-        + " · " + lastUsed(factor));
+    // The card title already names the factor, and for an authenticator app that name *is* the type
+    // label — printing both reads as "Authenticator app / Authenticator app · added …".
+    String type = typeLabel(factor.type());
+    String added = DATE.format(factor.createdAt());
+    Span meta = new Span(type.equals(factor.displayName())
+        ? "Added " + added + " · " + lastUsed(factor)
+        : type + " · added " + added + " · " + lastUsed(factor));
     meta.addClassName("mfa-card__meta");
 
     card.add(header, meta);
