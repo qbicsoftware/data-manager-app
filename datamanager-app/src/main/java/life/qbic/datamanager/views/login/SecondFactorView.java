@@ -138,22 +138,16 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     recoveryCode.setMaxLength(RecoveryCodes.CODE_LENGTH + RecoveryCodes.CODE_LENGTH / 4 - 1);
     recoveryCode.setAllowedCharPattern("[A-Za-z2-7\\-]");
     recoveryCode.setPlaceholder("XXXX-XXXX-XXXX");
-    // Grouping has to happen in the browser: Vaadin's default value-change mode is LAZY, so a
-    // server-side listener only sees the value when the field loses focus.
-    //
-    // Two details cost a deployment round trip each, so they are spelled out:
-    //  1. The script must run AFTER attach. In the constructor the element has no shadow root yet,
-    //     so `shadowRoot.querySelector('input')` is null and an "install once" script silently does
-    //     nothing — which is exactly how the first version failed (typed text stayed raw and
-    //     lower-case).
-    //  2. Even after attach the web component upgrades asynchronously, so the install retries until
-    //     the input exists instead of giving up.
-    //
-    // The server keeps two jobs: the listener below is the blur-time fallback, and the encoder
-    // normalises again before hashing, so the stored value never depends on what the browser showed.
-    addAttachListener(event -> installRecoveryCodeGrouping());
-
-    // Fallback: fires on blur/change if the script above could not attach.
+    // PARKED (2026-11-19): grouping *while typing* does not work on the deployed build — typed text
+    // stays raw ("dsadsadasdsa", lower case, no hyphens). Two attempts failed:
+    //   1. a server-side value-change listener: Vaadin's default value-change mode is LAZY, so it
+    //      runs only when the field loses focus;
+    //   2. an inline executeJs listener installed on attach with a retry loop: it never attached and
+    //      logged nothing, so the failure was invisible.
+    // The next attempt should be a @JsModule client script (the pattern proven by totpqrcode.js) and
+    // must first prove in the browser that the script runs at all — do not iterate blind.
+    // Until then: one formatting pass on blur, and RecoveryCodeEncoder normalises again before hashing.
+    // The blur-time pass (see PARKED above). Idempotent, and the only formatting that currently works.
     recoveryCode.addValueChangeListener(event -> {
       if (!event.isFromClient() || event.getValue() == null) {
         return;
@@ -272,52 +266,6 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
       error.setVisible(false);
       code.focus();
     }
-  }
-
-  /**
-   * Installs the in-browser grouping for the recovery-code field.
-   *
-   * <p>Runs on attach and retries, because both the element and the web component's shadow root come
-   * into existence asynchronously; an install that runs once and finds no {@code <input>} leaves the
-   * field unformatted with no visible error.</p>
-   */
-  private void installRecoveryCodeGrouping() {
-    recoveryCode.getElement().executeJs("""
-        const field = $0;
-        if (!field || field.__qbicRecoveryGroupingInstalled) {
-          return;
-        }
-        const install = (attempt) => {
-          const input = field.shadowRoot ? field.shadowRoot.querySelector('input') : null;
-          if (!input) {
-            // The component is upgraded a tick after attach; give up only after ~3 seconds.
-            if (attempt < 60) {
-              window.setTimeout(() => install(attempt + 1), 50);
-            }
-            return;
-          }
-          field.__qbicRecoveryGroupingInstalled = true;
-          input.addEventListener('input', () => {
-            const typed = input.value;
-            const characters = typed.replace(/[^A-Za-z2-7]/g, '').toUpperCase().slice(0, 12);
-            let grouped = '';
-            for (let index = 0; index < characters.length; index++) {
-              if (index > 0 && index % 4 === 0) {
-                grouped += '-';
-              }
-              grouped += characters[index];
-            }
-            if (grouped !== typed) {
-              // Setting the component's value (not only the inner input) keeps Vaadin's state in
-              // sync, so submitting without blurring sends the grouped text.
-              field.value = grouped;
-              input.value = grouped;
-              input.setSelectionRange(grouped.length, grouped.length);
-            }
-          });
-        };
-        install(0);
-        """, recoveryCode.getElement());
   }
 
   /**

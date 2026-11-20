@@ -89,9 +89,11 @@ and names support only to find out who verifies for a group.
 Until then, recovery codes are the only reset-free way in, which is why their generation must not be
 skippable — see the next item.
 
-Same class of debt for the one-time recovery-code sheet: it lists the codes but offers no
-copy/download/print, so a user must transcribe ten codes by hand — the most likely way to lose them.
-That is a UX defect on the break-glass path, not a nice-to-have.
+Same class of debt was the one-time recovery-code sheet: it listed the codes but offered no
+copy/download/print, so a user had to transcribe ten codes by hand — the most likely way to lose them.
+**Closed 2026-11-19:** the sheet now copies the whole sheet (account and timestamp included) and
+downloads it as a dated plain-text file. It still has no *print* button: a browser print of a Vaadin
+dialog prints the page around it, and the downloaded file prints cleanly from any editor.
 
 ## 5. Security notes for review
 

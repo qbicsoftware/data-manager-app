@@ -75,6 +75,12 @@ Two decisions worth keeping:
   `RECOVERY_CODE_PEPPER`). That is what keeps ADR 0011 B1 true: a lost vault key must not take the
   recovery codes with it. It must be backed up with the config; a rotated pepper invalidates every
   outstanding code.
+- **The one-time sheet is exportable** (2026-11-19). Copy-all and a dated `.txt` download render the
+  same plain-ASCII sheet, including the account and the generation time in UTC, so ten codes no longer
+  have to be transcribed by hand on the one path that has no reset. Copy reuses
+  `CopyToClipBoardComponent`; download is an `Anchor` + `DownloadHandler` (no JavaScript at all).
+  Plain-text only, on purpose: a typed archive format would be one more thing to get wrong on a
+  break-glass screen, and a `.txt` prints from any editor.
 
 ## 4a. M3-3 gaps, stated rather than hidden
 

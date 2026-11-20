@@ -37,7 +37,15 @@ import java.time.Instant
 class MfaLoginSuccessHandlerSpec extends Specification {
 
     static final String CONTEXT_PATH = "/app"
-    static final Instant NOW = Instant.parse("2026-11-18T09:00:00Z")
+
+    /**
+     * The handler asks the guard with the real clock ({@code Instant.now()}), so the grace windows
+     * arranged here must be relative to it too. A hard-coded instant silently rots: this spec used
+     * {@code 2026-11-18T09:00:00Z} and its "running grace window" case started failing on
+     * 2026-11-20T08:00Z, when that fixed window expired — a green suite that had become a lie about
+     * yesterday rather than a statement about the code.
+     */
+    static final Instant NOW = Instant.now()
     static final Duration GRACE = Duration.ofHours(48)
     static final ProtectedSecret SECRET =
             ProtectedSecret.ofBase64(Base64.encoder.encodeToString(new byte[32]))
