@@ -1905,11 +1905,6 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
      - the account's own state was rendered quieter than the deployment's policy sentence, i.e. the
        opposite of what the user came for. `.mfa-status` fixes the order of emphasis: state first and
        at body weight, policy as a quiet footnote below it. */
-.mfa-summary {
-  color: var(--lumo-secondary-text-color);
-  font-size: var(--lumo-font-size-s);
-}
-
 .second-factor-icon {
   color: var(--lumo-primary-color);
   width: var(--lumo-icon-size-l);
