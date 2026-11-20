@@ -43,15 +43,21 @@ Nothing is enforced until `qbic.security.mfa.mode` is set to `OPTIONAL`/`REQUIRE
 2. **Spring saves the security context before the success handler.** Withholding a password-only
    session means clearing `SecurityContextHolder` **and**
    `HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY`.
-3. **Vaadin fields are `LAZY` by value-change mode.** Server-side reformatting only runs on blur; the
-   recovery-code grouping is therefore client-side. **It still does not work on the deployed build**
-   (typed text stays raw, e.g. `dsadsadasdsa`): the first version executed from the constructor, where
-   the element has no shadow root yet, so `shadowRoot.querySelector('input')` was null and the
-   install-once script silently did nothing. The current version installs on attach and retries until
-   the input exists — **not yet verified on a running build.** If it still fails, the radio silence is
-   the tell: nothing logs, so "no effect" means the listener never attached. Fallbacks in order:
-   (a) a proper `@JsModule` client-side script next to `totpqrcode.js`, (b) `ValueChangeMode.EAGER`
-   with server-side formatting (works, but round-trips per keystroke and jumps the caret).
+3. **Vaadin fields are `LAZY` by value-change mode.** Server-side reformatting only runs on blur, so
+   the recovery-code grouping had to move into the browser — and it took three attempts, two of them
+   silent failures on a deployed build:
+   1. a server-side value-change listener: LAZY, so it only ran when the field lost focus;
+   2. an inline `executeJs` install on attach with a retry loop: it never attached, and a script that
+      does nothing logs nothing, so "no effect" was the only symptom;
+   3. **current:** a `@JsModule` script (`frontend/javascript/recoverycodeformat.js`) **delegated on
+      the `document`**, acting only on fields marked `data-recovery-code-input`. No per-element
+      install, no shadow-root lookup, no attach race. Verified without a browser by
+      `node datamanager-app/src/test/js/recoverycodeformat.check.mjs` (15 checks: typing, pasting,
+      deleting, caret). The blur-time server formatter stays as a fallback; the encoder normalises
+      again before hashing, so the stored value never depends on what the browser showed.
+   Two rules that came out of this and apply to every client-side decoration in the app: **delegate on
+   the document** instead of installing per element, and **let the browser own transient state**
+   (§3 trap 9).
 4. **Any service that consumes a code needs `@Transactional`** (pessimistic lock + flush otherwise throw
    `No active transaction`). A reflection assertion in `RecoveryCodeServiceSpec` guards this.
 5. **Redirects need `request.getContextPath()`**: a hard-coded `/` lands outside `/dev`.
@@ -87,6 +93,7 @@ export JAVA_HOME=~/.sdkman/candidates/java/current      # /usr/bin/java is a stu
 ./mvnw -o -pl datamanager-app -am test \
     -Dtest='Mfa*,RecoveryCode*,TwoFactor*,SecondFactor*' \
     -Dsurefire.failIfNoSpecifiedTests=false   # 76 (164 in identity, same run)
+node datamanager-app/src/test/js/recoverycodeformat.check.mjs   # 15, client-side formatter
 ```
 
 The Vaadin frontend build **cannot** run here (`~/.vaadin` is read-only), so UI changes are
@@ -111,7 +118,7 @@ Two facts about this suite that cost time to find out:
 
 | # | Task | Why it is next |
 |---|---|---|
-| 0 | **Recovery-code live grouping (open, parked)** | Two attempts failed and the broken inline script is removed (see §3 trap 3). Needs a `@JsModule` client script plus browser-console verification **before** coding further. Until then the field formats on blur only; submission is still correct. Do not re-attempt blind: the last two iterations cost deployment round trips and gave no signal |
+| 0 | **Recovery-code live grouping — closed 2026-11-20** | Works as specified: upper case, hyphens added as fillers, backspace behind a hyphen deletes the group's character, pasted codes normalise to themselves. See §3 trap 3 for the pattern (document delegation) and `node datamanager-app/src/test/js/recoverycodeformat.check.mjs` for the check that does not need a browser |
 | 1 | **M4-5 bypass suite** (HTTP level) | The properties are unit-tested; the suite proves no route, session reuse or replay gets past the factor. **Needs infrastructure this workspace does not have** (see §4): plan it against a booted instance, not as a unit spec |
 | 2 | **M6-1 administrative re-enrolment + ADR 0012** | The challenge's support copy promises identity verification; that needs a process decision (proofing that is not the mailbox, four-eyes, audit) before `REQUIRED` |
 | 3 | **M5** — `REQUIRED` for a cohort, audit trail (`AUTH-R-04`), challenge throttling on `auth_attempt` | Enforcement is the milestone's exit gate |

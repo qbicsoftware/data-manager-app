@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.dependency.CssImport;
+import com.vaadin.flow.component.dependency.JsModule;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -70,6 +71,7 @@ import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
  * @since 1.0.0
  */
 @CssImport("./styles/views/login/login-view.css")
+@JsModule("./javascript/recoverycodeformat.js")
 @PageTitle("Second factor")
 @Route(value = "login/second-factor", layout = LandingPageLayout.class)
 @AnonymousAllowed
@@ -138,16 +140,19 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     recoveryCode.setMaxLength(RecoveryCodes.CODE_LENGTH + RecoveryCodes.CODE_LENGTH / 4 - 1);
     recoveryCode.setAllowedCharPattern("[A-Za-z2-7\\-]");
     recoveryCode.setPlaceholder("XXXX-XXXX-XXXX");
-    // PARKED (2026-11-19): grouping *while typing* does not work on the deployed build — typed text
-    // stays raw ("dsadsadasdsa", lower case, no hyphens). Two attempts failed:
-    //   1. a server-side value-change listener: Vaadin's default value-change mode is LAZY, so it
-    //      runs only when the field loses focus;
-    //   2. an inline executeJs listener installed on attach with a retry loop: it never attached and
-    //      logged nothing, so the failure was invisible.
-    // The next attempt should be a @JsModule client script (the pattern proven by totpqrcode.js) and
-    // must first prove in the browser that the script runs at all — do not iterate blind.
-    // Until then: one formatting pass on blur, and RecoveryCodeEncoder normalises again before hashing.
-    // The blur-time pass (see PARKED above). Idempotent, and the only formatting that currently works.
+    // Grouping *while typing* happens in the browser (frontend/javascript/recoverycodeformat.js,
+    // imported above). Two Java attempts failed before it:
+    //   1. a server-side value-change listener: Vaadin's default value-change mode is LAZY, so it ran
+    //      only when the field lost focus;
+    //   2. an inline executeJs listener installed on attach with a retry loop: it never attached, and
+    //      a script that does nothing logs nothing, so there was no signal at all.
+    // The script is delegated on the document and marks the fields it acts on with this attribute, so
+    // it needs no per-element install and cannot lose an attach race.
+    recoveryCode.getElement().setAttribute("data-recovery-code-input", "");
+
+    // Fallback for a browser where the script did not load: one formatting pass when the field loses
+    // focus (which is when a LAZY value change reaches the server). Idempotent, and the encoder
+    // normalises again before hashing, so the stored value never depends on what the browser showed.
     recoveryCode.addValueChangeListener(event -> {
       if (!event.isFromClient() || event.getValue() == null) {
         return;

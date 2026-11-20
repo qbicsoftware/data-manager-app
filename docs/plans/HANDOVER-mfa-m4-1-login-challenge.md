@@ -59,7 +59,7 @@ holds — but say so, because the flow is one redirect uglier and the handler ne
 | Task | Note |
 |---|---|
 | M4-2 WebAuthn assertions | `SecondFactorVerificationService` skips `WEBAUTHN` factors: a code cannot satisfy them, and nothing creates them yet (M3-2 not shipped) |
-| M4-3 recovery-code login | **done 2026-11-18**: the challenge has a "Use a recovery code instead" toggle; `RecoveryCodeService.redeemFor` consumes the code only if it belongs to the account that is mid-login, so a stranger's code is refused *without being spent* |
+| M4-3 recovery-code login | **done 2026-11-18**: the challenge has a "Use a recovery code instead" toggle; `RecoveryCodeService.redeemFor` consumes the code only if it belongs to the account that is mid-login, so a stranger's code is refused *without being spent*. The field formats while typing since **2026-11-20** (`frontend/javascript/recoverycodeformat.js`, document-delegated; check with `node datamanager-app/src/test/js/recoverycodeformat.check.mjs`) |
 | M4-4 saved request | actually works already: the view replays Spring's saved request on success |
 | M4-5 bypass suite | the unit-level properties are asserted; the HTTP-level suite (second factor required on every route, session fixation, replay) is next |
 | Second-factor throttling | M5-4, on the existing `auth_attempt` table |
