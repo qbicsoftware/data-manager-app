@@ -1999,3 +1999,29 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   border-radius: var(--lumo-border-radius-s);
   text-align: center;
 }
+
+.mfa-recovery-account {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* Both actions of the one-time sheet: copy (an icon that switches to a check) and download
+   (a real anchor). They wrap on narrow screens rather than squeezing the labels. */
+.mfa-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-l);
+}
+
+.mfa-recovery-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-primary-text-color);
+}
+
+.mfa-recovery-action:hover {
+  text-decoration: underline;
+}

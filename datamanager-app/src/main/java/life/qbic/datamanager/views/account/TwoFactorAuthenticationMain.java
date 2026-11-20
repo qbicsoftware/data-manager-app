@@ -127,7 +127,10 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
     long remaining = recoveryCodeService.remaining(userId);
     DialogAction generate = () -> {
       var codeSet = recoveryCodeService.generate(userId, Instant.now());
-      new RecoveryCodesDialog(codeSet).open();
+      // The sheet names the account it belongs to, so a sheet found later is still assignable — and a
+      // user with two accounts (a shared device, a second lab) has no other way to tell them apart.
+      String accountEmail = userInformationService.findById(userId).orElseThrow().emailAddress();
+      new RecoveryCodesDialog(codeSet, accountEmail).open();
       refresh();
     };
     if (remaining == 0) {
