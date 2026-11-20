@@ -122,8 +122,33 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
     // factor by itself; "no factor without a verified code" stays a property of the application layer.
     var dialog = new TotpEnrolmentDialog(pending,
         code -> totpEnrolmentService.confirm(pending, code, Instant.now()));
-    dialog.addEnrolledListener(event -> refresh());
+    dialog.addEnrolledListener(event -> onEnrolled(userId, user.emailAddress()));
     dialog.open();
+  }
+
+  /**
+   * What happens the moment the first factor is confirmed.
+   *
+   * <p>The recovery codes are issued <b>here</b>, in the same breath as the factor, because this is
+   * the only moment at which the user is guaranteed to be paying attention and to have just proved
+   * both password and a fresh device. Leaving it as a second, optional click on the page is how
+   * people end up enrolled with no recovery codes — and then a lost phone becomes an identity
+   * verification at the helpdesk, not a self-service recovery.</p>
+   *
+   * <p>A fresh set is only issued when the account has none left, so adding a second device does not
+   * silently invalidate a sheet the user has already printed.</p>
+   *
+   * @param userId       the account that just enrolled
+   * @param accountEmail the account, named on the sheet so it is identifiable later
+   */
+  private void onEnrolled(String userId, String accountEmail) {
+    refresh();
+    if (recoveryCodeService.remaining(userId) > 0) {
+      return;
+    }
+    var codeSet = recoveryCodeService.generate(userId, Instant.now());
+    refresh();
+    new RecoveryCodesDialog(codeSet, accountEmail, RecoveryCodesDialog.Reason.FIRST_FACTOR).open();
   }
 
   private void onRemoveRequested(long factorId) {
@@ -171,7 +196,9 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
       // The sheet names the account it belongs to, so a sheet found later is still assignable — and a
       // user with two accounts (a shared device, a second lab) has no other way to tell them apart.
       String accountEmail = userInformationService.findById(userId).orElseThrow().emailAddress();
-      new RecoveryCodesDialog(codeSet, accountEmail).open();
+      // Regenerated on purpose, so the dialog may be dismissed: the user has been here before and
+      // knows what the sheet is. The first-factor sheet is the one that cannot be waved away.
+      new RecoveryCodesDialog(codeSet, accountEmail, RecoveryCodesDialog.Reason.REGENERATED).open();
       refresh();
     };
     if (remaining == 0) {

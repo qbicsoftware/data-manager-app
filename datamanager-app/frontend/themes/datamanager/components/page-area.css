@@ -2097,6 +2097,18 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   gap: var(--lumo-space-m);
 }
 
+/* The lockout consequence, shown only on the sheet issued right after the first factor. It carries
+   the weight the ordinary helper text does not: this is the one sentence on the screen that decides
+   whether the user keeps the codes. */
+.mfa-recovery-lockout {
+  margin: 0;
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  border-left: 3px solid var(--lumo-error-color);
+  background-color: var(--lumo-error-color-10pct);
+  border-radius: var(--lumo-border-radius-s);
+  font-size: var(--lumo-font-size-s);
+}
+
 .mfa-recovery-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(12ch, 1fr));

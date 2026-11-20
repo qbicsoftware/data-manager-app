@@ -58,6 +58,22 @@ public class RecoveryCodesDialog extends Div {
 
   private static final String FILE_PREFIX = "data-manager-recovery-codes-";
 
+  /**
+   * Why the sheet is on screen, which decides how hard the warning is.
+   *
+   * @since 1.0.0
+   */
+  public enum Reason {
+    /**
+     * Shown right after the first factor was confirmed. The user may not cancel: this is the only
+     * moment at which they are guaranteed to be looking, and the codes are the only self-service way
+     * back in.
+     */
+    FIRST_FACTOR,
+    /** The user asked for a new set on the settings page; they can back out. */
+    REGENERATED
+  }
+
   private final AppDialog dialog;
 
   /**
@@ -65,15 +81,35 @@ public class RecoveryCodesDialog extends Div {
    * @param accountEmail the account the codes belong to, so a printed sheet is identifiable
    */
   public RecoveryCodesDialog(RecoveryCodeSet codeSet, String accountEmail) {
+    this(codeSet, accountEmail, Reason.REGENERATED);
+  }
+
+  /**
+   * @param codeSet      the one-time plaintext set, straight from generation
+   * @param accountEmail the account the codes belong to, so a printed sheet is identifiable
+   * @param reason       why the sheet is shown; decides whether backing out is allowed and how loudly
+   *                     the lockout consequence is stated
+   */
+  public RecoveryCodesDialog(RecoveryCodeSet codeSet, String accountEmail, Reason reason) {
     requireNonNull(codeSet, "codeSet must not be null");
     requireNonNull(accountEmail, "accountEmail must not be null");
+    requireNonNull(reason, "reason must not be null");
+    boolean firstFactor = reason == Reason.FIRST_FACTOR;
 
     dialog = AppDialog.medium();
-    DialogHeader.with(dialog, "Recovery codes");
+    DialogHeader.with(dialog, firstFactor ? "Save your recovery codes" : "Recovery codes");
 
-    Paragraph warning = new Paragraph(
-        "These codes are shown only once. Each code works one time. Download or copy them and keep "
+    Paragraph warning = new Paragraph(firstFactor
+        ? "Your authenticator app is set up. Before you finish, save these recovery codes."
+        : "These codes are shown only once. Each code works one time. Download or copy them and keep "
             + "them somewhere safe — anyone with a code can sign in.");
+
+    Div body = new Div(warning);
+    if (firstFactor) {
+      Paragraph lockout = new Paragraph(firstFactorLockoutWarning());
+      lockout.addClassName("mfa-recovery-lockout");
+      body.add(lockout);
+    }
 
     Span account = new Span("Account: " + accountEmail);
     account.addClassName("mfa-recovery-account");
@@ -98,12 +134,36 @@ public class RecoveryCodesDialog extends Div {
     actions.add(copyAction(codesAsText(codeSet, accountEmail), copyStatus),
         downloadAction(codeSet, accountEmail), copyStatus);
 
-    Div body = new Div(warning, account, grid, actions);
+    body.add(account, grid, actions);
     body.addClassName("mfa-recovery-body");
     DialogBody.withoutUserInput(dialog, body);
 
-    DialogFooter.withConfirmOnly(dialog, "I have saved them");
+    // The first-factor sheet has no way out but the acknowledgement. Whether the user copied the
+    // codes is not something the application can verify, so the only honest exit is "I have saved
+    // them" — and offering a cancel would let the one guaranteed moment pass silently.
+    DialogFooter.withConfirmOnly(dialog,
+        firstFactor ? "I have saved my recovery codes" : "I have saved them");
     dialog.registerConfirmAction(dialog::close);
+  }
+
+  /**
+   * The one sentence on the first-factor sheet that decides whether the user keeps the codes.
+   *
+   * <p>It has to say three things and no more: losing both means no self-service way in; the helpdesk
+   * can help, but only after verifying identity in person; and there is no e-mail link that skips the
+   * second step. The last part matters because "contact support" alone reads as "they will reset it
+   * by mail", which is exactly the path the milestone forbids (mailbox control must never be the way
+   * past the factor).</p>
+   *
+   * <p>Tested in {@code RecoveryCodesDialogSpec}: the wording is a security statement, not styling,
+   * so it is pinned rather than left to drift.</p>
+   *
+   * @return the warning text shown right after the first factor is confirmed
+   */
+  static String firstFactorLockoutWarning() {
+    return "If you lose your phone and these codes, you cannot sign in by yourself. Your QBiC "
+        + "contact can only help after verifying who you are in person. There is no e-mail link "
+        + "that skips the second step.";
   }
 
   public void open() {

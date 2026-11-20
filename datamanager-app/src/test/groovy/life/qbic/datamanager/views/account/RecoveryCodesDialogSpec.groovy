@@ -82,4 +82,23 @@ class RecoveryCodesDialogSpec extends Specification {
         then:
         thrown(NullPointerException)
     }
+
+    def "the first-factor warning states the lockout, the in-person check, and that e-mail is not a way in"() {
+        when:
+        def warning = RecoveryCodesDialog.firstFactorLockoutWarning()
+        def lower = warning.toLowerCase()
+
+        then: "losing both means no self-service way in"
+        lower.contains("cannot sign in by yourself")
+
+        and: "the helpdesk helps, but only after verifying in person"
+        lower.contains("in person")
+
+        and: "no e-mail link skips the step — the constraint the whole milestone rests on"
+        lower.contains("no e-mail link")
+        lower.contains("skips the second step")
+
+        and: "it must not read as 'support will reset it for you'"
+        !lower.contains("reset")
+    }
 }
