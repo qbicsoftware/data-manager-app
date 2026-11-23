@@ -22,8 +22,11 @@ import life.qbic.identity.application.mfa.MfaPolicy;
 import life.qbic.identity.application.mfa.RecoveryCodeService;
 import life.qbic.identity.application.mfa.SecondFactorService;
 import life.qbic.identity.application.mfa.TotpEnrolmentService;
+import life.qbic.identity.domain.model.mfa.MfaGrace;
+import life.qbic.identity.domain.model.mfa.MfaPolicyMode;
 import life.qbic.identity.domain.model.mfa.SecondFactor;
 import life.qbic.identity.domain.model.mfa.SecondFactorRemoval;
+import life.qbic.identity.domain.repository.MfaGraceRepository;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -58,6 +61,7 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
   private final transient TotpEnrolmentService totpEnrolmentService;
   private final transient RecoveryCodeService recoveryCodeService;
   private final transient MfaPolicy mfaPolicy;
+  private final transient MfaGraceRepository graceRepository;
   private final transient UserInformationService userInformationService;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
 
@@ -65,6 +69,7 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
       TotpEnrolmentService totpEnrolmentService,
       RecoveryCodeService recoveryCodeService,
       MfaPolicy mfaPolicy,
+      MfaGraceRepository graceRepository,
       UserInformationService userInformationService,
       AuthenticationToUserIdTranslationService userIdTranslator,
       TwoFactorAuthenticationComponent component) {
@@ -75,6 +80,7 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
     this.recoveryCodeService = requireNonNull(recoveryCodeService,
         "recoveryCodeService must not be null");
     this.mfaPolicy = requireNonNull(mfaPolicy, "mfaPolicy must not be null");
+    this.graceRepository = requireNonNull(graceRepository, "graceRepository must not be null");
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator,
@@ -100,6 +106,14 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
     refresh();
   }
 
+  /**
+   * Renders the account's state, and says when enforcement will start biting.
+   *
+   * <p>The deadline is read here rather than in the component because it is persistence: the page
+   * owns the transaction and the services, the component only renders. Passing it in keeps
+   * {@link TwoFactorSettingsCopy} a pure function of its inputs, which is what makes the copy
+   * testable.</p>
+   */
   private void refresh() {
     String userId = currentUserId();
     var factors = secondFactorService.activeFactors(userId);
@@ -111,6 +125,15 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
     component.setFactors(factors, outcomes);
     component.setRecoveryCodeCount(recoveryCodeService.remaining(userId));
     component.setPolicyMode(mfaPolicy.mode());
+    // Only meaningful under REQUIRED without a factor: an unenrolled account is on a deadline and the
+    // page has to name it, or "until the grace period ends" tells the user nothing they can act on.
+    if (mfaPolicy.mode() == MfaPolicyMode.REQUIRED && factors.isEmpty()) {
+      component.setGraceDeadline(graceRepository.findByUserId(userId)
+          .map(MfaGrace::graceUntil)
+          .orElse(null));
+    } else {
+      component.setGraceDeadline(null);
+    }
   }
 
   private void onEnrolRequested() {

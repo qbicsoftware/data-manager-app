@@ -1928,6 +1928,22 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   color: var(--lumo-success-color);
 }
 
+/* REQUIRED without a factor: the one state that is counting down on this account, so the shield
+   carries the warning colour and the state line takes more weight. Without these two rules the
+   deadline renders exactly like "nothing set up yet", which is the state it must be told apart from. */
+.mfa-status--deadline .mfa-status__icon {
+  color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
+}
+
+.mfa-status--deadline .mfa-status__state {
+  font-weight: 600;
+}
+
+/* Nothing set up: the state line is a fact, not an alarm. */
+.mfa-status--empty .mfa-status__icon {
+  color: var(--lumo-tertiary-text-color, var(--lumo-secondary-text-color));
+}
+
 .mfa-status__text {
   display: flex;
   flex-direction: column;

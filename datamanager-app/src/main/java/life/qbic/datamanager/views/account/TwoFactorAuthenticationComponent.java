@@ -59,6 +59,8 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
   private final Span statusState = new Span();
   private final Div status = new Div();
   private final Div emptyState = new Div();
+  private final Span emptyStateTitle = new Span();
+  private final Span emptyStateHint = new Span();
   private final Div factorList = new Div();
   private final Span recoverySummary = new Span();
   private final Div recoveryCard = new Div();
@@ -70,6 +72,7 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
   private int factorCount;
   private long unusedRecoveryCodes;
   private MfaPolicyMode mode = MfaPolicyMode.OFF;
+  private Instant graceDeadline;
 
   public TwoFactorAuthenticationComponent() {
     addClassName("two-factor-authentication-component");
@@ -98,11 +101,9 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
 
     // The empty state is a card-shaped invitation rather than a grey sentence: it is the first thing
     // a new account sees on this page, and it has to carry the answer to "what do I need?" and "how
-    // long does it take?" — the two questions that decide whether people start at all.
-    Span emptyStateTitle = new Span("Nothing set up yet.");
+    // long does it take?" — the two questions that decide whether people start at all. Its text is
+    // mode-dependent and set in render().
     emptyStateTitle.addClassName("mfa-empty-state__title");
-    Span emptyStateHint = new Span(
-        "You will need a phone with an authenticator app. Setting one up takes about a minute.");
     emptyStateHint.addClassName("mfa-empty-state__hint");
     emptyState.addClassName("mfa-empty-state");
     emptyState.add(emptyStateTitle, emptyStateHint);
@@ -191,6 +192,20 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
   }
 
   /**
+   * The instant after which this account must present a code, if it is on a grace window.
+   *
+   * <p>Set by the page from the stored grace row; {@code null} means either the account has a factor or
+   * the deployment is not enforcing. Rendering the date rather than the phrase "the grace period" is
+   * the difference between a sentence a user can act on and one they can only worry about.</p>
+   *
+   * @param graceDeadline when password-only sign-in stops working for this account, or {@code null}
+   */
+  public void setGraceDeadline(Instant graceDeadline) {
+    this.graceDeadline = graceDeadline;
+    render();
+  }
+
+  /**
    * Writes the sentences and the action states from the current inputs.
    *
    * <p>Recovery codes are generated after the factor, not before: without a factor there is no
@@ -206,12 +221,18 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
     boolean hasFactor = factorCount > 0;
 
     statusState.setText(TwoFactorSettingsCopy.factorSummary(factorCount));
-    policyNote.setText(TwoFactorSettingsCopy.policyNote(mode, hasFactor));
+    policyNote.setText(policySentence(hasFactor));
     status.removeClassNames("mfa-status--enrolled", "mfa-status--empty");
-    status.addClassName(hasFactor ? "mfa-status--enrolled" : "mfa-status--empty");
+    // An unenrolled account under REQUIRED is the one case where the state line has a deadline, so it
+    // carries the warning treatment rather than the plain "nothing set up yet".
+    boolean onDeadline = !hasFactor && mode == MfaPolicyMode.REQUIRED;
+    status.addClassName(hasFactor ? "mfa-status--enrolled"
+        : onDeadline ? "mfa-status--deadline" : "mfa-status--empty");
 
     emptyState.setVisible(!hasFactor);
     factorList.setVisible(hasFactor);
+    emptyStateTitle.setText(TwoFactorSettingsCopy.emptyStateTitle(mode));
+    emptyStateHint.setText(TwoFactorSettingsCopy.emptyStateHint(mode));
 
     enrolButton.setText(TwoFactorSettingsCopy.enrolActionLabel(hasFactor));
     if (hasFactor) {
@@ -228,6 +249,25 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
     if (!hasFactor) {
       recoveryCard.addClassName("mfa-card--muted");
     }
+  }
+
+  /**
+   * The posture sentence, including the exact deadline when this account is on a grace window.
+   *
+   * <p>The date only exists under {@code REQUIRED} without a factor, which is the one case where the
+   * deployment is counting down on this account. Everywhere else the mode/factor sentence is the whole
+   * answer, and {@link TwoFactorSettingsCopy#requiredDeadlineNote} is not reached.</p>
+   *
+   * @param hasFactor whether the account has an active factor
+   * @return the sentence to show under the status line
+   */
+  private String policySentence(boolean hasFactor) {
+    if (mode == MfaPolicyMode.REQUIRED && !hasFactor && graceDeadline != null) {
+      return TwoFactorSettingsCopy.requiredDeadlineNote(DATE.format(graceDeadline));
+    }
+    // No stored window (MfaGate reads that as "grant one", never "deny") or a factor is present:
+    // the mode/factor sentence is the whole answer.
+    return TwoFactorSettingsCopy.policyNote(mode, hasFactor);
   }
 
   private Div buildFactorCard(SecondFactor factor, SecondFactorRemoval.Outcome outcome) {

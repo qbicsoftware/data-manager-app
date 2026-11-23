@@ -124,6 +124,39 @@ class TwoFactorSettingsCopySpec extends Specification {
         TwoFactorSettingsCopy.enrolActionLabel(true) == "Add another authenticator app"
     }
 
+    def "the grace-window sentence names the exact date instead of the phrase 'grace period'"() {
+        when:
+        def note = TwoFactorSettingsCopy.requiredDeadlineNote("18 Nov 2026")
+
+        then: "'until the grace period ends' is true but useless; the user needs the when"
+        note.contains("until 18 Nov 2026")
+        note.contains("only an app gets you in")
+        !note.toLowerCase().contains("grace period")
+    }
+
+    def "the empty state under REQUIRED is a deadline, not an invitation"() {
+        expect:
+        TwoFactorSettingsCopy.emptyStateTitle(MfaPolicyMode.REQUIRED)
+                .contains("to stay signed in")
+        TwoFactorSettingsCopy.emptyStateHint(MfaPolicyMode.REQUIRED).contains("from then on")
+    }
+
+    @Unroll
+    def "the empty state under #mode is an offer, not a deadline"() {
+        expect:
+        TwoFactorSettingsCopy.emptyStateTitle(mode) == "Nothing set up yet."
+        !TwoFactorSettingsCopy.emptyStateHint(mode).contains("from then on")
+
+        where:
+        mode << [MfaPolicyMode.OFF, MfaPolicyMode.OPTIONAL]
+    }
+
+    def "the empty state tells a newcomer what they need and how long it takes"() {
+        expect: "the two questions that decide whether people start at all"
+        TwoFactorSettingsCopy.emptyStateHint(MfaPolicyMode.OPTIONAL).contains("phone")
+        TwoFactorSettingsCopy.emptyStateHint(MfaPolicyMode.OPTIONAL).contains("about a minute")
+    }
+
     @Unroll
     def "no sentence advertises a reset by e-mail or by support (#mode, factor=#hasFactor)"() {
         given: "accounts are self-service and e-mail verified, so mailbox control must never be the way"

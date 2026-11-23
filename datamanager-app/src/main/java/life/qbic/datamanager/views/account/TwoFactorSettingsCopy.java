@@ -75,10 +75,27 @@ public final class TwoFactorSettingsCopy {
           : "Two-factor authentication is optional on this installation. Without an app you sign in "
               + "with your password alone.";
       case REQUIRED -> hasFactor
-          ? "Two-factor authentication is required at sign-in for every account."
+          ? "Two-factor authentication is required at sign-in for every account. If you remove your "
+              + "last app you will not be able to sign in until you set up a new one."
           : "Two-factor authentication is required at sign-in for every account. You can still sign "
               + "in until the grace period for your account ends.";
     };
+  }
+
+  /**
+   * The sentence for an unenrolled account under {@code REQUIRED}, naming the exact deadline.
+   *
+   * <p>"Until the grace period ends" is true but useless: the only thing that user needs to know is
+   * <em>when</em>. There is deliberately no second variant for "the window has already ended" — an
+   * account whose window is over cannot sign in, so it never reaches this page, and copy for an
+   * unreachable state is copy nobody can check.</p>
+   *
+   * @param formattedEnd the deadline, already formatted for display
+   * @return the posture sentence
+   */
+  static String requiredDeadlineNote(String formattedEnd) {
+    return "Two-factor authentication is required at sign-in. You can still sign in with your "
+        + "password until " + formattedEnd + " — after that, only an app gets you in.";
   }
 
   /**
@@ -123,5 +140,31 @@ public final class TwoFactorSettingsCopy {
    */
   static String enrolActionLabel(boolean hasFactor) {
     return hasFactor ? "Add another authenticator app" : "Set up authenticator app";
+  }
+
+  /**
+   * The heading of the not-set-up card.
+   *
+   * <p>Under {@code REQUIRED} it is a deadline, not an invitation: the same card has to convey that
+   * doing nothing has a cost. Under {@code OPTIONAL} it is an offer.</p>
+   *
+   * @param mode the posture
+   * @return the empty-state heading
+   */
+  static String emptyStateTitle(MfaPolicyMode mode) {
+    return mode == MfaPolicyMode.REQUIRED
+        ? "Set up an authenticator app to stay signed in"
+        : "Nothing set up yet.";
+  }
+
+  /**
+   * @param mode the posture
+   * @return the hint under the empty-state heading
+   */
+  static String emptyStateHint(MfaPolicyMode mode) {
+    return mode == MfaPolicyMode.REQUIRED
+        ? "You will need a phone with an authenticator app. Setting one up takes about a minute, and "
+            + "you will be asked for a code from it from then on."
+        : "You will need a phone with an authenticator app. Setting one up takes about a minute.";
   }
 }
