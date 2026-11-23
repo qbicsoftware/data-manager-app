@@ -160,6 +160,14 @@ window is stored. **Dismissal is per session, not per account** — persisting i
 a migration for a preference not worth one; under `REQUIRED` there is no dismissal at all, because an
 offer may be declined and a deadline may not be hidden. Not verified visually (no frontend build).
 
+The enrolment dialog was cut back after review (2026-11-20): one instruction sentence, the QR, the
+setup key with a **repeatable** "Copy" button, and the code field. Removed on purpose, do not re-add
+without a reason: the numbered three-step instructions, the "Scan with your authenticator app" caption
+under the QR, the explanation in the setup-key label, and a line stating which name the entry gets in
+the app. The last one was tried to diagnose the `%3A` label bug and became noise once the label was
+fixed — the name is now correct by construction (`OtpauthUri.ISSUER`), and the dialog is not the place
+to document it.
+
 Known smaller gaps: no rename field on a factor (domain supports it), no "N codes left" hint at the
 challenge, no per-request rate limiting on the challenge yet, and **no enrolment step in registration
 (M5-2)** — a new account still reaches the app with a password only and learns about the factor from

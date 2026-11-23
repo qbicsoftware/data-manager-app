@@ -1,7 +1,6 @@
 package life.qbic.datamanager.views.account;
 
 import life.qbic.identity.domain.model.mfa.MfaPolicyMode;
-import life.qbic.identity.domain.model.mfa.OtpauthUri;
 
 /**
  * <b>Every sentence the two-factor settings page can show, decided in one place</b>
@@ -156,26 +155,6 @@ public final class TwoFactorSettingsCopy {
     return mode == MfaPolicyMode.REQUIRED
         ? "Set up an authenticator app to stay signed in"
         : "Nothing set up yet.";
-  }
-
-  /**
-   * The sentence naming the entry the authenticator app should create.
-   *
-   * <p>It exists because the entry's name lives only inside the QR code, so a user whose app shows
-   * something else has no way to tell whether the application sent the wrong label or the app
-   * ignored it. That question is not academic: two accounts on the same mail domain, enrolled in the
-   * same app, look alike unless the name is stated. Naming it also tells the user which account they
-   * are enrolling, which is the other thing that is easy to get wrong with more than one account.</p>
-   *
-   * <p>One sentence on purpose. The dialog already carries the steps, the QR and two fields; the
-   * naming check is worth one line, not a paragraph.</p>
-   *
-   * @param accountEmail the account the factor belongs to
-   * @return the hint shown above the QR code
-   */
-  static String enrolmentEntryHint(String accountEmail) {
-    return "Your app lists this as “" + OtpauthUri.ISSUER + "”, with " + accountEmail
-        + " underneath.";
   }
 
   /**

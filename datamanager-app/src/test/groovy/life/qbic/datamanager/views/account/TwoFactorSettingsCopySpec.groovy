@@ -249,20 +249,6 @@ class TwoFactorSettingsCopySpec extends Specification {
         !body.matches(".*\\d{4}.*")
     }
 
-    def "the enrolment hint names the entry and the account, from the same issuer the URI carries"() {
-        when:
-        def hint = TwoFactorSettingsCopy.enrolmentEntryHint("ada@example.org")
-
-        then: "the name cannot drift from the QR code: both come from OtpauthUri.ISSUER"
-        hint.contains(life.qbic.identity.domain.model.mfa.OtpauthUri.ISSUER)
-        hint.contains("ada@example.org")
-
-        and: "one sentence: the dialog already carries the steps, the QR and two fields"
-        hint.endsWith(".")
-        !hint.contains(". ")   // no second sentence; the e-mail's dots are not sentence breaks
-        hint.length() < 120
-    }
-
     def "the prompt never advertises a reset by e-mail either"() {
         expect:
         [MfaPolicyMode.OPTIONAL, MfaPolicyMode.REQUIRED].every { mode ->

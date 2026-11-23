@@ -51,12 +51,11 @@ public class TotpEnrolmentDialog extends Div {
   private final List<ComponentEventListener<EnrolledEvent>> enrolledListeners = new ArrayList<>();
 
   /**
-   * @param pending      the enrolment to confirm
-   * @param accountEmail the account the factor belongs to; shown as the entry name the app should use
-   * @param verify       verifies the typed code; throws {@link InvalidTotpCodeException} when it does
-   *                     not match, {@link EnrolmentExpiredException} when the setup window has passed
+   * @param pending the enrolment to confirm
+   * @param verify  verifies the typed code; throws {@link InvalidTotpCodeException} when it does not
+   *                match, {@link EnrolmentExpiredException} when the setup window has passed
    */
-  public TotpEnrolmentDialog(PendingTotpEnrolment pending, String accountEmail,
+  public TotpEnrolmentDialog(PendingTotpEnrolment pending,
       Function<String, SecondFactor> verify) {
     dialog = AppDialog.medium();
     DialogHeader.with(dialog, "Set up an authenticator app");
@@ -80,11 +79,6 @@ public class TotpEnrolmentDialog extends Div {
     Paragraph instructions = new Paragraph(
         "Scan the QR code, then type the six-digit code your app shows.");
 
-    // The entry name only exists inside the QR code; one line is enough to make it checkable and to
-    // tell a user with two accounts which one this is.
-    Paragraph entryHint = new Paragraph(TwoFactorSettingsCopy.enrolmentEntryHint(accountEmail));
-    entryHint.addClassName("mfa-enrol-identity");
-
     Div qrBlock = new Div(new TotpQrCode(pending.provisioningUri()));
     qrBlock.addClassName("mfa-qr-block");
 
@@ -96,7 +90,7 @@ public class TotpEnrolmentDialog extends Div {
     error.getStyle().set("color", "var(--lumo-error-text-color)");
     error.setVisible(false);
 
-    Div body = new Div(instructions, entryHint, qrBlock, setupKeyRow, code, error);
+    Div body = new Div(instructions, qrBlock, setupKeyRow, code, error);
     body.addClassName("mfa-enrol-body");
 
     DialogBody.with(dialog, body, new CodeInput(verify));
