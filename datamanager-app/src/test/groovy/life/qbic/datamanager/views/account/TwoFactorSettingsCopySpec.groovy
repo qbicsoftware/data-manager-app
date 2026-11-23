@@ -157,6 +157,70 @@ class TwoFactorSettingsCopySpec extends Specification {
         TwoFactorSettingsCopy.emptyStateHint(MfaPolicyMode.OPTIONAL).contains("about a minute")
     }
 
+    // ── the in-app prompt (M7-2) ────────────────────────────────────────────────────────────────
+
+    @Unroll
+    def "the prompt is shown only when it can be acted on (mode=#mode, factor=#hasFactor, dismissed=#dismissed)"() {
+        expect:
+        TwoFactorSettingsCopy.promptVisible(mode, hasFactor, dismissed) == expected
+
+        where:
+        mode                   | hasFactor | dismissed | expected
+        MfaPolicyMode.OFF      | false     | false     | false  // nothing is asked at sign-in
+        MfaPolicyMode.OFF      | true      | false     | false
+        MfaPolicyMode.OPTIONAL | false     | false     | true
+        MfaPolicyMode.OPTIONAL | true      | false     | false  // nothing left to do
+        MfaPolicyMode.OPTIONAL | false     | true      | false  // "not now" means not now
+        MfaPolicyMode.REQUIRED | false     | false     | true
+        MfaPolicyMode.REQUIRED | true      | false     | false
+    }
+
+    def "an offer may be declined, a deadline may not be hidden"() {
+        expect:
+        TwoFactorSettingsCopy.promptDismissible(MfaPolicyMode.OPTIONAL)
+        !TwoFactorSettingsCopy.promptDismissible(MfaPolicyMode.REQUIRED)
+    }
+
+    def "the prompt under OPTIONAL is an offer, not a warning"() {
+        when:
+        def title = TwoFactorSettingsCopy.promptTitle(MfaPolicyMode.OPTIONAL)
+        def body = TwoFactorSettingsCopy.promptBody(MfaPolicyMode.OPTIONAL, null)
+
+        then: "no deadline may be invented where the deployment enforces none"
+        !title.toLowerCase().contains("required")
+        !body.toLowerCase().contains("required")
+        !body.toLowerCase().contains("deadline")
+        body.contains("about a minute")
+    }
+
+    def "the prompt under REQUIRED names the deadline when there is one"() {
+        when:
+        def body = TwoFactorSettingsCopy.promptBody(MfaPolicyMode.REQUIRED, "20 November 2026")
+
+        then:
+        body.contains("20 November 2026")
+        body.contains("required")
+    }
+
+    def "the prompt under REQUIRED without a stored window states the requirement, not a date"() {
+        when:
+        def body = TwoFactorSettingsCopy.promptBody(MfaPolicyMode.REQUIRED, null)
+
+        then: "an absent grace row means 'a window will be granted', never 'no deadline'"
+        body.contains("required")
+        !body.contains("null")
+        !body.matches(".*\\d{4}.*")
+    }
+
+    def "the prompt never advertises a reset by e-mail either"() {
+        expect:
+        [MfaPolicyMode.OPTIONAL, MfaPolicyMode.REQUIRED].every { mode ->
+            def text = (TwoFactorSettingsCopy.promptTitle(mode)
+                    + " " + TwoFactorSettingsCopy.promptBody(mode, "20 November 2026")).toLowerCase()
+            !text.contains("e-mail") && !text.contains("email") && !text.contains("support")
+        }
+    }
+
     @Unroll
     def "no sentence advertises a reset by e-mail or by support (#mode, factor=#hasFactor)"() {
         given: "accounts are self-service and e-mail verified, so mailbox control must never be the way"

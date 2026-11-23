@@ -167,4 +167,76 @@ public final class TwoFactorSettingsCopy {
             + "you will be asked for a code from it from then on."
         : "You will need a phone with an authenticator app. Setting one up takes about a minute.";
   }
+
+  /**
+   * The heading of the in-app prompt that reaches accounts which never open the settings page.
+   *
+   * <p>Under {@code OPTIONAL} it is an offer, so it must not sound like a warning. Under
+   * {@code REQUIRED} it is a deadline, and the heading says what is at stake rather than what is
+   * recommended.</p>
+   *
+   * @param mode the posture
+   * @return the prompt heading
+   */
+  static String promptTitle(MfaPolicyMode mode) {
+    return mode == MfaPolicyMode.REQUIRED
+        ? "Set up an authenticator app to keep signing in"
+        : "Add a second step to your sign-in";
+  }
+
+  /**
+   * The body of the in-app prompt.
+   *
+   * <p>Under {@code REQUIRED} the deadline is named when the page knows it: "before the grace period
+   * ends" is true and useless, and a countdown the user cannot see is a countdown they cannot act
+   * on. Under {@code OPTIONAL} there is no deadline to name, and inventing one would be the promise
+   * this milestone forbids.</p>
+   *
+   * @param mode              the posture
+   * @param formattedDeadline the grace deadline, already formatted, or {@code null} when there is
+   *                          none to name
+   * @return the prompt body
+   */
+  static String promptBody(MfaPolicyMode mode, String formattedDeadline) {
+    if (mode == MfaPolicyMode.REQUIRED) {
+      return formattedDeadline == null
+          ? "Two-factor authentication is required on this installation. Signing in needs a code "
+              + "from an app you set up beforehand."
+          : "Two-factor authentication becomes required for your account on " + formattedDeadline
+              + ". After that, signing in needs a code from an app.";
+    }
+    return "A stolen password is not enough on its own. An authenticator app on your phone takes "
+        + "about a minute to set up, and you can turn it off again at any time.";
+  }
+
+  /**
+   * Whether the prompt may be dismissed for the rest of the session.
+   *
+   * <p>An offer may be declined; a deadline may not be hidden. Under {@code REQUIRED} the prompt
+   * therefore has no "not now" — the account is counting down and the reminder is the only thing
+   * standing between the user and a lockout.</p>
+   *
+   * @param mode the posture
+   * @return {@code true} if a "not now" action is honest
+   */
+  static boolean promptDismissible(MfaPolicyMode mode) {
+    return mode != MfaPolicyMode.REQUIRED;
+  }
+
+  /**
+   * Whether the in-app prompt belongs on the screen at all.
+   *
+   * <p>Three conditions, and each one is a way the prompt could be wrong: under {@code OFF} nothing
+   * is asked at sign-in, so the prompt would send the user to a page that reroutes away; an account
+   * that already has a factor has nothing to do; and a dismissed prompt must stay dismissed for the
+   * session, or it becomes the nagging banner people learn to ignore.</p>
+   *
+   * @param mode      the posture
+   * @param hasFactor whether the account has an active factor
+   * @param dismissed whether the user dismissed the prompt in this session
+   * @return {@code true} if the prompt should be rendered
+   */
+  static boolean promptVisible(MfaPolicyMode mode, boolean hasFactor, boolean dismissed) {
+    return mode != MfaPolicyMode.OFF && !hasFactor && !dismissed;
+  }
 }

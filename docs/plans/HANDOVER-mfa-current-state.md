@@ -13,10 +13,14 @@ Verified on a deployed instance (context path `/dev`, `qbic.security.mfa.mode=OP
 
 1. **Settings → Two-factor authentication**: enrol an authenticator app by scanning a QR or typing the
    setup key, confirm with a code, see/remove factors, generate a one-time recovery-code sheet that
-   can be copied to the clipboard or downloaded as a dated text file.
-2. **Sign in**: password → `Second factor` challenge (or recovery-code mode) → session established,
+   can be copied to the clipboard or downloaded as a dated text file. The first confirmed factor
+   issues a recovery-code set immediately, in the same breath (M3-4/M7-2).
+2. **Every authenticated page** carries the enrolment prompt (`MfaEnrolmentPrompt`, mounted in
+   `DataManagerLayout`): an offer under `OPTIONAL`, a dated deadline under `REQUIRED`, nothing under
+   `OFF`, and nothing once a factor exists. Dismissible per session under `OPTIONAL` only.
+3. **Sign in**: password → `Second factor` challenge (or recovery-code mode) → session established,
    deep link replayed.
-3. **Storage**: TOTP seeds are AES-256-GCM ciphertext (60 bytes decoded) under the vault alias
+4. **Storage**: TOTP seeds are AES-256-GCM ciphertext (60 bytes decoded) under the vault alias
    `second-factor-master-key`; recovery codes are HMAC-SHA-256 hashes under `RECOVERY_CODE_PEPPER`.
 
 Nothing is enforced until `qbic.security.mfa.mode` is set to `OPTIONAL`/`REQUIRED` (default `OFF`).
@@ -119,7 +123,6 @@ Two facts about this suite that cost time to find out:
 | # | Task | Why it is next |
 |---|---|---|
 | 0 | **Recovery-code live grouping — closed 2026-11-20** | Works as specified: upper case, hyphens added as fillers, backspace behind a hyphen deletes the group's character, pasted codes normalise to themselves. See §3 trap 3 for the pattern (document delegation) and `node datamanager-app/src/test/js/recoverycodeformat.check.mjs` for the check that does not need a browser |
-| 1 | **Settings page hierarchy** (UI review, slice 2 — pending) | The copy now tells the truth (see below), but the page still points its only blue primary at "set up *another* app" while "generate a new set" looks disabled, states the account's state four times, and wraps "Two-factor authentication" onto two lines in the sidebar |
 | 1 | **M4-5 bypass suite** (HTTP level) | The properties are unit-tested; the suite proves no route, session reuse or replay gets past the factor. **Needs infrastructure this workspace does not have** (see §4): plan it against a booted instance, not as a unit spec |
 | 2 | **M6-1 administrative re-enrolment + ADR 0012** | The challenge's support copy promises identity verification; that needs a process decision (proofing that is not the mailbox, four-eyes, audit) before `REQUIRED` |
 | 3 | **M5** — `REQUIRED` for a cohort, audit trail (`AUTH-R-04`), challenge throttling on `auth_attempt` | Enforcement is the milestone's exit gate |
@@ -147,8 +150,20 @@ card title, and each `Remove` carries the factor name as its accessible label. T
 record: *the "zero gap between the sections" and "button is vertically centred" findings were
 retracted* once the screenshot was actually read — do not "fix" either.
 
+**The enrolment prompt exists (M7-2, 2026-11-20).** `MfaEnrolmentPrompt` is mounted in
+`DataManagerLayout`, so it reaches every authenticated page — the gap it closes is that enrolment used
+to be discoverable only by someone who already knew the settings page existed. It renders only when
+`TwoFactorSettingsCopy.promptVisible(mode, hasFactor, dismissed)` says so: never under `OFF` (the page
+it links to reroutes away), never for an enrolled account, never after "not now" in this session. It
+is hidden on the two-factor page itself, and it names the grace deadline under `REQUIRED` when a
+window is stored. **Dismissal is per session, not per account** — persisting it would need a column and
+a migration for a preference not worth one; under `REQUIRED` there is no dismissal at all, because an
+offer may be declined and a deadline may not be hidden. Not verified visually (no frontend build).
+
 Known smaller gaps: no rename field on a factor (domain supports it), no "N codes left" hint at the
-challenge, no per-request rate limiting on the challenge yet.
+challenge, no per-request rate limiting on the challenge yet, and **no enrolment step in registration
+(M5-2)** — a new account still reaches the app with a password only and learns about the factor from
+the prompt, not from the sign-up flow.
 
 ## 6. Governance state
 

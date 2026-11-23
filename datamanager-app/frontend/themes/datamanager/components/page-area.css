@@ -2189,3 +2189,62 @@ a.mfa-recovery-action {
   white-space: nowrap;
   border: 0;
 }
+
+/* ── In-app enrolment prompt (M7-2) ─────────────────────────────────────────────────────────────
+   Mounted in the application shell, directly under the announcement strip, so it reaches accounts
+   that never open the settings page. It is deliberately quieter than the announcement: that strip
+   carries operator messages about the instance, this one is about the user's own account. */
+.mfa-prompt {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-03);
+  margin: var(--spacing-04);
+  padding: var(--spacing-03) var(--spacing-04);
+  background-color: var(--lumo-primary-color-10pct);
+  border: 1px solid var(--lumo-primary-color-50pct);
+  border-left-width: 4px;
+  border-radius: var(--lumo-border-radius-m);
+  box-sizing: border-box;
+}
+
+.mfa-prompt__icon {
+  flex: none;
+  color: var(--lumo-primary-color);
+}
+
+.mfa-prompt__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.mfa-prompt__title {
+  font-weight: 600;
+  font-size: var(--lumo-font-size-s);
+}
+
+.mfa-prompt__body {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.mfa-prompt__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-03);
+  flex: none;
+}
+
+/* Narrow screens: the actions drop below the text instead of squeezing it to one word per line. */
+@media (max-width: 720px) {
+  .mfa-prompt {
+    flex-wrap: wrap;
+  }
+
+  .mfa-prompt__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
