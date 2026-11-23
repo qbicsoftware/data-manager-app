@@ -2113,6 +2113,14 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   gap: var(--lumo-space-m);
 }
 
+/* The entry name the app should show. Helper text, not a warning: it answers "is this the right
+   account?" and "did my app use the name we sent?", and it sits with the instructions. */
+.mfa-enrol-identity {
+  margin: 0;
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
 /* The lockout consequence, shown only on the sheet issued right after the first factor. It carries
    the weight the ordinary helper text does not: this is the one sentence on the screen that decides
    whether the user keeps the codes. */

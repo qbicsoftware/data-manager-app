@@ -51,11 +51,12 @@ public class TotpEnrolmentDialog extends Div {
   private final List<ComponentEventListener<EnrolledEvent>> enrolledListeners = new ArrayList<>();
 
   /**
-   * @param pending the enrolment to confirm
-   * @param verify  verifies the typed code; throws {@link InvalidTotpCodeException} when it does not
-   *                match, {@link EnrolmentExpiredException} when the setup window has passed
+   * @param pending      the enrolment to confirm
+   * @param accountEmail the account the factor belongs to; shown as the entry name the app should use
+   * @param verify       verifies the typed code; throws {@link InvalidTotpCodeException} when it does
+   *                     not match, {@link EnrolmentExpiredException} when the setup window has passed
    */
-  public TotpEnrolmentDialog(PendingTotpEnrolment pending,
+  public TotpEnrolmentDialog(PendingTotpEnrolment pending, String accountEmail,
       Function<String, SecondFactor> verify) {
     dialog = AppDialog.medium();
     DialogHeader.with(dialog, "Set up an authenticator app");
@@ -74,6 +75,12 @@ public class TotpEnrolmentDialog extends Div {
             + "2. Type the six-digit code the app shows and confirm. "
             + "If scanning is not possible, enter the setup key below instead.");
 
+    // The entry name only exists inside the QR code; stating it here is the only way a user can tell
+    // whether the app ignored our label or we sent the wrong one.
+    Paragraph entryHint = new Paragraph(
+        TwoFactorSettingsCopy.enrolmentEntryHint(accountEmail));
+    entryHint.addClassName("mfa-enrol-identity");
+
     Div qrBlock = new Div(new TotpQrCode(pending.provisioningUri()),
         new Span("Scan with your authenticator app"));
     qrBlock.addClassName("mfa-qr-block");
@@ -86,7 +93,7 @@ public class TotpEnrolmentDialog extends Div {
     error.getStyle().set("color", "var(--lumo-error-text-color)");
     error.setVisible(false);
 
-    Div body = new Div(instructions, qrBlock, setupKeyRow, code, error);
+    Div body = new Div(instructions, entryHint, qrBlock, setupKeyRow, code, error);
     body.addClassName("mfa-enrol-body");
 
     DialogBody.with(dialog, body, new CodeInput(verify));

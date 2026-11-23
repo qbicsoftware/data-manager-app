@@ -143,7 +143,7 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
         Instant.now());
     // The verification callback is passed in rather than the service, so the dialog cannot create a
     // factor by itself; "no factor without a verified code" stays a property of the application layer.
-    var dialog = new TotpEnrolmentDialog(pending,
+    var dialog = new TotpEnrolmentDialog(pending, user.emailAddress(),
         code -> totpEnrolmentService.confirm(pending, code, Instant.now()));
     dialog.addEnrolledListener(event -> onEnrolled(userId, user.emailAddress()));
     dialog.open();
