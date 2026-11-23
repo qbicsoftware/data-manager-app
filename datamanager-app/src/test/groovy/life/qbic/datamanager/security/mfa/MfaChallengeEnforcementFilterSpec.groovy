@@ -59,10 +59,10 @@ class MfaChallengeEnforcementFilterSpec extends Specification {
         SecurityContextHolder.clearContext()
     }
 
-    private MfaChallengeEnforcementFilter filterFor(MfaPolicyMode mode) {
+    private MfaChallengeEnforcementFilter filterFor(MfaPolicyMode mode, boolean owesGrace = true) {
         new MfaChallengeEnforcementFilter(
                 new MfaLoginGuard(factors, graces, new MfaPolicy(mode.name(), GRACE, ""),
-                        { String ignored -> true } as GraceEligibility))
+                        { String ignored -> owesGrace } as GraceEligibility))
     }
 
     // ---------------------------------------------------------------- the challenge
@@ -110,6 +110,50 @@ class MfaChallengeEnforcementFilterSpec extends Specification {
 
         then:
         1 * response.sendRedirect(CONTEXT_PATH + "/login/second-factor?graceExpired")
+        0 * chain.doFilter(_, _)
+    }
+
+    // ---------------------------------------------------------------- enrolment due (registration path)
+
+    def "an account that is not owed a window is sent to enrolment, with no session"() {
+        given: "a new account under REQUIRED: no factor, no deadline to count down"
+        authenticateAs("u-1")
+
+        when:
+        filterFor(MfaPolicyMode.REQUIRED, false).doFilter(request, response, chain)
+
+        then: "the same mechanical pair as the challenge, aimed at the enrolment page"
+        1 * session.setAttribute(MfaPendingLogin.SESSION_ATTRIBUTE, { MfaPendingLogin p ->
+            p.userId() == "u-1" && p.email() == "ada@example.org"
+        })
+        1 * session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY)
+        1 * response.sendRedirect(CONTEXT_PATH + "/login/enrol")
+        0 * chain.doFilter(_, _)
+        SecurityContextHolder.context.authentication == null
+    }
+
+    def "the enrolment page itself is not re-gated, or the redirect would loop"() {
+        given: "the request arrives at the page the filter just redirected to"
+        request.getRequestURI() >> (CONTEXT_PATH + "/login/enrol")
+        authenticateAs("u-1")
+
+        when:
+        filterFor(MfaPolicyMode.REQUIRED, false).doFilter(request, response, chain)
+
+        then:
+        1 * chain.doFilter(request, response)
+        0 * response.sendRedirect(_)
+    }
+
+    def "an enrolment-due account gets no grace row written"() {
+        given:
+        authenticateAs("u-1")
+
+        when:
+        filterFor(MfaPolicyMode.REQUIRED, false).doFilter(request, response, chain)
+
+        then: "nothing persisted, so nothing can expire and no lockout can follow"
+        graces.stored.isEmpty()
         0 * chain.doFilter(_, _)
     }
 

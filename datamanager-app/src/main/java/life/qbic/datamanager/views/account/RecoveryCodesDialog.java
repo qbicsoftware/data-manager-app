@@ -75,6 +75,8 @@ public class RecoveryCodesDialog extends Div {
   }
 
   private final AppDialog dialog;
+  private final java.util.List<com.vaadin.flow.component.ComponentEventListener<CodesSavedEvent>>
+      savedListeners = new java.util.ArrayList<>();
 
   /**
    * @param codeSet      the one-time plaintext set, straight from generation
@@ -143,7 +145,14 @@ public class RecoveryCodesDialog extends Div {
     // them" — and offering a cancel would let the one guaranteed moment pass silently.
     DialogFooter.withConfirmOnly(dialog,
         firstFactor ? "I have saved my recovery codes" : "I have saved them");
-    dialog.registerConfirmAction(dialog::close);
+    dialog.registerConfirmAction(() -> {
+      dialog.close();
+      // Fired for the login-time enrolment page, which must not create a session before the user has
+      // acknowledged the only copy of these codes. The settings page has no listener, so it behaves
+      // exactly as before.
+      savedListeners.forEach(listener ->
+          listener.onComponentEvent(new CodesSavedEvent(this, false)));
+    });
   }
 
   /**
@@ -168,6 +177,39 @@ public class RecoveryCodesDialog extends Div {
 
   public void open() {
     dialog.open();
+  }
+
+  /**
+   * Registers a listener that runs when the user acknowledges the sheet.
+   *
+   * <p>The acknowledgement is not a promise the codes were saved — the application cannot know that —
+   * but it is the last moment at which the user is guaranteed to be looking at them. A caller that
+   * grants something irreversible afterwards (a session) waits for exactly this.</p>
+   *
+   * @param listener called after the sheet closes
+   * @return a registration that removes the listener again
+   */
+  public com.vaadin.flow.shared.Registration addCodesSavedListener(
+      com.vaadin.flow.component.ComponentEventListener<CodesSavedEvent> listener) {
+    requireNonNull(listener, "listener must not be null");
+    savedListeners.add(listener);
+    return () -> savedListeners.remove(listener);
+  }
+
+  /**
+   * <b>The user acknowledged the recovery-code sheet.</b>
+   *
+   * @since 1.0.0
+   */
+  public static class CodesSavedEvent
+      extends com.vaadin.flow.component.ComponentEvent<RecoveryCodesDialog> {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    public CodesSavedEvent(RecoveryCodesDialog source, boolean fromClient) {
+      super(source, fromClient);
+    }
   }
 
   /**

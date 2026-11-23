@@ -53,6 +53,16 @@ public class MfaLoginSuccessHandler implements AuthenticationSuccessHandler {
 
   static final String CHALLENGE_PATH = "/login/second-factor";
 
+  /**
+   * Where an account that is not owed a grace window must go instead of a session (registration path).
+   *
+   * <p>Declared here, next to the challenge, because both are outcomes of the same decision and the
+   * filter reuses them. The value matches {@code RequiredEnrolmentView.PATH}; the view is not a
+   * dependency of this layer, so the constant is duplicated rather than imported — and a test asserts
+   * the two agree, because a redirect to a route that does not exist is a silent 404 at login.</p>
+   */
+  public static final String ENROL_PATH = "/login/enrol";
+
   private final MfaLoginGuard loginGuard;
   private final AuthenticationSuccessHandler delegate;
 
@@ -94,6 +104,11 @@ public class MfaLoginSuccessHandler implements AuthenticationSuccessHandler {
       case MfaGateDecision.Challenge challenge -> {
         startChallenge(request, response, principal);
       }
+      case MfaGateDecision.EnrolmentDue due -> {
+        // The account is not owed a deadline, so there is nothing to count down: it enrols now or it
+        // does not get in. Same mechanical step as the challenge — the password established nothing.
+        startChallenge(request, response, principal, ENROL_PATH);
+      }
       case MfaGateDecision.GraceExpired expired -> {
         // The account is past its enrolment window. Deny, and say what to do — the password was
         // correct, so this is not an enumeration oracle; it is the account owner being told why
@@ -116,14 +131,25 @@ public class MfaLoginSuccessHandler implements AuthenticationSuccessHandler {
 
   private void startChallenge(HttpServletRequest request, HttpServletResponse response,
       QbicUserDetails principal) throws IOException {
+    startChallenge(request, response, principal, CHALLENGE_PATH);
+  }
+
+  /**
+   * Leaves the session with nothing but a pending login and sends the browser to the step that
+   * completes it.
+   *
+   * @param target the route to send the user to: the challenge, or mandatory enrolment
+   */
+  private void startChallenge(HttpServletRequest request, HttpServletResponse response,
+      QbicUserDetails principal, String target) throws IOException {
     // getUsername() returns the USER ID (ACL records are keyed on it); the email is the login name
     // the challenge needs to reload the principal, and it is only reachable via getEmailAddress().
     MfaPendingLogin.store(request,
         new MfaPendingLogin(principal.getUserId(), principal.getEmailAddress(), Instant.now()));
     forgetAuthentication(request);
-    log.info("Second factor required for user %s; authentication withheld"
-        .formatted(principal.getUserId()));
-    response.sendRedirect(contextPathOf(request) + CHALLENGE_PATH);
+    log.info("Second factor required for user %s; authentication withheld, target %s"
+        .formatted(principal.getUserId(), target));
+    response.sendRedirect(contextPathOf(request) + target);
   }
 
   /**

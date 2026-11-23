@@ -36,6 +36,7 @@ import java.util.Locale;
 import life.qbic.identity.domain.model.mfa.RecoveryCodes;
 import life.qbic.identity.domain.model.mfa.Totp;
 import life.qbic.datamanager.security.mfa.MfaPendingLogin;
+import life.qbic.datamanager.security.mfa.MfaSessionCompletion;
 import life.qbic.datamanager.security.mfa.MfaSessionState;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.identity.application.mfa.RecoveryCodeService;
@@ -43,10 +44,7 @@ import life.qbic.identity.application.mfa.SecondFactorVerificationService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
 
 /**
  * <b>The second-factor step (M4-1)</b>
@@ -83,8 +81,7 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
 
   private final transient SecondFactorVerificationService verificationService;
   private final transient RecoveryCodeService recoveryCodeService;
-  private final transient UserDetailsService userDetailsService;
-  private final transient VaadinDefaultRequestCache requestCache;
+  private final transient MfaSessionCompletion sessionCompletion;
 
   private final TextField code = new TextField("Six-digit code");
   private final TextField recoveryCode = new TextField("Recovery code");
@@ -100,16 +97,14 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
   private MfaPendingLogin pending;
 
   public SecondFactorView(SecondFactorVerificationService verificationService,
-      RecoveryCodeService recoveryCodeService,
-      UserDetailsService userDetailsService, VaadinDefaultRequestCache requestCache,
+      RecoveryCodeService recoveryCodeService, MfaSessionCompletion sessionCompletion,
       @Value("${qbic.communication.contact.email}") String contactEmail) {
     this.verificationService = requireNonNull(verificationService,
         "verificationService must not be null");
     this.recoveryCodeService = requireNonNull(recoveryCodeService,
         "recoveryCodeService must not be null");
-    this.userDetailsService = requireNonNull(userDetailsService,
-        "userDetailsService must not be null");
-    this.requestCache = requireNonNull(requestCache, "requestCache must not be null");
+    this.sessionCompletion = requireNonNull(sessionCompletion,
+        "sessionCompletion must not be null");
 
     // Top-aligned, not centred: the card is taller than the login card, and centring a too-tall
     // element pushes it over the footer instead of letting the page scroll.
@@ -320,39 +315,12 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
   /**
    * Establishes the authentication the password alone did not get.
    *
-   * <p>The principal is reloaded through {@link UserDetailsService} rather than reconstructed, so
-   * authorities are exactly what a password login would have produced — the factor step grants
-   * nothing extra, it only completes the same login.</p>
+   * <p>Delegated to {@link MfaSessionCompletion}, which is shared with the mandatory-enrolment page: the
+   * rules (reload the principal, mark the session, clear the pending login, honour the saved request and
+   * the context path) are the same for both, and having them in two places is how one of them drifts.</p>
    */
   private void establishSession() {
-    UserDetails user = userDetailsService.loadUserByUsername(pending.email());
-    var authentication = UsernamePasswordAuthenticationToken.authenticated(
-        user, null, user.getAuthorities());
-
-    var context = SecurityContextHolder.createEmptyContext();
-    context.setAuthentication(authentication);
-    SecurityContextHolder.setContext(context);
-
-    HttpServletRequest request = currentHttpRequest();
-    HttpServletResponse response = (HttpServletResponse) VaadinService.getCurrentResponse();
-    new HttpSessionSecurityContextRepository().saveContext(context, request, response);
-    var session = request.getSession(false);
-    // Marks this session as having passed the step, so the enforcement filter does not ask again on
-    // every request. Without it the filter would re-decide here and start a challenge loop.
-    MfaSessionState.store(session, pending.userId(), Instant.now());
-    MfaPendingLogin.clear(session);
-
-    // Deep links survive the challenge: Spring saved the original request when it redirected to the
-    // login page, and that is where the user wanted to go (M4-4, for free). Its URL already contains
-    // the context path.
-    //
-    // Without a saved request the fallback must be the application root, not the host root: this
-    // deployment runs under a context path (e.g. /dev), and "/" would send the browser outside it —
-    // a working login that lands on a 404.
-    var saved = requestCache.getRequest(request, response);
-    String contextPath = request.getContextPath() == null ? "" : request.getContextPath();
-    String target = saved == null ? contextPath + "/" : saved.getRedirectUrl();
-    UI.getCurrent().getPage().setLocation(target);
+    sessionCompletion.complete(pending);
   }
 
   private void showGraceExpired() {

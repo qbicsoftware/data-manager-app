@@ -96,10 +96,15 @@ public class MfaChallengeEnforcementFilter extends OncePerRequestFilter {
       case MfaGateDecision.Challenge challenge -> {
         log.info("Second factor required for user %s; session withheld at the request boundary"
             .formatted(userId));
-        MfaPendingLogin.store(request, new MfaPendingLogin(userId, emailOf(authentication),
-            Instant.now()));
-        withdraw(session);
-        response.sendRedirect(contextPathOf(request) + MfaLoginSuccessHandler.CHALLENGE_PATH);
+        withholdSession(request, session, authentication,
+            MfaLoginSuccessHandler.CHALLENGE_PATH, response);
+      }
+      case MfaGateDecision.EnrolmentDue due -> {
+        // Not owed a deadline: the account enrols before any session exists (registration path).
+        log.info("Enrolment due for user %s; session withheld at the request boundary"
+            .formatted(userId));
+        withholdSession(request, session, authentication, MfaLoginSuccessHandler.ENROL_PATH,
+            response);
       }
       case MfaGateDecision.GraceExpired expired -> {
         log.info("Login denied for user %s: second-factor grace expired at %s"
@@ -115,6 +120,18 @@ public class MfaChallengeEnforcementFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
       }
     }
+  }
+
+  /**
+   * Leaves a pending login behind, withdraws the authentication and sends the user to the step that
+   * completes it — the same mechanical pair the success handler performs.
+   */
+  private static void withholdSession(HttpServletRequest request, HttpSession session,
+      Authentication authentication, String target, HttpServletResponse response) throws IOException {
+    MfaPendingLogin.store(request,
+        new MfaPendingLogin(userIdOf(authentication), emailOf(authentication), Instant.now()));
+    withdraw(session);
+    response.sendRedirect(contextPathOf(request) + target);
   }
 
   /** Removes the authentication from the thread and from the session (see the success handler). */
@@ -141,7 +158,11 @@ public class MfaChallengeEnforcementFilter extends OncePerRequestFilter {
       return false;
     }
     String contextPath = contextPathOf(request);
+    // The enrolment page belongs on this list for the same reason as the challenge: it must be
+    // reachable while the gate has just decided that no session may exist, and it must not be
+    // re-gated on every request or the redirect would loop.
     return path.equals(contextPath + MfaLoginSuccessHandler.CHALLENGE_PATH)
+        || path.equals(contextPath + MfaLoginSuccessHandler.ENROL_PATH)
         || path.equals(contextPath + "/login");
   }
 

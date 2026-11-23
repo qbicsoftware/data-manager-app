@@ -40,7 +40,7 @@ class SecondFactorServiceSpec extends Specification {
     }
 
     private SecondFactorService serviceFor(MfaPolicyMode mode) {
-        new SecondFactorService(repository, recoveryCodes, new MfaPolicy(mode.name(), MfaPolicy.DEFAULT_GRACE))
+        new SecondFactorService(repository, recoveryCodes, new MfaPolicy(mode.name(), MfaPolicy.DEFAULT_GRACE, ""))
     }
 
     // ---------------------------------------------------------------- reads + ownership

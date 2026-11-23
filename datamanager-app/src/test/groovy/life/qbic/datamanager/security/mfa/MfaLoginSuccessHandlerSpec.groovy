@@ -178,6 +178,26 @@ class MfaLoginSuccessHandlerSpec extends Specification {
         SecurityContextHolder.context.authentication == null
     }
 
+    def "an account that is not owed a window never gets a session, only the enrolment page"() {
+        when: "a new account signs in under REQUIRED for the first time"
+        handlerFor(MfaPolicyMode.REQUIRED, false)
+                .onAuthenticationSuccess(request, response, authentication())
+
+        then: "nothing was granted, and the delegate (the session) never ran"
+        0 * delegate.onAuthenticationSuccess(_, _, _)
+        0 * requestCache.getRequest(_, _)
+
+        and: "the password produced no session, and the browser is sent to enrolment"
+        1 * session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY)
+        1 * session.setAttribute(MfaPendingLogin.SESSION_ATTRIBUTE, { MfaPendingLogin p ->
+            p.userId() == "u-1" && p.email() == "ada@example.org"
+        })
+        1 * response.sendRedirect(CONTEXT_PATH + "/login/enrol")
+
+        and: "no deadline is invented for an account that is not owed one"
+        graces.stored.isEmpty()
+    }
+
     def "an unexpected principal fails closed rather than treating the login as factor-free"() {
         when:
         handlerFor(MfaPolicyMode.REQUIRED).onAuthenticationSuccess(request, response,
@@ -191,9 +211,9 @@ class MfaLoginSuccessHandlerSpec extends Specification {
 
     // ---------------------------------------------------------------- helpers
 
-    private MfaLoginSuccessHandler handlerFor(MfaPolicyMode mode) {
+    private MfaLoginSuccessHandler handlerFor(MfaPolicyMode mode, boolean owesGrace = true) {
         def guard = new MfaLoginGuard(factors, graces, new MfaPolicy(mode.name(), GRACE, ""),
-                { String ignored -> true } as GraceEligibility)
+                { String ignored -> owesGrace } as GraceEligibility)
         return new MfaLoginSuccessHandler(guard, requestCache, delegate)
     }
 
