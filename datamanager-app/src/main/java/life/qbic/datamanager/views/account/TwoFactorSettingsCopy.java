@@ -167,13 +167,15 @@ public final class TwoFactorSettingsCopy {
    * same app, look alike unless the name is stated. Naming it also tells the user which account they
    * are enrolling, which is the other thing that is easy to get wrong with more than one account.</p>
    *
+   * <p>One sentence on purpose. The dialog already carries the steps, the QR and two fields; the
+   * naming check is worth one line, not a paragraph.</p>
+   *
    * @param accountEmail the account the factor belongs to
    * @return the hint shown above the QR code
    */
   static String enrolmentEntryHint(String accountEmail) {
-    return "In your app this entry appears under “" + OtpauthUri.ISSUER + "”, with "
-        + accountEmail + " underneath. If your app shows something else, it is not using the name "
-        + "in the QR code — enter the setup key by hand and name the entry yourself.";
+    return "Your app lists this as “" + OtpauthUri.ISSUER + "”, with " + accountEmail
+        + " underneath.";
   }
 
   /**

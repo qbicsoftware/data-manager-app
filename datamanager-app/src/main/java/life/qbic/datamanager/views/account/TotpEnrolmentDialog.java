@@ -10,7 +10,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import life.qbic.datamanager.views.general.CopyToClipBoardComponent;
+import life.qbic.datamanager.views.general.CopyToClipboardButton;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
 import life.qbic.datamanager.views.general.dialog.DialogFooter;
@@ -62,27 +62,30 @@ public class TotpEnrolmentDialog extends Div {
     DialogHeader.with(dialog, "Set up an authenticator app");
 
     String setupKey = seedFrom(pending.provisioningUri());
-    TextField setupKeyField = new TextField("Setup key (only needed if you cannot scan)");
+    TextField setupKeyField = new TextField("Setup key (if you can't scan)");
     setupKeyField.setValue(setupKey);
     setupKeyField.setReadOnly(true);
     setupKeyField.setWidthFull();
 
-    Div setupKeyRow = new Div(setupKeyField, new CopyToClipBoardComponent(setupKey));
+    // CopyToClipboardButton, not CopyToClipBoardComponent: the latter swaps its icon for a check mark
+    // and restores it from the server, which without push only happens on the next request — so after
+    // one click the check stays and the key looks copied-for-good. This button keeps its label, is
+    // keyboard reachable, and confirms in the browser (see CopyToClipboardButton).
+    CopyToClipboardButton copySetupKey = new CopyToClipboardButton("Copy");
+    copySetupKey.addClickListener(event -> copySetupKey.copy(setupKey));
+
+    Div setupKeyRow = new Div(setupKeyField, copySetupKey);
     setupKeyRow.addClassName("mfa-setup-key-row");
 
     Paragraph instructions = new Paragraph(
-        "1. Scan the QR code with your authenticator app. "
-            + "2. Type the six-digit code the app shows and confirm. "
-            + "If scanning is not possible, enter the setup key below instead.");
+        "Scan the QR code, then type the six-digit code your app shows.");
 
-    // The entry name only exists inside the QR code; stating it here is the only way a user can tell
-    // whether the app ignored our label or we sent the wrong one.
-    Paragraph entryHint = new Paragraph(
-        TwoFactorSettingsCopy.enrolmentEntryHint(accountEmail));
+    // The entry name only exists inside the QR code; one line is enough to make it checkable and to
+    // tell a user with two accounts which one this is.
+    Paragraph entryHint = new Paragraph(TwoFactorSettingsCopy.enrolmentEntryHint(accountEmail));
     entryHint.addClassName("mfa-enrol-identity");
 
-    Div qrBlock = new Div(new TotpQrCode(pending.provisioningUri()),
-        new Span("Scan with your authenticator app"));
+    Div qrBlock = new Div(new TotpQrCode(pending.provisioningUri()));
     qrBlock.addClassName("mfa-qr-block");
 
     code.setWidthFull();

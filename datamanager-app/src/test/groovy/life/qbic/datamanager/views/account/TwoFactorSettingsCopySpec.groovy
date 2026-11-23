@@ -257,8 +257,10 @@ class TwoFactorSettingsCopySpec extends Specification {
         hint.contains(life.qbic.identity.domain.model.mfa.OtpauthUri.ISSUER)
         hint.contains("ada@example.org")
 
-        and: "it tells the user what to do when the app disagrees"
-        hint.contains("setup key")
+        and: "one sentence: the dialog already carries the steps, the QR and two fields"
+        hint.endsWith(".")
+        !hint.contains(". ")   // no second sentence; the e-mail's dots are not sentence breaks
+        hint.length() < 120
     }
 
     def "the prompt never advertises a reset by e-mail either"() {

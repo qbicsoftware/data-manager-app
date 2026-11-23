@@ -2100,10 +2100,18 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   display: none;
 }
 
+/* The field carries a label, so the row must align the copy button with the INPUT, not with the
+   middle of the label+input block: `center` put the button visibly above the field's baseline. */
 .mfa-setup-key-row {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: var(--lumo-space-s);
+}
+
+/* Keeps the button off the very bottom edge while it aligns with the input. */
+.mfa-setup-key-row .copy-action {
+  flex: none;
+  padding-bottom: var(--lumo-space-xs);
 }
 
 .mfa-enrol-body,
