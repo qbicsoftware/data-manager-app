@@ -36,13 +36,16 @@ public class MfaLoginGuard {
   private final SecondFactorRepository secondFactorRepository;
   private final MfaGraceRepository graceRepository;
   private final MfaPolicy policy;
+  private final GraceEligibility graceEligibility;
 
   public MfaLoginGuard(SecondFactorRepository secondFactorRepository,
-      MfaGraceRepository graceRepository, MfaPolicy policy) {
+      MfaGraceRepository graceRepository, MfaPolicy policy, GraceEligibility graceEligibility) {
     this.secondFactorRepository = requireNonNull(secondFactorRepository,
         "secondFactorRepository must not be null");
     this.graceRepository = requireNonNull(graceRepository, "graceRepository must not be null");
     this.policy = requireNonNull(policy, "policy must not be null");
+    this.graceEligibility = requireNonNull(graceEligibility,
+        "graceEligibility must not be null");
   }
 
   /**
@@ -62,7 +65,8 @@ public class MfaLoginGuard {
         secondFactorRepository.hasActiveFactor(userId),
         graceRepository.findByUserId(userId),
         now,
-        policy.grace());
+        policy.grace(),
+        graceEligibility.isEligible(userId));
 
     // One line per password login, naming the outcome. Diagnosing "no challenge appeared" needs the
     // decision, not the absence of one.
@@ -77,4 +81,5 @@ public class MfaLoginGuard {
     }
     return decision;
   }
+
 }

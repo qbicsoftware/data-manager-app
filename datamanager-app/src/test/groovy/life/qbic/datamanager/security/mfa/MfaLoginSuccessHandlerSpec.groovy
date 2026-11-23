@@ -3,6 +3,7 @@ package life.qbic.datamanager.security.mfa
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.servlet.http.HttpSession
+import life.qbic.identity.application.mfa.GraceEligibility
 import life.qbic.identity.application.mfa.MfaLoginGuard
 import life.qbic.identity.application.mfa.MfaPolicy
 import life.qbic.identity.domain.model.mfa.MfaGrace
@@ -191,7 +192,8 @@ class MfaLoginSuccessHandlerSpec extends Specification {
     // ---------------------------------------------------------------- helpers
 
     private MfaLoginSuccessHandler handlerFor(MfaPolicyMode mode) {
-        def guard = new MfaLoginGuard(factors, graces, new MfaPolicy(mode.name(), GRACE))
+        def guard = new MfaLoginGuard(factors, graces, new MfaPolicy(mode.name(), GRACE, ""),
+                { String ignored -> true } as GraceEligibility)
         return new MfaLoginSuccessHandler(guard, requestCache, delegate)
     }
 

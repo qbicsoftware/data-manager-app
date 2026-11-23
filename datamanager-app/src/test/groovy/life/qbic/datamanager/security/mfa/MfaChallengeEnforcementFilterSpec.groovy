@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.servlet.http.HttpSession
+import life.qbic.identity.application.mfa.GraceEligibility
 import life.qbic.identity.application.mfa.MfaLoginGuard
 import life.qbic.identity.application.mfa.MfaPolicy
 import life.qbic.identity.domain.model.mfa.MfaGrace
@@ -60,7 +61,8 @@ class MfaChallengeEnforcementFilterSpec extends Specification {
 
     private MfaChallengeEnforcementFilter filterFor(MfaPolicyMode mode) {
         new MfaChallengeEnforcementFilter(
-                new MfaLoginGuard(factors, graces, new MfaPolicy(mode.name(), GRACE)))
+                new MfaLoginGuard(factors, graces, new MfaPolicy(mode.name(), GRACE, ""),
+                        { String ignored -> true } as GraceEligibility))
     }
 
     // ---------------------------------------------------------------- the challenge

@@ -27,7 +27,8 @@ import java.util.Optional;
  *   <li><b>Under {@code OPTIONAL}, an unenrolled account proceeds.</b> That is what optional means;
  *       the user is offered enrolment without being forced.</li>
  *   <li><b>Under {@code REQUIRED}, an unenrolled account gets the grace window</b> — granted if it has
- *       none, honoured if it is running, denied once it has passed.</li>
+ *       none, honoured if it is running, denied once it has passed — <b>unless it is not eligible for a
+ *       window at all</b>, in which case it must enrol now ({@link MfaGateDecision.EnrolmentDue}).</li>
  * </ol>
  *
  * <h3>The lockout bug this type exists to prevent</h3>
@@ -51,6 +52,21 @@ public final class MfaGate {
   }
 
   /**
+   * Decides what the login path must do for one account, treating every account as eligible for a
+   * grace window.
+   *
+   * <p>Equivalent to {@link #decide(MfaPolicyMode, boolean, java.util.Optional, Instant, Duration,
+   * boolean)} with {@code graceEligible = true}. Kept because most callers (and every existing rule)
+   * are about the window itself, not about who is owed one.</p>
+   *
+   * @see #decide(MfaPolicyMode, boolean, java.util.Optional, Instant, Duration, boolean)
+   */
+  public static MfaGateDecision decide(MfaPolicyMode mode, boolean hasActiveFactor,
+      Optional<MfaGrace> grace, Instant now, Duration graceWindow) {
+    return decide(mode, hasActiveFactor, grace, now, graceWindow, true);
+  }
+
+  /**
    * Decides what the login path must do for one account.
    *
    * @param mode             the deployment posture; must not be null
@@ -62,10 +78,15 @@ public final class MfaGate {
    * @param graceWindow      the window to grant when there is none stored. Must be positive; only
    *     validated when it is actually used, because a deployment that never reaches
    *     {@code REQUIRED} does not need one and should not fail to start over it.
+   * @param graceEligible    whether this account is owed a grace window at all. {@code false} for an
+   *     account created after the posture came into force: it cannot be locked out by a flip that
+   *     preceded it, so it enrols at its first login instead of starting a countdown. A window that is
+   *     <em>already</em> stored and running is still honoured — this input decides whether to
+   *     <b>grant</b> a deadline, never whether to revoke one that an operator set deliberately.
    * @return what the login path must do, including any deadline it must persist
    */
   public static MfaGateDecision decide(MfaPolicyMode mode, boolean hasActiveFactor,
-      Optional<MfaGrace> grace, Instant now, Duration graceWindow) {
+      Optional<MfaGrace> grace, Instant now, Duration graceWindow, boolean graceEligible) {
     requireNonNull(mode, "mode must not be null");
     requireNonNull(grace, "grace must not be null");
     requireNonNull(now, "now must not be null");
@@ -81,6 +102,14 @@ public final class MfaGate {
     }
 
     // REQUIRED, no active factor.
+    if (!graceEligible) {
+      // Nothing is owed, so nothing is written. A window an operator granted on purpose still wins
+      // while it runs: eligibility governs granting, not revoking.
+      if (grace.isPresent() && grace.get().isActiveAt(now)) {
+        return new MfaGateDecision.GraceActive(grace.get().graceUntil());
+      }
+      return new MfaGateDecision.EnrolmentDue();
+    }
     if (grace.isPresent()) {
       MfaGrace window = grace.get();
       return window.isActiveAt(now)

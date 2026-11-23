@@ -7,6 +7,7 @@ import java.time.Duration
 import java.time.Instant
 
 import static life.qbic.identity.domain.model.mfa.MfaGateDecision.Challenge
+import static life.qbic.identity.domain.model.mfa.MfaGateDecision.EnrolmentDue
 import static life.qbic.identity.domain.model.mfa.MfaGateDecision.GraceActive
 import static life.qbic.identity.domain.model.mfa.MfaGateDecision.GraceExpired
 import static life.qbic.identity.domain.model.mfa.MfaGateDecision.GraceGranted
@@ -37,6 +38,11 @@ class MfaGateSpec extends Specification {
     private static MfaGateDecision decide(MfaPolicyMode mode, boolean enrolled,
                                           MfaGrace grace = null, Instant now = NOW) {
         MfaGate.decide(mode, enrolled, Optional.ofNullable(grace), now, TWO_DAYS)
+    }
+
+    private static MfaGateDecision decideEligible(boolean eligible, MfaPolicyMode mode = MfaPolicyMode.REQUIRED,
+                                                 MfaGrace grace = null, Instant now = NOW) {
+        MfaGate.decide(mode, false, Optional.ofNullable(grace), now, TWO_DAYS, eligible)
     }
 
     private static MfaGrace graceActiveUntil(Instant deadline) {
@@ -222,5 +228,62 @@ class MfaGateSpec extends Specification {
 
         then: "fail loudly at the decision, not by silently denying everyone"
         thrown(NullPointerException)
+    }
+
+    // ---------------------------------------------------------------- who is owed a window (registration path)
+
+    def "an account that is not owed a window must enrol instead of being granted one"() {
+        expect: "no countdown, because nothing was taken away from this account"
+        decideEligible(false) instanceof EnrolmentDue
+    }
+
+    def "the enrolment outcome refuses a session without a factor"() {
+        when:
+        def decision = decideEligible(false)
+
+        then: "a login path that only reads these two flags cannot let the account through"
+        decision.secondFactorRequired()
+        !decision.loginMayProceedWithoutFactor()
+    }
+
+    def "no window is validated or required when the account is not owed one"() {
+        expect: "a deployment that never grants a window needs no grace configuration at all"
+        MfaGate.decide(MfaPolicyMode.REQUIRED, false, Optional.empty(), NOW, null, false)
+                instanceof EnrolmentDue
+    }
+
+    def "a window an operator granted to a new account is honoured while it runs"() {
+        given: "eligibility decides whether to grant, never whether to revoke"
+        def granted = graceActiveUntil(NOW.plus(TWO_DAYS))
+
+        expect:
+        decideEligible(false, MfaPolicyMode.REQUIRED, granted) instanceof GraceActive
+    }
+
+    def "an expired window on a new account leads to enrolment, not to a denial"() {
+        given: "the account is not owed a deadline, so the expired one carries no sentence to show"
+        def expired = MfaGrace.start("u-1", NOW.minus(TWO_DAYS.multipliedBy(3)), TWO_DAYS)
+
+        expect:
+        decideEligible(false, MfaPolicyMode.REQUIRED, expired) instanceof EnrolmentDue
+    }
+
+    @Unroll
+    def "eligibility is irrelevant under #mode"() {
+        expect:
+        MfaGate.decide(mode, enrolled, Optional.empty(), NOW, TWO_DAYS, false).getClass() == expected
+
+        where:
+        mode                   | enrolled | expected
+        MfaPolicyMode.OFF      | false    | NotRequired
+        MfaPolicyMode.OFF      | true     | NotRequired
+        MfaPolicyMode.OPTIONAL | false    | NotRequired
+        MfaPolicyMode.OPTIONAL | true     | Challenge
+        MfaPolicyMode.REQUIRED | true     | Challenge
+    }
+
+    def "the five-argument form still means every account is eligible"() {
+        expect: "existing behaviour cannot change for a deployment that configures no cut-off"
+        decide(MfaPolicyMode.REQUIRED, false) instanceof GraceGranted
     }
 }

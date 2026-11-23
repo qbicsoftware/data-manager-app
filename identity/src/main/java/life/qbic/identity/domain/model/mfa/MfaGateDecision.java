@@ -14,7 +14,7 @@ import java.time.Instant;
  */
 public sealed interface MfaGateDecision
     permits MfaGateDecision.NotRequired, MfaGateDecision.Challenge, MfaGateDecision.GraceGranted,
-    MfaGateDecision.GraceActive, MfaGateDecision.GraceExpired {
+    MfaGateDecision.GraceActive, MfaGateDecision.GraceExpired, MfaGateDecision.EnrolmentDue {
 
   /**
    * @return {@code true} if the account may not reach an authenticated session without presenting a
@@ -119,11 +119,41 @@ public sealed interface MfaGateDecision
   }
 
   /**
+   * The policy is {@link MfaPolicyMode#REQUIRED}, the account has no factor, and it is <b>not eligible
+   * for a grace window</b>: it was created after the posture came into force, so no deadline is owed to
+   * it.
+   *
+   * <h3>Why this is not a grant with a zero-length window</h3>
+   * <p>Grace exists for one thing — nobody is locked out by the <em>flip</em> to the required posture
+   * (ADR 0011 item 3). An account created afterwards cannot be locked out by a change that preceded it;
+   * it is being onboarded into a world that already asks for a factor. Giving it a countdown would
+   * invite exactly the failure the countdown would then punish: 48 hours in which nothing in the
+   * application insists, followed by a lockout with no way back.</p>
+   *
+   * <p><b>Nothing is persisted for this outcome.</b> No deadline row is created, so nothing can expire,
+   * and the next login asks the same question and gets the same answer until a factor exists. The login
+   * path must therefore send the user to enrolment, never to a session.</p>
+   */
+  record EnrolmentDue() implements MfaGateDecision {
+
+    @Override
+    public boolean secondFactorRequired() {
+      return true;
+    }
+
+    @Override
+    public boolean loginMayProceedWithoutFactor() {
+      return false;
+    }
+  }
+
+  /**
    * The policy is {@link MfaPolicyMode#REQUIRED}, the account has no factor, and the window has run
    * out.
    *
-   * <p>Deny, and offer recovery: an administrator re-enrolment (M6-1), or a recovery code if one
-   * exists. The deadline is carried so the message can state it without another lookup.</p>
+   * <p>Deny, and offer recovery: the mailbox-proof re-enrolment link, or a recovery code if one exists
+   * (an account that never enrolled has no codes — that is what makes the link the primary path here).
+   * The deadline is carried so the message can state it without another lookup.</p>
    *
    * @param graceUntil the deadline that has passed
    */
