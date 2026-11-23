@@ -18,12 +18,26 @@ class OtpauthUriSpec extends Specification {
         def uri = OtpauthUri.forTotp("ada@example.org", SEED)
 
         then:
-        uri.startsWith("otpauth://totp/QBIC%20Data%20Manager%3Aada%40example.org?")
+        uri.startsWith("otpauth://totp/QBiC%20Data%20Manager:ada%40example.org?")
         uri.contains("secret=" + SEED)
-        uri.contains("issuer=QBIC%20Data%20Manager")
+        uri.contains("issuer=QBiC%20Data%20Manager")
         uri.contains("algorithm=SHA1")
         uri.contains("digits=" + Totp.DIGITS)
         uri.contains("period=" + Totp.PERIOD_SECONDS)
+    }
+
+    def "the label separator is a literal colon, not %3A"() {
+        when:
+        def uri = OtpauthUri.forTotp("ada@example.org", SEED)
+
+        then: "an app that splits the label before decoding it must still find the issuer"
+        uri.contains("QBiC%20Data%20Manager:ada%40example.org")
+        !uri.contains("%3A")
+    }
+
+    def "the issuer is spelled the way the product is spelled"() {
+        expect: "the entry in the authenticator app is the only place a user sees this name"
+        OtpauthUri.ISSUER == "QBiC Data Manager"
     }
 
     def "the issuer is percent-encoded with %20, never a plus sign"() {
@@ -34,7 +48,7 @@ class OtpauthUriSpec extends Specification {
     def "a label with a space is encoded, so the account name survives the scan"() {
         expect:
         OtpauthUri.forTotp("ada lovelace", SEED)
-                .startsWith("otpauth://totp/QBIC%20Data%20Manager%3Aada%20lovelace?")
+                .startsWith("otpauth://totp/QBiC%20Data%20Manager:ada%20lovelace?")
     }
 
     def "blank input is refused"() {
