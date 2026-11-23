@@ -272,6 +272,14 @@
   background-color: var(--lumo-success-color-10pct);
 }
 
+/* The same flash, driven by the browser's copy confirmation instead of a server timer: while the
+   check mark is showing, the surrounding row is tinted. Nothing to undo afterwards, and the tint
+   appears on click rather than after a round trip. */
+.show-created-personal-access-token-details:has(.copy-to-clipboard[data-copied]),
+.ontology-lookup-component .ontology-item .header:has(.copy-to-clipboard[data-copied]) {
+  background-color: var(--lumo-success-color-10pct);
+}
+
 .base-background {
   background-color: var(--lumo-base-color);
 }
