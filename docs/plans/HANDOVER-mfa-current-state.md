@@ -124,7 +124,7 @@ Two facts about this suite that cost time to find out:
 |---|---|---|
 | 0 | **Recovery-code live grouping — closed 2026-11-20** | Works as specified: upper case, hyphens added as fillers, backspace behind a hyphen deletes the group's character, pasted codes normalise to themselves. See §3 trap 3 for the pattern (document delegation) and `node datamanager-app/src/test/js/recoverycodeformat.check.mjs` for the check that does not need a browser |
 | 1 | **M4-5 bypass suite** (HTTP level) | The properties are unit-tested; the suite proves no route, session reuse or replay gets past the factor. **Needs infrastructure this workspace does not have** (see §4): plan it against a booted instance, not as a unit spec |
-| 2 | **M6-1 administrative re-enrolment + ADR 0012** | The challenge's support copy promises identity verification; that needs a process decision (proofing that is not the mailbox, four-eyes, audit) before `REQUIRED` |
+| 2 | **Administrative re-enrolment for *enrolled* accounts (M6-1) + ADR 0012** | The unenrolled case now has a self-service path (§7). An account that *has* a factor and lost the device **and** the codes still needs identity proofing that is not the mailbox — that is the remaining decision, and the mailbox link deliberately refuses those accounts |
 | 3 | **M5** — `REQUIRED` for a cohort, audit trail (`AUTH-R-04`), challenge throttling on `auth_attempt` | Enforcement is the milestone's exit gate |
 | 4 | **§12 sign-off**, then promote the migration out of `drafts/` (move file, `sql/migrations/README.md` row, `complete-schema.sql`, drop the DRAFT status) | The DDL is applied on the test instance but not approved for production |
 | 5 | M4-2 WebAuthn spike (optional), M3-2 | ADR 0011 W1: optional, needs the §1a proxy prerequisites |
@@ -173,7 +173,54 @@ challenge, no per-request rate limiting on the challenge yet, and **no enrolment
 (M5-2)** — a new account still reaches the app with a password only and learns about the factor from
 the prompt, not from the sign-up flow.
 
-## 6. Governance state
+## 6. The required route: registration, and missing the window (2026-11-23)
+
+Three pieces landed together, and they answer the two questions the required posture raised: *how does
+a new account get a factor?* and *what happens to someone who ignored the deadline?*
+
+**A grace window is only owed to accounts that existed when the posture was flipped.** `MfaGate` has a
+fifth outcome, `EnrolmentDue`: an account with no factor that is not owed a window must enrol at its
+first login. Nothing is persisted for it, so nothing can expire, and the same answer comes back on every
+login until a factor exists. Eligibility is a configured instant,
+`qbic.security.mfa.grace-cutoff` (unset = everyone eligible, i.e. today's behaviour) compared against
+the account's registration date; it lives behind `GraceEligibility` so the login guard still asks one
+question and sees no repository. Two asymmetries are deliberate: a window an operator granted is still
+honoured for an ineligible account (eligibility governs granting, not revoking), and an unreadable
+account record answers "eligible" — a data gap must not produce a stricter path.
+
+**The registration path is that outcome, wired into both login entry points.** Password verified → the
+authentication is withdrawn → a pending login is stored → `/login/enrol`. The page starts an enrolment
+with the same service the settings page uses, verifies a code, and then shows the recovery codes
+*before* the session exists, waiting for the acknowledgement. Session establishment moved into
+`MfaSessionCompletion`, shared with the challenge, because the details that matter (reload the
+principal, mark the session or the filter loops, honour the saved request, fall back to the context
+root) drift when duplicated.
+
+**Missing the window is no longer terminal.** A one-time link, mailed to the account's mailbox, opens the
+same enrolment page. It reuses the verification-token machinery under its own purpose
+(`REENROL_SECOND_FACTOR`), so single use, expiry, hashing and uniform failures are the tested ones.
+
+> **Where the mailbox is the right proof, and where it stops.** For an account with **no factor**, the
+> mailbox already controls the account — a password reset makes it yours — and the link cannot finish
+> what it starts, because completing the enrolment needs a code from the device. For an account **with**
+> a factor the link is refused: there it would be the cheapest way *past* the requirement. That refusal
+> is the boundary to M6-1, and it is a spec, not a comment.
+
+Every request answers identically (unknown address, malformed address, mail server down), because the
+endpoint is unauthenticated and must not become an account oracle.
+
+**Reminders now run** (`MfaReminder` + `MfaReminderService` + `MfaReminderJob`): about a day before and a
+couple of hours before the deadline, stamps on the grace window making the pass idempotent. The final
+window decides rather than falling through, so a job that was down for a day sends one mail and not two
+minutes apart. Two nullable columns were added to `user_mfa_grace`; the ALTER and the reasoning are in
+`docs/migrations/NEXT.md`.
+
+**Not done, and known:** the enrolment page and the mailed link have **not been verified visually** (no
+frontend build here); the reminder job has **not been run against a database** (unit-level only, the
+missing piece is one integration test against `MfaPersistenceSpec`'s harness); and an account whose owner
+cannot install an authenticator app has no way in at all — the page says so instead of offering a skip.
+
+## 7. Governance state
 
 - **ADR 0011**: accepted by the PO; a second ADR (recovery reset identity proofing) is proposed for M6-1.
 - **Requirements**: `AUTH-*` and `FEAT-AUTH-FLOWS` and ADR **0010** exist only on `development`, not on
