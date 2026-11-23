@@ -37,6 +37,7 @@ import life.qbic.identity.domain.model.mfa.RecoveryCodes;
 import life.qbic.identity.domain.model.mfa.Totp;
 import life.qbic.datamanager.security.mfa.MfaPendingLogin;
 import life.qbic.datamanager.security.mfa.MfaSessionCompletion;
+import life.qbic.identity.application.mfa.MfaReenrolmentService;
 import life.qbic.datamanager.security.mfa.MfaSessionState;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.identity.application.mfa.RecoveryCodeService;
@@ -82,6 +83,7 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
   private final transient SecondFactorVerificationService verificationService;
   private final transient RecoveryCodeService recoveryCodeService;
   private final transient MfaSessionCompletion sessionCompletion;
+  private final transient MfaReenrolmentService reenrolmentService;
 
   private final TextField code = new TextField("Six-digit code");
   private final TextField recoveryCode = new TextField("Recovery code");
@@ -98,6 +100,7 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
 
   public SecondFactorView(SecondFactorVerificationService verificationService,
       RecoveryCodeService recoveryCodeService, MfaSessionCompletion sessionCompletion,
+      MfaReenrolmentService reenrolmentService,
       @Value("${qbic.communication.contact.email}") String contactEmail) {
     this.verificationService = requireNonNull(verificationService,
         "verificationService must not be null");
@@ -105,6 +108,8 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
         "recoveryCodeService must not be null");
     this.sessionCompletion = requireNonNull(sessionCompletion,
         "sessionCompletion must not be null");
+    this.reenrolmentService = requireNonNull(reenrolmentService,
+        "reenrolmentService must not be null");
 
     // Top-aligned, not centred: the card is taller than the login card, and centring a too-tall
     // element pushes it over the footer instead of letting the page scroll.
@@ -323,13 +328,62 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     sessionCompletion.complete(pending);
   }
 
+  /**
+   * The state after the enrolment window ran out: no code to enter, and a way forward that exists.
+   *
+   * <p>The previous copy said "ask an administrator to re-enrol you". There was no such action — the
+   * grace window cannot be reopened by the application, and no administrator has a button that grants
+   * one — so it sent users to a person who could only escalate to a database update. The button below
+   * is the recovery path that exists: a one-time link to this account's mailbox, which opens the
+   * enrolment page without granting a factor (finishing it still needs the device).</p>
+   *
+   * <p>An account with <b>an active factor</b> gets no link from this button; the service refuses it
+   * silently, because a mailbox must not be the way past a factor that already exists. That user needs
+   * identity verification by the helpdesk, and the copy below says so.</p>
+   */
   private void showGraceExpired() {
     codeSection.setVisible(false);
     recoverySection.setVisible(false);
     error.setVisible(false);
-    form.add(new Paragraph(
-        "Your enrolment window for two-factor authentication has passed. "
-            + "Ask an administrator to re-enrol you, then sign in again."));
+
+    Paragraph expired = new Paragraph(
+        "Your enrolment window for two-factor authentication has passed, and signing in needs a "
+            + "factor. You can set one up now: we send a one-time link to your account's e-mail "
+            + "address.");
+    Button sendLink = new Button("E-mail me a setup link");
+    sendLink.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    sendLink.addClickListener(event -> {
+      if (pending == null) {
+        UI.getCurrent().getPage().setLocation(loginPath());
+        return;
+      }
+      // The same call for every account state; the service answers uniformly (AUTH-NFR-03), so this
+      // page cannot be used to learn whether an address has an account.
+      reenrolmentService.request(pending.email(), Instant.now());
+      sendLink.setEnabled(false);
+      Span sent = new Span(
+          "If that address belongs to an account without a factor, the link is on its way. It works "
+              + "once and expires after 15 minutes.");
+      sent.addClassName("second-factor-notice");
+      form.add(sent);
+    });
+
+    Paragraph noMailbox = new Paragraph(
+        "No access to that mailbox, or an authenticator app you no longer have? A reset then needs "
+            + "identity verification and cannot be granted by e-mail. Ask QBiC support who can verify "
+            + "you in person.");
+    noMailbox.addClassName("second-factor-support");
+
+    form.add(expired, sendLink, noMailbox);
+  }
+
+  /**
+   * @return the login path including the context path, e.g. {@code /dev/login}
+   */
+  private static String loginPath() {
+    var request = VaadinService.getCurrentRequest();
+    String contextPath = request == null ? "" : request.getContextPath();
+    return (contextPath == null ? "" : contextPath) + "/login";
   }
 
   private static jakarta.servlet.http.HttpSession currentSession() {

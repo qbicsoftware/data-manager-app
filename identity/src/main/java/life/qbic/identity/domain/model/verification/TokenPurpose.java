@@ -26,5 +26,14 @@ public enum TokenPurpose {
    * <p>Sets the password <em>and</em> confirms the address in one step: those accounts are
    * {@code active = false} and cannot log in to confirm separately.</p>
    */
-  SET_PASSWORD
+  SET_PASSWORD,
+
+  /**
+   * Mailbox proof that may <em>start</em> a second-factor enrolment for an account without a factor.
+   *
+   * <p>Deliberately a separate flow from {@link #PASSWORD_RESET}: the link is minted for one purpose and
+   * refused for every other, so a stolen reset link cannot reach the enrolment page and a stolen
+   * enrolment link cannot change a password.</p>
+   */
+  REENROL_SECOND_FACTOR
 }

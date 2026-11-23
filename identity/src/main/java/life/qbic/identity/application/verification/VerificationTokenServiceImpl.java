@@ -49,15 +49,18 @@ public class VerificationTokenServiceImpl implements VerificationLinkService {
   private final Duration confirmationLifetime;
   private final Duration resetLifetime;
   private final Duration setPasswordLifetime;
+  private final Duration reenrolLifetime;
 
   public VerificationTokenServiceImpl(VerificationTokenRepository repository,
       @Value("${qbic.verification-token.confirmation-lifetime:PT1H}") Duration confirmationLifetime,
       @Value("${qbic.verification-token.reset-lifetime:PT5M}") Duration resetLifetime,
-      @Value("${qbic.verification-token.set-password-lifetime:PT1H}") Duration setPasswordLifetime) {
+      @Value("${qbic.verification-token.set-password-lifetime:PT1H}") Duration setPasswordLifetime,
+      @Value("${qbic.verification-token.reenrol-lifetime:PT15M}") Duration reenrolLifetime) {
     this.repository = requireNonNull(repository, "repository must not be null");
     this.confirmationLifetime = requirePositive(confirmationLifetime, "confirmationLifetime");
     this.resetLifetime = requirePositive(resetLifetime, "resetLifetime");
     this.setPasswordLifetime = requirePositive(setPasswordLifetime, "setPasswordLifetime");
+    this.reenrolLifetime = requirePositive(reenrolLifetime, "reenrolLifetime");
     enforceRequirementBounds();
   }
 
@@ -82,6 +85,11 @@ public class VerificationTokenServiceImpl implements VerificationLinkService {
     requireWithin(resetLifetime, Duration.ofMinutes(15), "password reset link", "AUTH-R-05");
     requireWithin(setPasswordLifetime, Duration.ofHours(1), "set-password invitation",
         "AUTH-R-05 (by analogy with email confirmation)");
+    // The strictest bound of the set, because this link is the one that can start a factor enrolment:
+    // a shorter life costs the user one more request and removes most of the value of an intercepted
+    // mail.
+    requireWithin(reenrolLifetime, Duration.ofMinutes(15), "second-factor enrolment link",
+        "AUTH-R-05 (by analogy with password reset)");
   }
 
   private static void requireWithin(Duration actual, Duration max, String what, String source) {
@@ -96,6 +104,7 @@ public class VerificationTokenServiceImpl implements VerificationLinkService {
       case EMAIL_CONFIRMATION -> confirmationLifetime;
       case PASSWORD_RESET -> resetLifetime;
       case SET_PASSWORD -> setPasswordLifetime;
+      case REENROL_SECOND_FACTOR -> reenrolLifetime;
     };
   }
 
@@ -165,6 +174,7 @@ public class VerificationTokenServiceImpl implements VerificationLinkService {
   @Override
   public String toString() {
     return "VerificationTokenServiceImpl{lifetimes=%s}"
-        .formatted(Arrays.asList(confirmationLifetime, resetLifetime, setPasswordLifetime));
+        .formatted(Arrays.asList(confirmationLifetime, resetLifetime, setPasswordLifetime,
+            reenrolLifetime));
   }
 }
