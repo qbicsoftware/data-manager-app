@@ -71,4 +71,37 @@ public class JpaMfaGraceRepository implements MfaGraceRepository {
     }
     return stored.getFirst();
   }
+
+  @Override
+  public List<MfaGrace> findActiveWithOutstandingReminder(java.time.Instant now) {
+    // One query, no per-account work: the job runs on a schedule and must not turn into N+1 as the
+    // population grows. The deadline is a bound parameter, never SQL NOW(), for the same reason the
+    // domain compares instants in Java (see MfaGrace).
+    return entityManager.createQuery(
+            "SELECT g FROM MfaGrace g WHERE g.graceUntil > :now "
+                + "AND (g.reminderDueSentAt IS NULL OR g.reminderFinalSentAt IS NULL)",
+            MfaGrace.class)
+        .setParameter("now", now)
+        .getResultList();
+  }
+
+  @Override
+  public void markDueReminderSent(String userId, java.time.Instant now) {
+    // "AND ... IS NULL" makes the write idempotent as well: two instances racing on the same window
+    // cannot overwrite the first stamp, so the record says when it was first sent.
+    entityManager.createQuery("UPDATE MfaGrace g SET g.reminderDueSentAt = :now "
+            + "WHERE g.userId = :userId AND g.reminderDueSentAt IS NULL")
+        .setParameter("now", now)
+        .setParameter("userId", userId)
+        .executeUpdate();
+  }
+
+  @Override
+  public void markFinalReminderSent(String userId, java.time.Instant now) {
+    entityManager.createQuery("UPDATE MfaGrace g SET g.reminderFinalSentAt = :now "
+            + "WHERE g.userId = :userId AND g.reminderFinalSentAt IS NULL")
+        .setParameter("now", now)
+        .setParameter("userId", userId)
+        .executeUpdate();
+  }
 }

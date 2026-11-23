@@ -195,7 +195,11 @@ CREATE TABLE IF NOT EXISTS `user_mfa_grace`
     `startedAt`  datetime(6)  NOT NULL
         COMMENT 'First login of this account under `required` with no factor enrolled. The window is per account, not per deployment.',
     `graceUntil` datetime(6)  NOT NULL
-        COMMENT 'Absolute deadline (startedAt + configured grace). Absence of this row means "grant a window now", never "deny".'
+        COMMENT 'Absolute deadline (startedAt + configured grace). Absence of this row means "grant a window now", never "deny".',
+    `reminderDueSentAt`   datetime(6) NULL
+        COMMENT 'When the "one day left" reminder was sent. Stored so the reminder is idempotent across restarts and instances.',
+    `reminderFinalSentAt` datetime(6) NULL
+        COMMENT 'When the final "hours left" reminder was sent.'
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 

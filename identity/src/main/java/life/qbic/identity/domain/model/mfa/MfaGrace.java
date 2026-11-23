@@ -49,6 +49,21 @@ public class MfaGrace {
   @Column(name = "graceUntil", nullable = false)
   private Instant graceUntil;
 
+  /**
+   * When the "a day left" reminder was sent, or {@code null}.
+   *
+   * <p>Stored rather than inferred from the deadline: a reminder that is decided by comparing clocks
+   * alone is re-sent on every pass of the job, and one that is decided by "did we already send
+   * something in this window" needs a second table. Two nullable columns keep the reminder idempotent
+   * across restarts and across a second instance.</p>
+   */
+  @Column(name = "reminderDueSentAt")
+  private Instant reminderDueSentAt;
+
+  /** When the final, "hours left" reminder was sent, or {@code null}. */
+  @Column(name = "reminderFinalSentAt")
+  private Instant reminderFinalSentAt;
+
   protected MfaGrace() {
     // for JPA
   }
@@ -94,6 +109,14 @@ public class MfaGrace {
 
   public Instant graceUntil() {
     return graceUntil;
+  }
+
+  public Instant reminderDueSentAt() {
+    return reminderDueSentAt;
+  }
+
+  public Instant reminderFinalSentAt() {
+    return reminderFinalSentAt;
   }
 
   /**

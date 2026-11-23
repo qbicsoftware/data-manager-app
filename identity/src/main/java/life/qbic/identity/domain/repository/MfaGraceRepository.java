@@ -1,5 +1,6 @@
 package life.qbic.identity.domain.repository;
 
+import java.time.Instant;
 import java.util.Optional;
 import life.qbic.identity.domain.model.mfa.MfaGrace;
 
@@ -33,4 +34,36 @@ public interface MfaGraceRepository {
    * @return the stored window — the candidate if this call was the first, otherwise the existing one
    */
   MfaGrace startIfAbsent(MfaGrace candidate);
+
+  /**
+   * Every window that is still running and has at least one reminder outstanding.
+   *
+   * <p>Filtering in the query, not in memory: a deployment with thousands of accounts must not load
+   * every window once a minute. "Outstanding" means a null stamp — the same fact {@code MfaReminder}
+   * uses, read in the place that can do it cheaply.</p>
+   *
+   * @param now the instant of the pass
+   * @return the windows the reminder job has to consider
+   */
+  java.util.List<MfaGrace> findActiveWithOutstandingReminder(Instant now);
+
+  /**
+   * Records that the first reminder went out.
+   *
+   * <p>Written after the mail is handed to the mail service, and never rolled back: a reminder that was
+   * sent but not recorded is one duplicate mail, while a recorded reminder that was not sent is a user
+   * who never hears about the deadline. The failure mode is chosen deliberately.</p>
+   *
+   * @param userId the account
+   * @param now    when it was sent
+   */
+  void markDueReminderSent(String userId, Instant now);
+
+  /**
+   * Records that the final reminder went out (see {@link #markDueReminderSent}).
+   *
+   * @param userId the account
+   * @param now    when it was sent
+   */
+  void markFinalReminderSent(String userId, Instant now);
 }

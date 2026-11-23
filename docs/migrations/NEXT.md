@@ -82,6 +82,33 @@ There is deliberately **no `users` change** and **no per-account policy override
 can express "not required for this account", which is the permanent exemption
 [AUTH-R-01](../requirements.md) rules out (ADR 0011 item 3).
 
+### Reminder columns — added after the first draft
+
+`user_mfa_grace` gained **two nullable columns** with the enrolment reminders:
+
+| Column | Meaning |
+|---|---|
+| `reminderDueSentAt` | when the "one day left" mail went out |
+| `reminderFinalSentAt` | when the "a few hours left" mail went out |
+
+They are **stamps, not a schedule**: the reminder decision (`MfaReminder`) reads them, so the job is
+idempotent across restarts and across a second instance without a lock. The writes are
+`UPDATE ... WHERE reminderDueSentAt IS NULL`, so a race cannot overwrite the first stamp.
+
+A fresh install gets them from the `CREATE TABLE` in the draft script; an existing installation needs
+
+```sql
+ALTER TABLE `user_mfa_grace`
+    ADD COLUMN `reminderDueSentAt`   datetime(6) NULL
+        COMMENT 'When the "one day left" reminder was sent.',
+    ADD COLUMN `reminderFinalSentAt` datetime(6) NULL
+        COMMENT 'When the final "hours left" reminder was sent.';
+```
+
+**Both columns null is the correct state for every existing row**: nothing has been sent yet, so the
+next pass sends the appropriate reminder if the window is still running, and nothing if it has already
+expired. Do not backfill them — a past timestamp would suppress a reminder the user still needs.
+
 ### Vault and configuration provisioning — before the first enrolment
 
 Two secrets are involved, and they must **not** be the same value.

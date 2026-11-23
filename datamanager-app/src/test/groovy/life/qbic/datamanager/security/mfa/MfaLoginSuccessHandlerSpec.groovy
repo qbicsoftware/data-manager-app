@@ -269,5 +269,21 @@ class MfaLoginSuccessHandlerSpec extends Specification {
             }
             return stored[candidate.userId()]
         }
+
+        @Override
+        List<life.qbic.identity.domain.model.mfa.MfaGrace> findActiveWithOutstandingReminder(
+                Instant now) {
+            stored.values().findAll { it.graceUntil().isAfter(now) }
+        }
+
+        @Override
+        void markDueReminderSent(String userId, Instant now) {
+            // Not modelled: these specs are about the login decision, not about the reminder job.
+        }
+
+        @Override
+        void markFinalReminderSent(String userId, Instant now) {
+            // Not modelled: see markDueReminderSent.
+        }
     }
 }
