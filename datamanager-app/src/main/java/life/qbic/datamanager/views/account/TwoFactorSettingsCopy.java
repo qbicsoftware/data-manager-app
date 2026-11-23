@@ -115,8 +115,8 @@ public final class TwoFactorSettingsCopy {
           + "your first app is confirmed.";
     }
     if (unusedCodes <= 0) {
-      return "No unused recovery codes. Losing your phone without them means an administrator has "
-          + "to re-enrol you.";
+      return "No unused recovery codes. Losing access to your app without them means an administrator "
+          + "has to re-enrol you.";
     }
     if (unusedCodes == 1) {
       return "1 unused recovery code left. Generating a new set stops it working.";
@@ -163,9 +163,10 @@ public final class TwoFactorSettingsCopy {
    */
   static String emptyStateHint(MfaPolicyMode mode) {
     return mode == MfaPolicyMode.REQUIRED
-        ? "You will need a phone with an authenticator app. Setting one up takes about a minute, and "
-            + "you will be asked for a code from it from then on."
-        : "You will need a phone with an authenticator app. Setting one up takes about a minute.";
+        ? "You will need an authenticator app — on your phone or in your password manager. Setting "
+            + "one up takes about a minute, and you will be asked for a code from it from then on."
+        : "You will need an authenticator app — on your phone or in your password manager. Setting "
+            + "one up takes about a minute.";
   }
 
   /**
@@ -205,8 +206,8 @@ public final class TwoFactorSettingsCopy {
           : "Two-factor authentication becomes required for your account on " + formattedDeadline
               + ". After that, signing in needs a code from an app.";
     }
-    return "A stolen password is not enough on its own. An authenticator app on your phone takes "
-        + "about a minute to set up, and you can turn it off again at any time.";
+    return "A stolen password is not enough on its own. Set up an authenticator app — on your phone "
+        + "or in your password manager — and a leaked password stays useless.";
   }
 
   /**

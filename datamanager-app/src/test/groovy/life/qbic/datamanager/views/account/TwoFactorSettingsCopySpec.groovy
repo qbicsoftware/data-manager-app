@@ -103,7 +103,7 @@ class TwoFactorSettingsCopySpec extends Specification {
 
         where:
         codes | expected
-        0L    | "No unused recovery codes. Losing your phone without them means an administrator has to re-enrol you."
+        0L    | "No unused recovery codes. Losing access to your app without them means an administrator has to re-enrol you."
         1L    | "1 unused recovery code left. Generating a new set stops it working."
         10L   | "10 unused recovery codes left. Generating a new set stops the current codes working."
     }
@@ -153,8 +153,42 @@ class TwoFactorSettingsCopySpec extends Specification {
 
     def "the empty state tells a newcomer what they need and how long it takes"() {
         expect: "the two questions that decide whether people start at all"
-        TwoFactorSettingsCopy.emptyStateHint(MfaPolicyMode.OPTIONAL).contains("phone")
+        TwoFactorSettingsCopy.emptyStateHint(MfaPolicyMode.OPTIONAL).contains("authenticator app")
         TwoFactorSettingsCopy.emptyStateHint(MfaPolicyMode.OPTIONAL).contains("about a minute")
+    }
+
+    def "no sentence claims a phone is required: password managers do TOTP too"() {
+        given: "a user with a password manager and no phone must not be told they cannot enrol"
+        def sentences = [
+                TwoFactorSettingsCopy.emptyStateHint(MfaPolicyMode.OPTIONAL),
+                TwoFactorSettingsCopy.emptyStateHint(MfaPolicyMode.REQUIRED),
+                TwoFactorSettingsCopy.promptBody(MfaPolicyMode.OPTIONAL, null),
+                TwoFactorSettingsCopy.promptBody(MfaPolicyMode.REQUIRED, null),
+                TwoFactorSettingsCopy.promptBody(MfaPolicyMode.REQUIRED, "20 November 2026"),
+                TwoFactorSettingsCopy.recoverySummary(0, true),
+        ]
+
+        expect: "where a phone is named at all, it is one option among others"
+        sentences.every { sentence ->
+            !sentence.toLowerCase().contains("phone") || sentence.contains("password manager")
+        }
+    }
+
+    def "no sentence invites the user to switch two-factor authentication off again"() {
+        given: "the page may state the consequence of removal, but must not sell it as an option"
+        def sentences = [
+                TwoFactorSettingsCopy.promptBody(MfaPolicyMode.OPTIONAL, null),
+                TwoFactorSettingsCopy.promptBody(MfaPolicyMode.REQUIRED, null),
+                TwoFactorSettingsCopy.emptyStateHint(MfaPolicyMode.OPTIONAL),
+                TwoFactorSettingsCopy.emptyStateHint(MfaPolicyMode.REQUIRED),
+        ]
+
+        expect:
+        sentences.every { sentence ->
+            def lower = sentence.toLowerCase()
+            !lower.contains("turn it off") && !lower.contains("turn off")
+                    && !lower.contains("switch it off") && !lower.contains("disable")
+        }
     }
 
     // ── the in-app prompt (M7-2) ────────────────────────────────────────────────────────────────
@@ -190,7 +224,10 @@ class TwoFactorSettingsCopySpec extends Specification {
         !title.toLowerCase().contains("required")
         !body.toLowerCase().contains("required")
         !body.toLowerCase().contains("deadline")
-        body.contains("about a minute")
+
+        and: "it says what the second step buys, which is the reason to do it"
+        body.contains("stolen password")
+        body.contains("leaked password")
     }
 
     def "the prompt under REQUIRED names the deadline when there is one"() {

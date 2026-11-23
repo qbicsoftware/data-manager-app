@@ -161,7 +161,7 @@ public class RecoveryCodesDialog extends Div {
    * @return the warning text shown right after the first factor is confirmed
    */
   static String firstFactorLockoutWarning() {
-    return "If you lose your phone and these codes, you cannot sign in by yourself. Your QBiC "
+    return "If you lose access to your app and these codes, you cannot sign in by yourself. Your QBiC "
         + "contact can only help after verifying who you are in person. There is no e-mail link "
         + "that skips the second step.";
   }

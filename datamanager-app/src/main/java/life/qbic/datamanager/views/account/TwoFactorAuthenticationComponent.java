@@ -118,8 +118,8 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
      * shapes and the count was the fifth line of the section.
      */
     SettingsSection recoverySection = new SettingsSection("Recovery codes",
-        "Single-use codes to get back in if you lose your phone. They are shown once and cannot be "
-            + "displayed again.");
+        "Single-use codes to get back in if you lose access to your app. They are shown once and "
+            + "cannot be displayed again.");
     recoverySummary.addClassName("mfa-card__text");
     recoveryCard.addClassName("mfa-card");
     recoveryCard.addClassName("mfa-card--row");
