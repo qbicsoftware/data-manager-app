@@ -215,6 +215,17 @@ window decides rather than falling through, so a job that was down for a day sen
 minutes apart. Two nullable columns were added to `user_mfa_grace`; the ALTER and the reasoning are in
 `docs/migrations/NEXT.md`.
 
+**Unresolved on the test instance (2026-11-24): grace write, unreadable read-back.** After the reminder
+columns were added, one deployment reported `grace window for user … was not readable after insert` →
+HTTP 500 on every login attempt of that account. The write succeeded; the JPQL read-back that follows it
+in the same transaction, on the same connection, returned nothing. **Root cause not established** — the
+adapter's read-back is now (a) followed by a native re-read, (b) never fatal (it returns the candidate and
+logs the effective schema, the affected-row count and the ORM-vs-native outcome), so the next occurrence
+names its own cause instead of denying a legitimate login. Two diagnostics that would settle it, both in
+`JpaMfaGraceRepositorySpec`'s failure mode: whether `SELECT DATABASE()` in that session is the schema the
+migration was applied to, and whether a `BEFORE INSERT` trigger or a view shadows `user_mfa_grace`.
+A `SELECT … WHERE userId = '<id>'` run from the *application's* schema answers the first directly.
+
 **Not done, and known:** the enrolment page and the mailed link have **not been verified visually** (no
 frontend build here); the reminder job has **not been run against a database** (unit-level only, the
 missing piece is one integration test against `MfaPersistenceSpec`'s harness); and an account whose owner

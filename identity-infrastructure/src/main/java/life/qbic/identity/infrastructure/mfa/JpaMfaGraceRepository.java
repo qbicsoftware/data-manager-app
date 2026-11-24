@@ -1,10 +1,13 @@
 package life.qbic.identity.infrastructure.mfa;
 
+import static life.qbic.logging.service.LoggerFactory.logger;
+
 import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Optional;
 import life.qbic.identity.domain.model.mfa.MfaGrace;
 import life.qbic.identity.domain.repository.MfaGraceRepository;
+import life.qbic.logging.api.Logger;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -32,6 +35,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class JpaMfaGraceRepository implements MfaGraceRepository {
 
+  private static final Logger log = logger(JpaMfaGraceRepository.class);
+
   private final EntityManager entityManager;
 
   public JpaMfaGraceRepository(EntityManager entityManager) {
@@ -45,7 +50,7 @@ public class JpaMfaGraceRepository implements MfaGraceRepository {
 
   @Override
   public MfaGrace startIfAbsent(MfaGrace candidate) {
-    entityManager.createNativeQuery("""
+    int affected = entityManager.createNativeQuery("""
             INSERT INTO user_mfa_grace (userId, startedAt, graceUntil)
             VALUES (:userId, :startedAt, :graceUntil)
             ON DUPLICATE KEY UPDATE userId = userId
@@ -66,10 +71,88 @@ public class JpaMfaGraceRepository implements MfaGraceRepository {
         .setParameter("userId", candidate.userId())
         .getResultList();
     if (stored.isEmpty()) {
-      throw new IllegalStateException(
-          "grace window for user " + candidate.userId() + " was not readable after insert");
+      // A native re-read before giving up: if the ORM-level query misses a row the native one can see,
+      // the problem is in the mapping or the query, and the log must say which. If both miss it, the
+      // row is not there for this connection, which is a different diagnosis again.
+      Optional<MfaGrace> nativeRow = readBackNatively(candidate.userId());
+      if (nativeRow.isPresent()) {
+        log.warn("Grace window for user %s was invisible to the ORM query but readable natively; "
+            .formatted(candidate.userId())
+            + "returning the stored row. The entity mapping and the table disagree.");
+        return nativeRow.get();
+      }
+      // Do NOT throw. This read is an assertion, and no caller reads its result — the login guard
+      // discards it. Throwing here turned one unreadable row into a failed login (observed on a
+      // deployed instance: a 500 for every attempt), which is the worst possible trade: the write
+      // succeeded, the session is legitimate, and the account is denied because a bookkeeping read
+      // came back empty.
+      //
+      // The cost of returning the candidate is bounded: at worst this login proceeds under a deadline
+      // one window later than the stored one. The stored row is untouched and first-write-wins still
+      // holds, so the next login reads the real deadline again.
+      log.error("Grace window for user %s was written (affected rows: %d) but is not readable in the "
+          .formatted(candidate.userId(), affected)
+          + "same transaction, by ORM or by native query; proceeding with the candidate until %s. %s"
+          .formatted(candidate.graceUntil(), describeSchema()));
+      return candidate;
     }
     return stored.getFirst();
+  }
+
+  /**
+   * The same row, read without Hibernate's mapping in the way.
+   *
+   * <p>Deliberately minimal: three columns, no entity, no query plan. It exists to separate "the row is
+   * not there" from "our query does not see it", which are different problems with different fixes.</p>
+   */
+  private Optional<MfaGrace> readBackNatively(String userId) {
+    try {
+      Object[] row = (Object[]) entityManager
+          .createNativeQuery("SELECT userId, startedAt, graceUntil FROM user_mfa_grace "
+              + "WHERE userId = :userId")
+          .setParameter("userId", userId)
+          .getResultList().stream().findFirst().orElse(null);
+      if (row == null) {
+        return Optional.empty();
+      }
+      return Optional.of(MfaGrace.start(String.valueOf(row[0]),
+          toInstant(row[1]),
+          java.time.Duration.between(toInstant(row[1]), toInstant(row[2]))));
+    } catch (RuntimeException e) {
+      // Reported by the caller's log line; a failure here must not mask the original observation.
+      return Optional.empty();
+    }
+  }
+
+  private static java.time.Instant toInstant(Object value) {
+    return switch (value) {
+      case java.time.Instant instant -> instant;
+      case java.sql.Timestamp timestamp -> timestamp.toInstant();
+      case java.time.LocalDateTime local -> local.toInstant(java.time.ZoneOffset.UTC);
+      case String text -> java.time.Instant.parse(text.replace(' ', 'T') + "Z");
+      case null, default -> throw new IllegalStateException(
+          "unexpected column type " + (value == null ? "null" : value.getClass().getName()));
+    };
+  }
+
+  /**
+   * Names the schema the connection is actually writing to, and how many rows a native query sees.
+   *
+   * <p>Two statements, two different views of the same table, and one of them writes: the only
+   * explanations left are that they are not the same table. Recording the effective schema turns that
+   * from a guess into a fact in the log, which is what a report of "not readable after insert" lacked.</p>
+   */
+  private String describeSchema() {
+    String schema;
+    try {
+      schema = String.valueOf(entityManager
+          .createNativeQuery("SELECT DATABASE()")
+          .getSingleResult());
+    } catch (RuntimeException e) {
+      schema = "unknown (" + e.getClass().getSimpleName() + ")";
+    }
+    return "Effective schema: " + schema + "; check that the migration was applied to it and that "
+        + "no trigger or view intercepts user_mfa_grace writes.";
   }
 
   @Override
