@@ -66,9 +66,15 @@ public class JpaMfaGraceRepository implements MfaGraceRepository {
     // A JPQL query, not find(): if findByUserId was called earlier in this transaction and found
     // nothing, JPA may remember that "absent" result and find() would keep returning empty even
     // though the native insert above just wrote the row.
+    //
+    // PESSIMISTIC_WRITE, because this must be a *current* read, not a consistent one. After an insert
+    // the truth is the row as it is now; a plain SELECT answers "what did my snapshot show", which is
+    // a different question and the reason a committed row can be invisible here. It also serialises the
+    // two logins that race on the same account, which is what "first write wins" needs.
     List<MfaGrace> stored = entityManager
         .createQuery("SELECT g FROM MfaGrace g WHERE g.userId = :userId", MfaGrace.class)
         .setParameter("userId", candidate.userId())
+        .setLockMode(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
         .getResultList();
     if (stored.isEmpty()) {
       // A native re-read before giving up: if the ORM-level query misses a row the native one can see,
@@ -143,16 +149,27 @@ public class JpaMfaGraceRepository implements MfaGraceRepository {
    * from a guess into a fact in the log, which is what a report of "not readable after insert" lacked.</p>
    */
   private String describeSchema() {
-    String schema;
+    return "Effective schema: " + probe("SELECT DATABASE()")
+        + "; autocommit: " + probe("SELECT @@autocommit")
+        + "; isolation: " + probe("SELECT @@transaction_isolation")
+        + "; connection: " + probe("SELECT CONNECTION_ID()")
+        + ". A row that committed but reads as absent means the readers and the writer are not the "
+        + "same table or not the same transaction. Check the schema above, and check that the "
+        + "migration was applied to it.";
+  }
+
+  /**
+   * One value from the database, as text, never throwing.
+   *
+   * <p>Diagnostics must not turn into a second failure: an exception here would replace the observation
+   * that matters with a different one.</p>
+   */
+  private String probe(String sql) {
     try {
-      schema = String.valueOf(entityManager
-          .createNativeQuery("SELECT DATABASE()")
-          .getSingleResult());
+      return String.valueOf(entityManager.createNativeQuery(sql).getSingleResult());
     } catch (RuntimeException e) {
-      schema = "unknown (" + e.getClass().getSimpleName() + ")";
+      return "unknown (" + e.getClass().getSimpleName() + ")";
     }
-    return "Effective schema: " + schema + "; check that the migration was applied to it and that "
-        + "no trigger or view intercepts user_mfa_grace writes.";
   }
 
   @Override

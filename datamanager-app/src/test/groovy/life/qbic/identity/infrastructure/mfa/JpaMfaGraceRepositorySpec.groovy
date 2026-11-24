@@ -10,15 +10,16 @@ import java.time.Duration
 import java.time.Instant
 
 /**
- * <b>A grace write must never deny a login.</b>
+ * <b>A grace write must never deny a login, and must never lie about what it stored.</b>
  *
- * <p>Observed on a deployed instance: the insert succeeded, the read-back that follows it returned
- * nothing, and the adapter threw — so <em>every</em> login attempt of that account got a 500. The read is
- * an assertion whose result no caller reads; failing the request over it is the wrong trade in an
- * authentication path.</p>
+ * <p>Observed on a deployed instance: the row was committed — it could be read from a SQL client
+ * afterwards, with the very timestamp the login had used — yet the read-back inside the same method
+ * returned nothing, and the adapter threw. Every login attempt of that account got a 500.</p>
  *
- * <p>These tests pin what happens when the read-back misbehaves, which is exactly the state that could
- * not be reproduced anywhere else.</p>
+ * <p>Two lessons are pinned here. The read is an <b>assertion no caller reads</b>, so it must not be
+ * fatal. And after a write the question is "what does the row say <em>now</em>", which is a
+ * <b>current read</b> ({@code FOR UPDATE}), not the snapshot a plain {@code SELECT} answers from — the
+ * distinction that produced this failure.</p>
  *
  * <p>Lives in this module because it is where the Groovy/Spock test setup is; the class under test is
  * plain Java in {@code identity-infrastructure}, which has no test sources of its own.</p>
@@ -32,62 +33,72 @@ class JpaMfaGraceRepositorySpec extends Specification {
     Query insertQuery = Mock()
     TypedQuery<MfaGrace> ormRead = Mock()
     Query nativeRead = Mock()
-    Query schemaQuery = Mock()
+    Query probeQuery = Mock()
 
     JpaMfaGraceRepository repository = new JpaMfaGraceRepository(entityManager)
 
-    /** The insert is the first native query the adapter runs; nothing else is stubbed yet. */
-    private void insertAffects(int rows) {
-        entityManager.createNativeQuery(_) >> insertQuery
+    def setup() {
+        // Answer by statement text: the adapter issues three kinds of native query and the diagnostics
+        // probe add more, so matching on order would break whenever a probe is added.
+        entityManager.createNativeQuery(_ as String) >> { String sql -> queryFor(sql) }
         insertQuery.setParameter(_, _) >> insertQuery
-        insertQuery.executeUpdate() >> rows
+        nativeRead.setParameter(_, _) >> nativeRead
+        probeQuery.getSingleResult() >> "data_management"
+        entityManager.createQuery(_, MfaGrace) >> ormRead
+        ormRead.setParameter(_, _) >> ormRead
+        ormRead.setLockMode(_) >> ormRead
     }
 
-    /** Insert, then the native re-read, then the schema probe: the adapter's order, in order. */
-    private void thenNativeReadAndSchema() {
-        entityManager.createNativeQuery(_) >>> [insertQuery, nativeRead, schemaQuery]
-        insertQuery.setParameter(_, _) >> insertQuery
-        insertQuery.executeUpdate() >> 1
-        nativeRead.setParameter(_, _) >> nativeRead
-        nativeRead.getResultList() >> []
-        schemaQuery.getSingleResult() >> "data_management"
+    private Query queryFor(String sql) {
+        if (sql.contains("INSERT INTO user_mfa_grace")) {
+            return insertQuery
+        }
+        if (sql.contains("SELECT userId")) {
+            return nativeRead
+        }
+        return probeQuery
     }
 
     def "the stored row is returned when the read-back works"() {
-        given: "the normal case: insert, then the row is readable"
+        given: "the normal case: insert inserted, then the row is readable"
         def candidate = MfaGrace.start("u-1", NOW, WINDOW)
         def stored = MfaGrace.start("u-1", NOW.minus(Duration.ofHours(10)), WINDOW)
-        insertAffects(0)
-        entityManager.createQuery(_, MfaGrace) >> ormRead
-        ormRead.setParameter(_, _) >> ormRead
+        insertQuery.executeUpdate() >> 1
         ormRead.getResultList() >> [stored]
 
         expect:
         repository.startIfAbsent(candidate) == stored
     }
 
-    def "an unreadable row returns the candidate instead of failing the login"() {
-        given: "the observed failure: written, then invisible to both reads"
+    def "the read-back is a current read, not a snapshot read"() {
+        given: "after a write the question is what the row says now; a plain SELECT answers from a snapshot"
         def candidate = MfaGrace.start("u-1", NOW, WINDOW)
-        thenNativeReadAndSchema()
-        entityManager.createQuery(_, MfaGrace) >> ormRead
-        ormRead.setParameter(_, _) >> ormRead
-        ormRead.getResultList() >> []
+        insertQuery.executeUpdate() >> 0
+        ormRead.getResultList() >> [candidate]
 
-        expect: "no exception — the write happened, the session is legitimate"
+        when:
+        repository.startIfAbsent(candidate)
+
+        then: "FOR UPDATE sees the latest committed row, which is what produced the observed failure"
+        1 * ormRead.setLockMode(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE) >> ormRead
+    }
+
+    def "an unreadable row returns the candidate instead of failing the login"() {
+        given: "the observed failure: written, then invisible to the ORM and to a native re-read"
+        def candidate = MfaGrace.start("u-1", NOW, WINDOW)
+        insertQuery.executeUpdate() >> 0
+        ormRead.getResultList() >> []
+        nativeRead.getResultList() >> []
+
+        expect: "no exception — no caller reads this value, and the session is legitimate"
         repository.startIfAbsent(candidate) == candidate
     }
 
     def "a row the ORM query misses is still returned when a native read can see it"() {
         given: "the mapping and the table disagree, which is a different bug from a missing row"
         def candidate = MfaGrace.start("u-1", NOW, WINDOW)
-        entityManager.createNativeQuery(_) >>> [insertQuery, nativeRead]
-        insertQuery.setParameter(_, _) >> insertQuery
         insertQuery.executeUpdate() >> 0
-        entityManager.createQuery(_, MfaGrace) >> ormRead
-        ormRead.setParameter(_, _) >> ormRead
         ormRead.getResultList() >> []
-        nativeRead.setParameter(_, _) >> nativeRead
         nativeRead.getResultList() >> [
                 ["u-1", java.sql.Timestamp.from(NOW), java.sql.Timestamp.from(NOW.plus(WINDOW))] as Object[]
         ]
@@ -100,30 +111,28 @@ class JpaMfaGraceRepositorySpec extends Specification {
         result.startedAt() == NOW
     }
 
-    def "the schema is named when the failure cannot be resolved"() {
-        given: "the log line must answer 'which table did this connection write to?'"
+    def "the diagnostic names the connection, not just the symptom"() {
+        given: "the log line must answer 'did the writer and the readers share a connection?'"
         def candidate = MfaGrace.start("u-1", NOW, WINDOW)
-        thenNativeReadAndSchema()
-        entityManager.createQuery(_, MfaGrace) >> ormRead
-        ormRead.setParameter(_, _) >> ormRead
+        insertQuery.executeUpdate() >> 0
         ormRead.getResultList() >> []
+        nativeRead.getResultList() >> []
 
         when:
         repository.startIfAbsent(candidate)
 
-        then: "one lookup of the effective schema, no exception"
-        1 * schemaQuery.getSingleResult() >> "data_management"
+        then: "schema, autocommit, isolation and connection id are all probed"
+        (1.._) * probeQuery.getSingleResult() >> "value"
         noExceptionThrown()
     }
 
-    def "a broken schema probe does not turn the fallback into a failure"() {
+    def "a broken probe does not turn the fallback into a failure"() {
         given:
         def candidate = MfaGrace.start("u-1", NOW, WINDOW)
-        thenNativeReadAndSchema()
-        entityManager.createQuery(_, MfaGrace) >> ormRead
-        ormRead.setParameter(_, _) >> ormRead
+        insertQuery.executeUpdate() >> 0
         ormRead.getResultList() >> []
-        schemaQuery.getSingleResult() >> { throw new IllegalStateException("no database selected") }
+        nativeRead.getResultList() >> []
+        probeQuery.getSingleResult() >> { throw new IllegalStateException("no database selected") }
 
         expect:
         repository.startIfAbsent(candidate) == candidate
