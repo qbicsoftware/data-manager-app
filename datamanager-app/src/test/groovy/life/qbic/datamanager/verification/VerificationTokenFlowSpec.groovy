@@ -181,7 +181,7 @@ class VerificationTokenFlowSpec extends Specification {
      */
     VerificationTokenServiceImpl newService(Duration confirmation, Duration reset, Duration setPw) {
         new VerificationTokenServiceImpl(new UserEnsuringRepository(emf, { String id -> ensureUser(id) }),
-                confirmation, reset, setPw)
+                confirmation, reset, setPw, Duration.ofMinutes(15))
     }
 
     /**

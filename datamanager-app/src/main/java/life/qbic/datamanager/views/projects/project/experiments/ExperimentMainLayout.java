@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import life.qbic.application.commons.ApplicationException;
 import life.qbic.datamanager.announcements.AnnouncementService;
+import life.qbic.datamanager.views.account.MfaEnrolmentPrompt;
 import life.qbic.datamanager.security.UserPermissions;
 import life.qbic.datamanager.views.Context;
 import life.qbic.datamanager.views.DataManagerLayout;
@@ -75,8 +76,10 @@ public class ExperimentMainLayout extends DataManagerLayout implements BeforeEnt
       @Autowired FooterComponent footerComponent,
       @Autowired TerminologyService terminologyService,
       @Autowired MessageSourceNotificationFactory messageSourceNotificationFactory,
-      @Autowired AnnouncementService announcementService) {
-    super(requireNonNull(footerComponent), announcementService);
+      @Autowired AnnouncementService announcementService,
+      @Autowired MfaEnrolmentPrompt mfaEnrolmentPrompt) {
+    super(requireNonNull(footerComponent), announcementService,
+        requireNonNull(mfaEnrolmentPrompt));
     requireNonNull(authenticationContext);
     requireNonNull(userInformationService);
     requireNonNull(projectInformationService);

@@ -15,6 +15,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.http.converter.FormHttpMessageConverter;
+import life.qbic.datamanager.security.mfa.MfaChallengeEnforcementFilter;
+import life.qbic.datamanager.security.mfa.MfaLoginSuccessHandler;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,6 +41,8 @@ public class SecurityConfiguration {
   private final AuthAttemptThrottle authAttemptThrottle;
   private final life.qbic.identity.api.OidcLinkService oidcLinkService;
   private final org.springframework.security.oauth2.client.OAuth2AuthorizedClientService authorizedClientService;
+  private final life.qbic.datamanager.security.mfa.MfaLoginSuccessHandler mfaLoginSuccessHandler;
+  private final life.qbic.identity.application.mfa.MfaLoginGuard mfaLoginGuard;
 
   /**
    * Held directly, not injected.
@@ -87,7 +91,9 @@ public class SecurityConfiguration {
       @Autowired VaadinDefaultRequestCache defaultRequestCache,
       @Autowired AuthAttemptThrottle authAttemptThrottle,
       @Autowired life.qbic.identity.api.OidcLinkService oidcLinkService,
-      @Autowired org.springframework.security.oauth2.client.OAuth2AuthorizedClientService authorizedClientService) {
+      @Autowired org.springframework.security.oauth2.client.OAuth2AuthorizedClientService authorizedClientService,
+      @Autowired life.qbic.datamanager.security.mfa.MfaLoginSuccessHandler mfaLoginSuccessHandler,
+      @Autowired life.qbic.identity.application.mfa.MfaLoginGuard mfaLoginGuard) {
     this.defaultRequestCache = requireNonNull(defaultRequestCache,
         "defaultRequestCache must not be null");
     this.authAttemptThrottle = requireNonNull(authAttemptThrottle,
@@ -95,6 +101,9 @@ public class SecurityConfiguration {
     this.oidcLinkService = requireNonNull(oidcLinkService, "oidcLinkService must not be null");
     this.authorizedClientService = requireNonNull(authorizedClientService,
         "authorizedClientService must not be null");
+    this.mfaLoginSuccessHandler = requireNonNull(mfaLoginSuccessHandler,
+        "mfaLoginSuccessHandler must not be null");
+    this.mfaLoginGuard = requireNonNull(mfaLoginGuard, "mfaLoginGuard must not be null");
   }
 
   /**
@@ -209,8 +218,20 @@ public class SecurityConfiguration {
     // attempts" message would tell an attacker their target is real (decision B4).
     http.addFilterBefore(loginThrottleFilter(), UsernamePasswordAuthenticationFilter.class);
 
+    // Belt and braces for the second factor (MILESTONE-MFA M4-1): if an authenticated session ever
+    // exists while a login is still pending a factor, it is withdrawn and the challenge is required.
+    // Registered BEFORE the password filter on purpose — the freshly minted authentication on the
+    // login POST must be left to the success handler, which knows whether to withhold it.
+    http.addFilterBefore(new MfaChallengeEnforcementFilter(mfaLoginGuard),
+        UsernamePasswordAuthenticationFilter.class);
+
     http.with(vaadin(), vaadin -> vaadin
         .loginView(LoginLayout.class, contextPath + "/login?logout=true"));
+
+    // The second factor: after the password is accepted, this handler decides whether a session may
+    // exist at all. Configured AFTER the Vaadin configurer so it is the last word on the success
+    // handler; a password-only session must never be established (AUTH-R-01).
+    http.formLogin(form -> form.successHandler(mfaLoginSuccessHandler));
     return http.build();
   }
 

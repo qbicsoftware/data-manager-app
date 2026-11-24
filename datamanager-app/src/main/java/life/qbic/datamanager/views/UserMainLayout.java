@@ -6,6 +6,7 @@ import com.vaadin.flow.spring.security.AuthenticationContext;
 import jakarta.annotation.security.PermitAll;
 import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementService;
+import life.qbic.datamanager.views.account.MfaEnrolmentPrompt;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
 import life.qbic.datamanager.views.general.DataManagerMenu;
 import life.qbic.datamanager.views.general.HomeLink;
@@ -29,8 +30,10 @@ public class UserMainLayout extends DataManagerLayout {
   public UserMainLayout(@Autowired AuthenticationContext authenticationContext,
       @Autowired UserInformationService userInformationService,
       @Autowired FooterComponent footerComponent,
-      @Autowired AnnouncementService announcementService) {
-    super(Objects.requireNonNull(footerComponent), announcementService);
+      @Autowired AnnouncementService announcementService,
+      @Autowired MfaEnrolmentPrompt mfaEnrolmentPrompt) {
+    super(Objects.requireNonNull(footerComponent), announcementService,
+        Objects.requireNonNull(mfaEnrolmentPrompt));
     RouterLink navBarTitle = new RouterLink("Data Manager", ProjectOverviewMain.class);
     navBarTitle.setClassName("navbar-title");
     addClassName("user-main-layout");

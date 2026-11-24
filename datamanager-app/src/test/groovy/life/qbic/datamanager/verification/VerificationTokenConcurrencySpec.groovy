@@ -256,7 +256,8 @@ class VerificationTokenConcurrencySpec extends Specification {
 
     VerificationTokenServiceImpl newService() {
         new VerificationTokenServiceImpl(
-                new UserEnsuringRepository(emf, { String id -> ensureUser(id) }), HOUR, TINY, HOUR)
+                new UserEnsuringRepository(emf, { String id -> ensureUser(id) }), HOUR, TINY, HOUR,
+                Duration.ofMinutes(15))
     }
 
     void truncate() {

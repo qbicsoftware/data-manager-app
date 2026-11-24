@@ -272,6 +272,14 @@
   background-color: var(--lumo-success-color-10pct);
 }
 
+/* The same flash, driven by the browser's copy confirmation instead of a server timer: while the
+   check mark is showing, the surrounding row is tinted. Nothing to undo afterwards, and the tint
+   appears on click rather than after a round trip. */
+.show-created-personal-access-token-details:has(.copy-to-clipboard[data-copied]),
+.ontology-lookup-component .ontology-item .header:has(.copy-to-clipboard[data-copied]) {
+  background-color: var(--lumo-success-color-10pct);
+}
+
 .base-background {
   background-color: var(--lumo-base-color);
 }
@@ -1892,4 +1900,421 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
 
 .project-access-component .project-role-static {
   font-size: var(--lumo-font-size-s);
+}
+
+/* Two-factor authentication settings (MILESTONE-MFA M3-3).
+   Reuses the card chrome the pinned-project and PAT lists already use: 1px contrast border and
+   rounded corners, no drop shadow. The grid is sized in `ch` so the fixed-width recovery codes keep
+   their columns on any font size.
+
+   Two rules here exist because the page looked wrong on a deployed build (UI review 2026-11-20):
+     - the two settings sections were separated by nothing (`.settings-main-layout .page-area` sets
+       `gap: 0`), so the "Recovery codes" heading visually belonged to the factor card above it;
+     - the account's own state was rendered quieter than the deployment's policy sentence, i.e. the
+       opposite of what the user came for. `.mfa-status` fixes the order of emphasis: state first and
+       at body weight, policy as a quiet footnote below it. */
+.second-factor-icon {
+  color: var(--lumo-primary-color);
+  width: var(--lumo-icon-size-l);
+  height: var(--lumo-icon-size-l);
+  flex: none;
+}
+
+/* The account's state and the installation's posture, as one block: icon, then state, then policy. */
+.mfa-status {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--lumo-space-s);
+}
+
+.mfa-status__icon {
+  flex: none;
+  color: var(--lumo-secondary-text-color);
+}
+
+.mfa-status--enrolled .mfa-status__icon {
+  color: var(--lumo-success-color);
+}
+
+/* REQUIRED without a factor: the one state that is counting down on this account, so the shield
+   carries the warning colour and the state line takes more weight. Without these two rules the
+   deadline renders exactly like "nothing set up yet", which is the state it must be told apart from. */
+.mfa-status--deadline .mfa-status__icon {
+  color: var(--lumo-warning-text-color, var(--lumo-error-text-color));
+}
+
+.mfa-status--deadline .mfa-status__state {
+  font-weight: 600;
+}
+
+/* Nothing set up: the state line is a fact, not an alarm. */
+.mfa-status--empty .mfa-status__icon {
+  color: var(--lumo-tertiary-text-color, var(--lumo-secondary-text-color));
+}
+
+.mfa-status__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+/* What this account has: the line a visitor came for, so it keeps body weight and colour. */
+.mfa-status__state {
+  font-size: var(--lumo-font-size-m);
+  color: var(--lumo-body-text-color);
+}
+
+/* What the installation asks at sign-in: a deployment fact, and therefore a footnote. */
+.mfa-policy-note {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* The not-set-up state is an invitation, not a grey sentence: it answers "what do I need?" and
+   "how long does it take?" at the one moment the answer decides whether people start at all. */
+.mfa-empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  padding: var(--lumo-space-m);
+  border: 1px dashed var(--lumo-contrast-30pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.mfa-empty-state__title {
+  font-weight: 600;
+}
+
+.mfa-empty-state__hint {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.mfa-factor-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+}
+
+.mfa-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+}
+
+/* A card that holds one sentence and one action, side by side: the recovery-code half uses the same
+   shape as a factor card so the two halves of the page read as peers. */
+.mfa-card--row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-l);
+  flex-wrap: wrap;
+}
+
+/* Before a factor exists the recovery card is present but inactive: dimmed, because the action is
+   disabled and the codes would be unredeemable anyway. */
+.mfa-card--muted {
+  border-style: dashed;
+  background-color: var(--lumo-contrast-5pct);
+}
+
+.mfa-card__text {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+  min-width: 0;
+}
+
+/* "Generate a new set" is a button, but it read as a *disabled* control on a deployed build (UI
+   review 2026-11-20): Lumo's tertiary look is a pale, page-coloured chip, and next to a solid blue
+   primary it looked unavailable rather than secondary. A secondary action has to look enabled while
+   still ranking below the primary, so it gets a normal button surface and no fill colour argument.
+   Applied only where a section header pairs it with a primary, so the "Remove" text actions inside
+   cards keep their quiet look. */
+.mfa-secondary-action {
+  background-color: var(--lumo-base-color);
+  border: 1px solid var(--lumo-contrast-30pct);
+  color: var(--lumo-primary-text-color);
+  font-weight: 500;
+  border-radius: var(--lumo-border-radius-m);
+  padding: 0 var(--lumo-space-m);
+  min-height: var(--lumo-button-size);
+  cursor: pointer;
+}
+
+.mfa-secondary-action:hover {
+  border-color: var(--lumo-primary-color);
+  background-color: var(--lumo-primary-color-10pct);
+}
+
+.mfa-secondary-action[disabled] {
+  background-color: transparent;
+  border-style: dashed;
+  border-color: var(--lumo-contrast-20pct);
+  color: var(--lumo-disabled-text-color);
+  cursor: not-allowed;
+}
+
+.mfa-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lumo-space-m);
+}
+
+.mfa-card__name {
+  font-weight: 600;
+}
+
+.mfa-card__meta {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* Why a removal is refused, or what a removal would switch off. Inside the card, next to the thing
+   it is about — a tooltip alone is invisible to keyboard and touch users. */
+.mfa-card__note {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-xs);
+}
+
+.mfa-qr-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+}
+
+.mfa-qr {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 240px;
+  min-height: 240px;
+  background: #fff;
+  border-radius: var(--lumo-border-radius-m);
+}
+
+.mfa-qr-canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.mfa-qr--unavailable {
+  display: none;
+}
+
+/* The field carries a label, so the row must align the copy button with the INPUT, not with the
+   middle of the label+input block: `center` put the button visibly above the field's baseline. */
+.mfa-setup-key-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--lumo-space-s);
+}
+
+/* Keeps the button off the very bottom edge while it aligns with the input. */
+.mfa-setup-key-row .copy-action {
+  flex: none;
+  padding-bottom: var(--lumo-space-xs);
+}
+
+.mfa-enrol-body,
+.mfa-recovery-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-m);
+}
+
+/* The lockout consequence, shown only on the sheet issued right after the first factor. It carries
+   the weight the ordinary helper text does not: this is the one sentence on the screen that decides
+   whether the user keeps the codes. */
+.mfa-recovery-lockout {
+  margin: 0;
+  padding: var(--lumo-space-s) var(--lumo-space-m);
+  border-left: 3px solid var(--lumo-error-color);
+  background-color: var(--lumo-error-color-10pct);
+  border-radius: var(--lumo-border-radius-s);
+  font-size: var(--lumo-font-size-s);
+}
+
+.mfa-recovery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(12ch, 1fr));
+  gap: var(--lumo-space-s);
+}
+
+.mfa-recovery-code {
+  font-family: var(--lumo-font-family-monospace, monospace);
+  font-size: var(--lumo-font-size-m);
+  letter-spacing: 0.05em;
+  padding: var(--lumo-space-xs) var(--lumo-space-s);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-s);
+  text-align: center;
+}
+
+.mfa-recovery-account {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* Both actions of the one-time sheet: a real button (copy, styled by copy-action.css) and a real
+   anchor (download). They wrap on narrow screens rather than squeezing the labels, and both must look
+   clickable: the first copy affordance was a bare icon span, so the pointer never changed over the
+   label even though the label was clickable too. */
+.mfa-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lumo-space-l);
+}
+
+.mfa-recovery-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-primary-text-color);
+  cursor: pointer;
+}
+
+/* The anchor gets the button's link look by hand; the copy button brings it from copy-action.css. */
+a.mfa-recovery-action {
+  text-decoration: none;
+}
+
+.mfa-recovery-action:hover {
+  text-decoration: underline;
+}
+
+/* The copy confirmation is the check mark on the button. This node says the same thing to a screen
+   reader, so it is removed from the visual layout without being removed from the accessibility tree.
+   It takes no space, and appearing cannot shift the two actions. */
+.mfa-recovery-feedback {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── In-app enrolment prompt (M7-2) ─────────────────────────────────────────────────────────────
+   Mounted in the application shell, directly under the announcement strip, so it reaches accounts
+   that never open the settings page. It is deliberately quieter than the announcement: that strip
+   carries operator messages about the instance, this one is about the user's own account. */
+.mfa-prompt {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-03);
+  margin: var(--spacing-04);
+  padding: var(--spacing-03) var(--spacing-04);
+  background-color: var(--lumo-primary-color-10pct);
+  border: 1px solid var(--lumo-primary-color-50pct);
+  border-left-width: 4px;
+  border-radius: var(--lumo-border-radius-m);
+  box-sizing: border-box;
+}
+
+.mfa-prompt__icon {
+  flex: none;
+  color: var(--lumo-primary-color);
+}
+
+.mfa-prompt__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.mfa-prompt__title {
+  font-weight: 600;
+  font-size: var(--lumo-font-size-s);
+}
+
+.mfa-prompt__body {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+.mfa-prompt__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-03);
+  flex: none;
+}
+
+/* Narrow screens: the actions drop below the text instead of squeezing it to one word per line. */
+@media (max-width: 720px) {
+  .mfa-prompt {
+    flex-wrap: wrap;
+  }
+
+  .mfa-prompt__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* ── Recovery-code meter ───────────────────────────────────────────────────────────────────────────
+   One slot per code in a full set: filled = still unused, hollow = spent. It sits above the sentence
+   rather than replacing it — the sentence stays authoritative for anyone using a screen reader, and
+   the slots carry the same fact as one image with a label instead of ten announcements.
+
+   The states are distinguished by fill AND by border, not by colour alone: "seven filled of ten" has
+   to be readable in greyscale, at a glance, without relying on hue. */
+.mfa-recovery-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.mfa-recovery-meter {
+  display: flex;
+  gap: var(--lumo-space-xs);
+  align-items: center;
+  /* Read left to right as "how much is left is what is filled", so the spent slots do not sit between
+     the reader and the remaining ones. */
+  flex-direction: row;
+}
+
+.mfa-recovery-meter__slot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  flex: none;
+  box-sizing: border-box;
+}
+
+/* Unused: a filled slot in the factor colour, because these are the codes that still work. */
+.mfa-recovery-meter__slot--unused {
+  background-color: var(--lumo-primary-color);
+  border: 1px solid var(--lumo-primary-color);
+}
+
+/* Spent: hollow and quiet — the absence of the fill is the signal, so it must not compete for
+   attention with the codes that are left. */
+.mfa-recovery-meter__slot--used {
+  background-color: transparent;
+  border: 1px solid var(--lumo-contrast-30pct);
+}
+
+/* Rename sits next to Remove on a factor card. They are different kinds of action — one changes a
+   label, the other destroys a credential — so they must not read as a single pair of equals: the
+   grouping keeps them adjacent while the error colour on Remove carries the difference. */
+.mfa-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  flex: none;
 }

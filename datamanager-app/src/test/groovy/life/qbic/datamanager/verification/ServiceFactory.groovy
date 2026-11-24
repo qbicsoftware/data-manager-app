@@ -35,7 +35,11 @@ class ServiceFactory {
         try {
             def repository = new SharedRepository(new JpaVerificationTokenRepository(em))
             def service = new VerificationTokenServiceImpl(repository,
-                    Duration.ofHours(1), Duration.ofMinutes(5), Duration.ofHours(1))
+                    Duration.ofHours(1), Duration.ofMinutes(5), Duration.ofHours(1),
+                    // The re-enrolment link lifetime (MFA). It is bounded to 15 minutes at
+                    // construction, so it must be passed explicitly here: this factory builds the
+                    // service with four named durations and a default would hide the fifth.
+                    Duration.ofMinutes(15))
             def result = action.call(service)
             tx.commit()
             return result

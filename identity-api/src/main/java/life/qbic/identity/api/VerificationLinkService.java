@@ -48,7 +48,18 @@ public interface VerificationLinkService {
   enum Purpose {
     EMAIL_CONFIRMATION,
     PASSWORD_RESET,
-    SET_PASSWORD
+    SET_PASSWORD,
+
+    /**
+     * Proof of mailbox control, used to <em>start</em> a second-factor enrolment for an account that has
+     * no factor.
+     *
+     * <p>Separate from the others on purpose: a reset link must never be replayable as a second-factor
+     * token or the other way round. And note what this link cannot do — it opens the enrolment page, it
+     * does not complete it. Finishing still needs a code from the new device, so a mailbox alone never
+     * produces a factor.</p>
+     */
+    REENROL_SECOND_FACTOR
   }
 
   /**

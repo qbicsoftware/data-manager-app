@@ -1,6 +1,5 @@
 package life.qbic.datamanager.views.projects.project.ontology;
 
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -190,13 +189,6 @@ public class OntologyLookupComponent extends PageArea {
       Span curie = new Tag(curieText);
       CopyToClipBoardComponent copyToClipBoardComponent = new CopyToClipBoardComponent(curieText);
       Span header = new Span(title, curie, copyToClipBoardComponent);
-      UI ui = UI.getCurrent();
-      copyToClipBoardComponent.addSwitchToSuccessfulCopyIconListener(event -> ui.access(() -> {
-        addClassName("success-background-hue");
-      }));
-      copyToClipBoardComponent.addSwitchToCopyIconListener(event -> ui.access(() -> {
-        removeClassName("success-background-hue");
-      }));
       header.addClassName("header");
       return header;
     }

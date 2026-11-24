@@ -4,7 +4,6 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
-import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
@@ -397,15 +396,9 @@ public class PersonalAccessTokenComponent extends PageArea implements Serializab
 
     public void setToken(String token) {
       rawToken.setText(token);
-      UI ui = UI.getCurrent();
       copyToClipBoardComponent.setCopyText(token);
       copyToClipBoardComponent.addSwitchToSuccessfulCopyIconListener(event ->
-          ui.access(() -> {
-            addClassName("success-background-hue");
-            copyDisclaimerText.setText("Token copied to clipboard.");
-          }));
-      copyToClipBoardComponent.addSwitchToCopyIconListener(event ->
-          ui.access(() -> removeClassName("success-background-hue")));
+          copyDisclaimerText.setText("Token copied to clipboard."));
     }
   }
 }

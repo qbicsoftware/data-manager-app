@@ -11,6 +11,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementComponent;
 import life.qbic.datamanager.announcements.AnnouncementService;
+import life.qbic.datamanager.views.account.MfaEnrolmentPrompt;
 import life.qbic.datamanager.views.general.footer.FooterComponent;
 
 /**
@@ -30,8 +31,9 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
   private static final String DRAWER_STATE_KEY = "drawerOpened";
 
   protected DataManagerLayout(FooterComponent footerComponent,
-      AnnouncementService announcementService) {
+      AnnouncementService announcementService, MfaEnrolmentPrompt mfaEnrolmentPrompt) {
     Objects.requireNonNull(footerComponent);
+    Objects.requireNonNull(mfaEnrolmentPrompt);
     setId("data-manager-layout");
     // Create content area
     contentArea = new Div();
@@ -45,9 +47,11 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
     contentHeaderArea.setId("content-header");
     contentHeaderArea.setVisible(false);
     AnnouncementComponent announcementComponent = new AnnouncementComponent(announcementService);
-    // Add content area and footer to the main layout
-    Div mainLayout = new Div(asideArea, announcementComponent, contentHeaderArea, contentArea,
-        footerComponent);
+    // Add content area and footer to the main layout. The enrolment prompt sits directly under the
+    // announcements: it is the only place in the application that tells an account without a second
+    // factor that one exists, and it has to be on every authenticated page to do that job.
+    Div mainLayout = new Div(asideArea, announcementComponent, mfaEnrolmentPrompt, contentHeaderArea,
+        contentArea, footerComponent);
     mainLayout.setId("main-layout");
     persistDrawerStateBetweenLayouts();
     setContent(mainLayout);

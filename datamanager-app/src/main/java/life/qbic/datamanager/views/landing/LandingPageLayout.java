@@ -12,6 +12,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import java.io.Serial;
 import java.util.Objects;
 import life.qbic.datamanager.announcements.AnnouncementService;
+import life.qbic.datamanager.views.account.MfaEnrolmentPrompt;
 import life.qbic.datamanager.views.DataManagerLayout;
 import life.qbic.datamanager.views.LandingPageTitleAndLogo;
 import life.qbic.datamanager.views.MainPage;
@@ -36,9 +37,11 @@ public class LandingPageLayout extends DataManagerLayout implements RouterLayout
 
   public LandingPageLayout(@Autowired LandingPageHandlerInterface handlerInterface,
       @Autowired FooterComponent footerComponent,
-      @Autowired AnnouncementService announcementService) {
+      @Autowired AnnouncementService announcementService,
+      @Autowired MfaEnrolmentPrompt mfaEnrolmentPrompt) {
 
-    super(Objects.requireNonNull(footerComponent), announcementService);
+    super(Objects.requireNonNull(footerComponent), announcementService,
+        Objects.requireNonNull(mfaEnrolmentPrompt));
     Objects.requireNonNull(handlerInterface);
     addClassName("landing-page-layout");
     //CSS class hosting the background image for all our landing pages

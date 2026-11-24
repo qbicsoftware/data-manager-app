@@ -12,7 +12,11 @@ import java.util.HashMap;
 import java.util.Map;
 import life.qbic.datamanager.views.account.ExternalProvidersMain;
 import life.qbic.datamanager.views.account.PersonalAccessTokenMain;
+import life.qbic.datamanager.views.account.TwoFactorAuthenticationMain;
 import life.qbic.datamanager.views.account.UserProfileMain;
+import life.qbic.identity.application.mfa.MfaPolicy;
+import life.qbic.identity.domain.model.mfa.MfaPolicyMode;
+import life.qbic.identity.domain.model.mfa.SecondFactorRemoval;
 
 /**
  * Settings Navigation Component
@@ -21,17 +25,28 @@ import life.qbic.datamanager.views.account.UserProfileMain;
  * settings section, so sections remain deep-linkable and the current section can be highlighted
  * based on the active route. Additional settings categories can be added by registering further
  * tabs via {@link #addTab(String, VaadinIcon, Class)}.
+ * <p>
+ * <b>The two-factor entry is conditional.</b> Under {@link MfaPolicyMode#OFF} nothing is asked at
+ * sign-in, so an account could enrol an app and never be challenged for it: the entry is not rendered
+ * at all, and {@link TwoFactorAuthenticationMain} refuses the route for the same reason. An entry that
+ * leads to "you cannot use this" is worse than no entry.
  */
 public class SettingsNavigationComponent extends Div {
 
   private final Tabs tabs = new Tabs();
   private final Map<Class<?>, Tab> tabsByNavigationTarget = new HashMap<>();
 
-  public SettingsNavigationComponent() {
+  /**
+   * @param mfaPolicy the deployment posture, which decides whether the two-factor entry exists
+   */
+  public SettingsNavigationComponent(MfaPolicy mfaPolicy) {
     addClassName("settings-navigation-component");
     tabs.addClassName("settings-navigation-tabs");
     tabs.getElement().setAttribute("orientation", "vertical");
     addTab("Profile", VaadinIcon.USER, UserProfileMain.class);
+    if (SecondFactorRemoval.twoFactorCanBeEnabled(mfaPolicy.mode())) {
+      addTab("Two-factor", VaadinIcon.SHIELD, TwoFactorAuthenticationMain.class);
+    }
     addTab("API Tokens", VaadinIcon.KEY, PersonalAccessTokenMain.class);
     addTab("External Providers", VaadinIcon.DATABASE, ExternalProvidersMain.class);
     add(tabs);

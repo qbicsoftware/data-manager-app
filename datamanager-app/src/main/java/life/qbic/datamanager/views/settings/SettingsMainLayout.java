@@ -12,6 +12,7 @@ import jakarta.annotation.security.PermitAll;
 import life.qbic.datamanager.views.UserMainLayout;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.api.UserInformationService;
+import life.qbic.identity.application.mfa.MfaPolicy;
 import life.qbic.projectmanagement.application.AuthenticationToUserIdTranslationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -38,18 +39,22 @@ import org.springframework.security.core.context.SecurityContextHolder;
 @ParentLayout(UserMainLayout.class)
 public class SettingsMainLayout extends Div implements RouterLayout, BeforeEnterObserver {
 
-  private final SettingsNavigationComponent settingsNavigationComponent = new SettingsNavigationComponent();
+  private final SettingsNavigationComponent settingsNavigationComponent;
   private final Div contentSlot = new Div();
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
   private final transient UserInformationService userInformationService;
   private final Div accountOverviewArea = new Div();
 
   public SettingsMainLayout(@Autowired UserInformationService userInformationService,
-      @Autowired AuthenticationToUserIdTranslationService userIdTranslator) {
+      @Autowired AuthenticationToUserIdTranslationService userIdTranslator,
+      @Autowired MfaPolicy mfaPolicy) {
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.userIdTranslator = requireNonNull(userIdTranslator,
         "userIdTranslator must not be null");
+    // The navigation decides whether the two-factor entry exists, from the deployment posture.
+    this.settingsNavigationComponent = new SettingsNavigationComponent(
+        requireNonNull(mfaPolicy, "mfaPolicy must not be null"));
     addClassName("settings-main-layout");
     accountOverviewArea.addClassName("settings-account-overview-area");
     Div asideArea = new Div(settingsNavigationComponent);

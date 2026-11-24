@@ -231,11 +231,27 @@ Run through this before the first production deployment and after any proxy chan
 - [ ] Passwordless active accounts counted and the helpdesk briefed — see
       [`docs/migrations/NEXT.md`](../migrations/NEXT.md) §"ORCID is no longer a login"
 
+### Second-factor secrets (MILESTONE-MFA)
+
+Needed before the first authenticator app can be enrolled, and **mandatory** before the release that
+enables the login challenge (M4). Provisioning commands: [`NEXT.md`](../migrations/NEXT.md) §"Migration 1".
+Neither missing value stops the application from starting; both fail the operation closed.
+
+- [ ] `second-factor-master-key` present in the PKCS12 keystore — a **Base64-encoded 32-byte** AES key
+      (not hex), **separate** from `external-credential-master-key`
+- [ ] `RECOVERY_CODE_PEPPER` set (≥ 32 characters) and **stored in the secrets backup** — it is
+      deliberately *not* the vault key, so that a lost vault key does not take the recovery codes with it
+- [ ] Vault restore runbook covers both keys: losing the second-factor key invalidates every TOTP
+      factor (recovery codes and admin re-enrolment still work); rotating the pepper invalidates every
+      outstanding recovery code
+
 ### Schema
 
 - [ ] Every migration in the relevant [`docs/migrations/`](../migrations/README.md) guide has been applied
 - [ ] `SHOW TABLES LIKE 'user_verification_token'` returns a row
 - [ ] `SHOW TABLES LIKE 'auth_attempt'` returns a row
+- [ ] `SHOW TABLES LIKE 'user_second_factor'` returns a row (once the MFA migration is approved and
+      applied — see [`NEXT.md`](../migrations/NEXT.md) §"Migration 1"; staging may already have it)
 
   > **Missing `auth_attempt` breaks login outright**, not gracefully: the code queries it on the first
   > login attempt and the request fails with a SQL error.

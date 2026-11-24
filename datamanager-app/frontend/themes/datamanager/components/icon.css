@@ -25,3 +25,24 @@ vaadin-icon.smallest {
 vaadin-icon.copy-icon {
   color: var(--lumo-contrast-50pct);
 }
+
+/* ── Copy affordance (CopyToClipBoardComponent) ──────────────────────────────────────────────────
+   The check mark is shown for a moment after a click. The state is the `data-copied` attribute,
+   set and cleared in the browser by frontend/javascript/copyfeedback.js — it must not be server
+   state, because restoring it after a delay needs push: without push the check stayed on screen and
+   the value looked already copied, so a second copy seemed impossible. */
+.copy-to-clipboard {
+  cursor: pointer;
+}
+
+.copy-to-clipboard .copy-icon-success {
+  display: none;
+}
+
+.copy-to-clipboard[data-copied] .copy-icon {
+  display: none;
+}
+
+.copy-to-clipboard[data-copied] .copy-icon-success {
+  display: inline-flex;
+}

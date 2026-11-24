@@ -130,6 +130,16 @@
   gap: 0;
 }
 
+/* ...but consecutive sections still need to read as separate things. With `gap: 0` the second
+   section's heading sat directly under the first section's last card, so "Recovery codes" looked
+   like a caption of the card above it (UI review 2026-11-20). Sections get the same separation the
+   settings groups already use: whitespace plus a hairline. */
+.settings-main-layout .page-area > .settings-section + .settings-section {
+  margin-top: var(--lumo-space-xl);
+  padding-top: var(--lumo-space-xl);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
 /* -- Settings section blueprint (single settings page layout) -- */
 
 .settings-section {
@@ -194,7 +204,12 @@
 .settings-navigation-tabs vaadin-tab {
   width: 100%;
   justify-content: flex-start;
-  --vaadin-tab-padding: var(--lumo-space-m) var(--lumo-space-m);
+  /* The aside is 240–280 px wide; `space-m` padding on both sides plus a `space-m` icon gap left too
+     little for "Two-factor authentication", which was the only tab that wrapped to two lines (UI
+     review 2026-11-20). The result was a selected row twice as tall as its neighbours, with the icon
+     centred between the two lines instead of aligned with the first. Tighter insets keep every label
+     on one line at this width. */
+  --vaadin-tab-padding: var(--lumo-space-s) var(--lumo-space-s);
   --vaadin-tab-border-radius: var(--lumo-border-radius-m);
   box-sizing: border-box;
 }
@@ -203,7 +218,13 @@
 .settings-navigation-tabs vaadin-tab a {
   display: inline-flex;
   align-items: center;
-  gap: var(--lumo-space-m);
+  gap: var(--lumo-space-s);
+}
+
+/* Should a label still wrap on a very narrow viewport, the icon aligns with the first line instead of
+   floating between the two. */
+.settings-navigation-tabs vaadin-tab a vaadin-icon {
+  flex: none;
 }
 
 .settings-navigation-tabs vaadin-tab:hover {
