@@ -33,8 +33,13 @@ public class OpenbisSession {
   private final IApplicationServerApi apiV3;
 
   public OpenbisSession(DataManagerVault vault, String applicationServerUrl) {
+    this(vault, applicationServerUrl, ApiV3.DEFAULT_READ_TIMEOUT_MILLIS);
+  }
+
+  public OpenbisSession(DataManagerVault vault, String applicationServerUrl,
+      long readTimeoutMillis) {
     this.vault = Objects.requireNonNull(vault);
-    this.apiV3 = ApiV3.applicationServer(applicationServerUrl);
+    this.apiV3 = ApiV3.applicationServer(applicationServerUrl, readTimeoutMillis);
     this.login();
   }
 
@@ -77,16 +82,34 @@ public class OpenbisSession {
 
   public static class ApiV3 {
 
+    /**
+     * Default read timeout for a single openBIS call, in milliseconds.
+     *
+     * <p>This is the cost a single stalled call can impose, and it is part of the retry budget
+     * arithmetic in {@link OpenbisRetryPolicy}. It used to be an unnamed literal, which hid the
+     * fact that ten attempts could spend ten times this value.
+     */
+    public static final long DEFAULT_READ_TIMEOUT_MILLIS = 100_000L;
+
     private ApiV3() {
     }
 
     public static IApplicationServerApi applicationServer(String url) {
-      return HttpInvokerUtils.createServiceStub(IApplicationServerApi.class, url, 100_000L);
+      return applicationServer(url, DEFAULT_READ_TIMEOUT_MILLIS);
+    }
+
+    public static IApplicationServerApi applicationServer(String url, long readTimeoutMillis) {
+      return HttpInvokerUtils.createServiceStub(IApplicationServerApi.class, url,
+          readTimeoutMillis);
     }
 
     public static IDataStoreServerApi dataStoreServer(String url) {
+      return dataStoreServer(url, DEFAULT_READ_TIMEOUT_MILLIS);
+    }
+
+    public static IDataStoreServerApi dataStoreServer(String url, long readTimeoutMillis) {
       return HttpInvokerUtils.createStreamSupportingServiceStub(IDataStoreServerApi.class, url,
-          100_000L);
+          readTimeoutMillis);
     }
 
   }

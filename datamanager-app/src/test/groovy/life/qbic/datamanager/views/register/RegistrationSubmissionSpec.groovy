@@ -63,7 +63,8 @@ class RegistrationSubmissionSpec extends Specification {
         blocked ? new BlockedCounter() : new AllowingCounter(),
         10, Duration.ofMinutes(15), Duration.ofMinutes(15),
         3, Duration.ofMinutes(15), Duration.ofMinutes(15))
-    return new RegistrationSubmission(identity, userInformationService, throttle)
+    return new RegistrationSubmission(identity, userInformationService, throttle,
+        life.qbic.identity.application.throttle.ClientOriginResolver.none())
   }
 
   private RegistrationSubmission.Navigator navigator() {

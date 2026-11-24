@@ -2,6 +2,8 @@ package life.qbic.datamanager.security
 
 import life.qbic.identity.application.throttle.AuthAttemptThrottle
 import life.qbic.identity.application.throttle.AuthAttemptThrottle.Scope
+import life.qbic.identity.application.throttle.ClientOrigin
+import life.qbic.identity.application.throttle.ClientOriginResolver
 import life.qbic.identity.domain.repository.AuthAttemptCounter
 import jakarta.servlet.FilterChain
 import jakarta.servlet.ServletRequest
@@ -49,7 +51,8 @@ class LoginThrottleWiringSpec extends Specification {
         2, Duration.ofMinutes(15), Duration.ofMinutes(15))
     failureHandler = new RecordingFailureHandler()
     constantWorkCalls = []
-    filter = new LoginThrottleFilter(throttle, failureHandler, { String a -> constantWorkCalls << a })
+    filter = new LoginThrottleFilter(throttle, ClientOriginResolver.none(), failureHandler,
+        { String a -> constantWorkCalls << a })
   }
 
   // ---- the filter must not be dead code ------------------------------------------------------
@@ -70,7 +73,7 @@ class LoginThrottleWiringSpec extends Specification {
 
   def "a throttled login POST is rejected without reaching the authentication path"() {
     given: 'the bucket is already over the limit'
-    4.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
+    4.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, NOW) }
 
     and:
     def request = loginPost(ADDRESS)
@@ -93,7 +96,7 @@ class LoginThrottleWiringSpec extends Specification {
     // ~1 ms while a wrong password takes ~30 ms tells the attacker the address is being throttled,
     // and therefore that it exists.
     given:
-    4.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
+    4.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, NOW) }
 
     when:
     filter.doFilterInternal(loginPost(ADDRESS), Stub(HttpServletResponse), new RecordingChain())
@@ -104,7 +107,7 @@ class LoginThrottleWiringSpec extends Specification {
 
   def "the rejection uses the same generic message a wrong password produces"() {
     given:
-    4.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
+    4.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, NOW) }
 
     when:
     filter.doFilterInternal(loginPost(ADDRESS), Stub(HttpServletResponse), new RecordingChain())
@@ -115,7 +118,7 @@ class LoginThrottleWiringSpec extends Specification {
 
   def "GET /login is never throttled, or the visitor could not reach the form to stop failing"() {
     given:
-    4.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
+    4.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, NOW) }
 
     and:
     def request = request('GET', '/login')
@@ -138,7 +141,7 @@ class LoginThrottleWiringSpec extends Specification {
 
   def "a rejected attempt is not counted, so retrying cannot extend the block"() {
     given:
-    4.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
+    4.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, NOW) }
     def before = counter.totalIncrements()
 
     when: 'the blocked client retries ten times'
@@ -154,7 +157,7 @@ class LoginThrottleWiringSpec extends Specification {
 
   def "a failed authentication is recorded"() {
     given:
-    def listener = new AuthAttemptEventListener(throttle)
+    def listener = new AuthAttemptEventListener(throttle, ClientOriginResolver.none())
 
     when:
     listener.onFailure(failureEvent())
@@ -165,7 +168,7 @@ class LoginThrottleWiringSpec extends Specification {
 
   def "a disabled-account failure is recorded too, because it is also a password attempt"() {
     given: 'an unconfirmed account is a weaker target, so guessing at it must still cost attempts'
-    def listener = new AuthAttemptEventListener(throttle)
+    def listener = new AuthAttemptEventListener(throttle, ClientOriginResolver.none())
 
     when:
     listener.onFailure(failureEvent())
@@ -183,8 +186,8 @@ class LoginThrottleWiringSpec extends Specification {
     // because ACL records are keyed on it. So on success the listener cleared hash("LOGIN\0<uuid>"),
     // a bucket nobody had written to, and the real email-keyed counter was left untouched.
     given: 'two failures keyed on the email, as the failure path does'
-    2.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
-    def listener = new AuthAttemptEventListener(throttle)
+    2.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, NOW) }
+    def listener = new AuthAttemptEventListener(throttle, ClientOriginResolver.none())
 
     when: 'the same person logs in successfully'
     listener.onSuccess(successEvent())
@@ -200,7 +203,7 @@ class LoginThrottleWiringSpec extends Specification {
     // Pins the mechanism directly: a QbicUserDetails whose getUsername() is the user id and whose
     // getEmailAddress() is the address. If the listener ever goes back to getName(), this fails.
     given:
-    def listener = new AuthAttemptEventListener(throttle)
+    def listener = new AuthAttemptEventListener(throttle, ClientOriginResolver.none())
 
     when:
     listener.onSuccess(successEvent())
@@ -219,8 +222,8 @@ class LoginThrottleWiringSpec extends Specification {
     // AuthenticationSuccessEvent, not a subclass — so a single handler cannot catch both. Missing
     // this one would leave every form-login user accumulating a counter they never clear.
     given:
-    def listener = new AuthAttemptEventListener(throttle)
-    2.times { throttle.record(Scope.LOGIN, ADDRESS, NOW) }
+    def listener = new AuthAttemptEventListener(throttle, ClientOriginResolver.none())
+    2.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, NOW) }
 
     when:
     listener.onInteractiveSuccess(
@@ -235,12 +238,100 @@ class LoginThrottleWiringSpec extends Specification {
     // The failure listener must key on the same value, or an attacker's failures would never reach
     // the threshold the filter consults.
     given:
-    def listener = new AuthAttemptEventListener(throttle)
+    def listener = new AuthAttemptEventListener(throttle, ClientOriginResolver.none())
 
     when:
     listener.onFailure(failureEvent())
 
     then:
+    counter.bucketCountFor(Scope.LOGIN, ADDRESS) == 1
+  }
+
+  // ---- origin scope: the filter and the listener must share one resolver ---------------------
+  //
+  // AUTH-NFR-03 asks for throttling per account AND per origin (#1691). The failure that would make
+  // origin scope inert is subtle: if the listener resolves the origin differently from the filter, the
+  // pre-check reads a bucket nobody ever writes, and the control exists, is maintained, and never fires.
+
+  def "an origin that floods many accounts is rejected before any password work"() {
+    given: 'origin scope on, and one origin that has exhausted its own bucket'
+    def scopedCounter = new InMemoryCounter()
+    def scoped = new AuthAttemptThrottle(scopedCounter, 3, Duration.ofMinutes(15),
+        Duration.ofMinutes(15), 2, Duration.ofMinutes(15), Duration.ofMinutes(15),
+        true, 5, Duration.ofMinutes(15), Duration.ofMinutes(10))
+    def attacker = ClientOrigin.of('203.0.113.0/24')
+    (1..6).each { i -> scoped.recordAttempt(Scope.LOGIN, "target$i@example.org".toString(), attacker, NOW) }
+
+    and:
+    def scopedHandler = new RecordingFailureHandler()
+    def work = []
+    def scopedFilter = new LoginThrottleFilter(scoped, { attacker } as ClientOriginResolver,
+        scopedHandler, { String a -> work << a })
+    def chain = new RecordingChain()
+
+    when: 'the same origin posts a login for a completely fresh account'
+    scopedFilter.doFilterInternal(loginPost('fresh@example.org'), Stub(HttpServletResponse), chain)
+
+    then: 'authentication was never reached, and the response is the normal failure'
+    chain.ranWith == null
+    scopedHandler.failures.size() == 1
+    scopedHandler.failures.first() instanceof BadCredentialsException
+
+    and: 'the constant work was paid, so the rejection is not faster than a wrong password'
+    work == ['fresh@example.org']
+  }
+
+  def "a clean origin is not rejected because another party filled the account bucket"() {
+    // The requirement's clause that account scope alone cannot satisfy.
+    given: 'the victim account is blocked by failures from a different origin'
+    def scopedCounter = new InMemoryCounter()
+    def scoped = new AuthAttemptThrottle(scopedCounter, 3, Duration.ofMinutes(15),
+        Duration.ofMinutes(15), 2, Duration.ofMinutes(15), Duration.ofMinutes(15),
+        true, 20, Duration.ofMinutes(15), Duration.ofMinutes(10))
+    (1..4).each { i ->
+      scoped.recordAttempt(Scope.LOGIN, ADDRESS, ClientOrigin.of('203.0.113.0/24'), NOW)
+    }
+
+    and:
+    def victimFilter = new LoginThrottleFilter(scoped,
+        { ClientOrigin.of('198.51.100.0/24') } as ClientOriginResolver,
+        new RecordingFailureHandler(), { String a -> })
+    def chain = new RecordingChain()
+
+    when: 'the victim logs in from their own untouched origin'
+    victimFilter.doFilterInternal(loginPost(ADDRESS), Stub(HttpServletResponse), chain)
+
+    then: 'the request proceeds to authentication — the victim is not locked out'
+    chain.ranWith != null
+  }
+
+  def "the listener writes the origin bucket the filter reads"() {
+    given: 'one resolver, used by both the filter and the listener — as production wires it'
+    def shared = ClientOrigin.of('203.0.113.0/24')
+    def scopedCounter = new InMemoryCounter()
+    def scoped = new AuthAttemptThrottle(scopedCounter, 3, Duration.ofMinutes(15),
+        Duration.ofMinutes(15), 2, Duration.ofMinutes(15), Duration.ofMinutes(15),
+        true, 20, Duration.ofMinutes(15), Duration.ofMinutes(10))
+    def listener = new AuthAttemptEventListener(scoped, { shared } as ClientOriginResolver)
+
+    when: 'four failures are recorded from that origin'
+    (1..4).each { listener.onFailure(failureEvent()) }
+
+    then: 'the origin bucket exists and is readable by a pre-check for the same origin'
+    scopedCounter.originBucketCount() == 4
+    scoped.isThrottled(Scope.LOGIN, ADDRESS, shared, NOW.plusSeconds(1))
+  }
+
+  def "a listener with no trusted origin writes only the account bucket"() {
+    // The pre-origin behaviour, and what a deployment without a trustworthy client address gets.
+    given:
+    def listener = new AuthAttemptEventListener(throttle, ClientOriginResolver.none())
+
+    when:
+    listener.onFailure(failureEvent())
+
+    then:
+    counter.originBucketCount() == 0
     counter.bucketCountFor(Scope.LOGIN, ADDRESS) == 1
   }
 
@@ -353,6 +444,12 @@ class LoginThrottleWiringSpec extends Specification {
 
     int totalIncrements() {
       return increments
+    }
+
+    /** Attempts counted in the LOGIN_ORIGIN scope, across all origins. */
+    int originBucketCount() {
+      return counts.findAll { k, v -> k.startsWith(Scope.LOGIN_ORIGIN.name() + '|') }
+          .values().sum(0) { it[0] } as int
     }
 
     /** How many attempts are counted against this identifier in this scope. */

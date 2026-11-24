@@ -80,6 +80,11 @@ public class ROCreateBuilder {
                 .addProperty("name", "Project Summary")
                 .addProperty("encodingFormat", MimeTypes.YAML.value())
                 .build())
+        // ro-crate-java generates an optional preview by default and writes it to a
+        // hard-coded ./.tmp directory relative to the process working directory. The
+        // preview is not required by the RO-Crate specification, so disable it to keep
+        // all export scratch files under service.host.temp.dir.
+        .setPreview(null)
         .build();
     crate.getRootDataEntity().addIdProperty("publisher", ROR_URL_QBIC);
     crate.getRootDataEntity().addIdProperty("license", LICENSE_URL_CCBY_4);

@@ -93,9 +93,38 @@ class AuthAttemptThrottleTransactionSpec extends Specification {
   def "every public write method on the throttle declares @Transactional"() {
     // The annotation is the fix. Without it the native SQL below throws under a real request, and the
     // failure appears as a 500 on a page that should have shown "Incorrect username or password".
+    //
+    // This guard is deliberately name-based, so it fails when a method is renamed — which is how the
+    // rename from `record` to `recordAttempt` (#1691) was noticed rather than silently losing the
+    // annotation. `record` is a restricted identifier in Java; the rename is a fix, not a refactor.
     expect:
-    transactionallyAnnotated('record')
+    transactionallyAnnotated('recordAttempt')
+    transactionallyAnnotated('recordAndReport')
     transactionallyAnnotated('onSuccess')
+    transactionallyAnnotated('isThrottled')
+  }
+
+  def "the transaction boundary is decided in private, non-transactional cores"() {
+    // A self-invocation bypasses the Spring proxy, so the callee's @Transactional is ignored and only
+    // the caller's applies. The two were compatible, which is exactly the trap: a later change to
+    // either annotation would take effect in one entry point and not the other.
+    //
+    // The implementation therefore puts the real work in private cores and has every public method
+    // open its own transaction. This asserts the shape that makes that true; the absence of
+    // self-invocation itself is what Sonar rule java:S6809 checks, because it needs bytecode rather
+    // than reflection.
+    given: 'the private cores'
+    def cores = ['doRecordAndReport', 'doIsThrottled'].collect { name ->
+      AuthAttemptThrottle.declaredMethods.find { it.name == name }
+    }
+
+    expect: 'each exists exactly once, is private, and carries no transaction annotation of its own'
+    cores.every { it != null }
+    cores.every { java.lang.reflect.Modifier.isPrivate(it.modifiers) }
+    cores.every { !it.isAnnotationPresent(org.springframework.transaction.annotation.Transactional) }
+
+    and: 'so the annotation on the public entry point is the one that takes effect'
+    transactionallyAnnotated('recordAndReport')
     transactionallyAnnotated('isThrottled')
   }
 
@@ -116,7 +145,7 @@ class AuthAttemptThrottleTransactionSpec extends Specification {
   def "the writes are NOT readOnly, or the upsert would still fail"() {
     // A copy-paste of readOnly = true onto record() would leave the 500 in place while looking fixed.
     expect:
-    !readOnly('record')
+    !readOnly('recordAttempt')
     !readOnly('onSuccess')
   }
 
@@ -146,7 +175,7 @@ class AuthAttemptThrottleTransactionSpec extends Specification {
 
     when: 'three attempts from the event listener'
     3.times {
-      assert throttle.record(AuthAttemptThrottle.Scope.LOGIN, ADDRESS, T0)
+      assert throttle.recordAttempt(AuthAttemptThrottle.Scope.LOGIN, ADDRESS, T0)
           == AuthAttemptThrottle.Decision.ALLOWED
     }
 
@@ -162,7 +191,7 @@ class AuthAttemptThrottleTransactionSpec extends Specification {
     def throttle = throttleWithOwnTransactions(3)
 
     when: 'an attacker fails four times with a transaction present'
-    4.times { throttle.record(AuthAttemptThrottle.Scope.LOGIN, ADDRESS, T0) }
+    4.times { throttle.recordAttempt(AuthAttemptThrottle.Scope.LOGIN, ADDRESS, T0) }
 
     then: 'the block engaged'
     throttle.isThrottled(AuthAttemptThrottle.Scope.LOGIN, ADDRESS, T0.plusSeconds(1))

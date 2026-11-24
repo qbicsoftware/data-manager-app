@@ -271,7 +271,7 @@ class EmailConfirmationResendSpec extends Specification {
 
   private EmailConfirmationMain newView() {
     return new EmailConfirmationMain(userInformationService, emailService, linkSupplier,
-        verificationLinkService, throttle)
+        verificationLinkService, throttle, life.qbic.identity.application.throttle.ClientOriginResolver.none())
   }
 
   private com.vaadin.flow.router.BeforeEvent event() {

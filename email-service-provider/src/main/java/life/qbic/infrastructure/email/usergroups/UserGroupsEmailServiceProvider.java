@@ -1,11 +1,10 @@
 package life.qbic.infrastructure.email.usergroups;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.Objects;
 import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.EmailSubmissionException;
 import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.usergroups.application.communication.CommunicationException;
 import life.qbic.usergroups.application.communication.Content;
 import life.qbic.usergroups.application.communication.EmailService;
@@ -19,11 +18,20 @@ import life.qbic.usergroups.application.communication.Subject;
  * communication records into the shared infrastructure email model and delegating the actual
  * submission to {@link EmailServiceProvider}.
  *
+ * <p>Translates the shared infrastructure's {@link EmailSubmissionException} into this context's
+ * {@link CommunicationException}, which is what the port declares. The catch is not decoration: each
+ * context defines its own {@code CommunicationException}, so without this mapping a caller catching
+ * the type its port promises would never see the failure.</p>
+ *
+ * <p>This block was unreachable for a long time, because the provider threw the <em>identity</em>
+ * context's {@code CommunicationException} and never {@code EmailSubmissionException} — a different
+ * class that merely shares a name.</p>
+ *
  * @since 1.19.0
  */
 public class UserGroupsEmailServiceProvider implements EmailService {
 
-  private static final Logger log = logger(UserGroupsEmailServiceProvider.class);
+  private static final Logger log = LoggerFactory.logger(UserGroupsEmailServiceProvider.class);
   public static final String EMAIL_SUBMISSION_FAILED = "Email submission failed";
 
   private final EmailServiceProvider emailServiceProvider;
@@ -39,7 +47,7 @@ public class UserGroupsEmailServiceProvider implements EmailService {
       emailServiceProvider.send(MessageTranslator.translate(subject),
           MessageTranslator.translate(recipient), MessageTranslator.translate(content));
     } catch (EmailSubmissionException e) {
-      log.error("Email submission failed!", e);
+      log.error(EMAIL_SUBMISSION_FAILED, e);
       throw new CommunicationException(EMAIL_SUBMISSION_FAILED, e);
     }
   }
