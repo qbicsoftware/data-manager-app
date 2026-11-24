@@ -181,6 +181,99 @@ stop_recorded() {
 stop_recorded "$WORK/proxy.pid" "session proxy"
 stop_recorded "$WORK/app.pid" "application"
 
+# The pidfiles only cover instances this script started. Anything else holding
+# our ports -- an earlier run whose pidfile was deleted, or a process started by
+# hand -- has to be found another way, or the next start dies with
+# "Port 48014 was already in use".
+#
+# "lsof -ti:PORT" is NOT reliable here: Tomcat binds an IPv6 socket (netstat
+# shows tcp46 *.48014) and lsof reports no pid for it. "netstat -anv" prints the
+# owning process in its last column, which works for those.
+pid_on_port() {
+  port=$1
+  pid=$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | head -1 || true)
+  if [ -z "$pid" ]; then
+    pid=$(netstat -anv 2>/dev/null \
+      | grep "[.]$port " | grep LISTEN \
+      | grep -oE '[A-Za-z_.-]+:[0-9]+' | head -1 | cut -d: -f2 || true)
+  fi
+  echo "$pid"
+}
+
+free_port() {
+  port=$1
+  pid=$(pid_on_port "$port")
+  [ -n "$pid" ] || return 0
+  case "$pid" in *[!0-9]*) return 0 ;; esac
+  echo "==> port $port is held by pid $pid; stopping it"
+  kill -TERM "$pid" 2>/dev/null || true
+  for _ in $(seq 1 15); do
+    kill -0 "$pid" 2>/dev/null || return 0
+    sleep 1
+  done
+  echo "    did not stop within 15s; forcing"
+  kill -9 "$pid" 2>/dev/null || true
+  sleep 2
+}
+
+free_port "$PORT"
+free_port "$APP_PORT"
+
+# A port can stay bound by a socket whose process is already gone -- the kernel
+# has not reclaimed it yet. Nothing the script can do will free that: the pid is
+# dead, so there is nothing to signal. Rather than fail with "Port already in
+# use" after a 3 minute start, move to the next free port and say so.
+port_taken() {
+  port=$1
+  pid=$(pid_on_port "$port")
+  [ -n "$pid" ] || return 1
+  case "$pid" in
+    *[!0-9]*) return 1 ;;
+  esac
+  # A live pid means the stop above did not work; treat that as taken too.
+  return 0
+}
+
+find_free_port() {
+  start=$1
+  candidate=$start
+  while [ "$candidate" -lt $((start + 20)) ]; do
+    if ! port_taken "$candidate"; then echo "$candidate"; return 0; fi
+    candidate=$((candidate + 1))
+  done
+  return 1
+}
+
+if port_taken "$APP_PORT"; then
+  HOLDER=$(pid_on_port "$APP_PORT")
+  if [ -n "$HOLDER" ] && kill -0 "$HOLDER" 2>/dev/null; then
+    echo "port $APP_PORT is still held by pid $HOLDER after stopping it" >&2
+    exit 4
+  fi
+  if [ "$NO_PROXY" = 1 ]; then
+    NEW_PORT=$(find_free_port $((APP_PORT + 10))) || {
+      echo "no free port found near $APP_PORT" >&2; exit 4; }
+    echo "==> port $APP_PORT is bound by a socket whose process is gone"
+    echo "    (the kernel has not reclaimed it) -- using $NEW_PORT instead"
+    PORT=$NEW_PORT
+    APP_PORT=$NEW_PORT
+  else
+    NEW_PORT=$(find_free_port $((APP_PORT + 10))) || {
+      echo "no free port found near $APP_PORT" >&2; exit 4; }
+    echo "==> port $APP_PORT is bound by a socket whose process is gone"
+    echo "    (the kernel has not reclaimed it) -- using $NEW_PORT instead"
+    APP_PORT=$NEW_PORT
+  fi
+fi
+
+if port_taken "$PORT"; then
+  NEW_PORT=$(find_free_port $((PORT + 10))) || {
+    echo "no free port found near $PORT" >&2; exit 4; }
+  echo "==> port $PORT is bound by a socket whose process is gone -- using $NEW_PORT instead"
+  PORT=$NEW_PORT
+  if [ "$NO_PROXY" = 1 ]; then APP_PORT=$NEW_PORT; fi
+fi
+
 # Only reached if a forced stop happened: the ports are free, so any lock left
 # behind belongs to a process that no longer exists.
 for stale in "$WORK"/db-*.lock.db; do
@@ -248,14 +341,49 @@ echo "==> starting the application"
     -jar "$JAR" > "$WORK/mockup.log" 2>&1 &
   echo $! > "$WORK/app.pid" )
 
-for i in $(seq 1 180); do
-  if grep -qE 'Tomcat started|Application run failed' "$WORK/mockup.log" 2>/dev/null; then break; fi
+# Wait for the server to come up, but stop as soon as it is clear it will not.
+# Two independent signals, because either can come first:
+#   * the log says so -- Spring writes "APPLICATION FAILED TO START", not the
+#     "Application run failed" this loop used to look for, so a port clash
+#     looked like a slow start and the script waited the full timeout;
+#   * the JVM we started has exited.
+APP_PID=$(cat "$WORK/app.pid" 2>/dev/null || true)
+for _ in $(seq 1 180); do
+  if grep -qE 'Tomcat started|Started DataManagerApplication|APPLICATION FAILED TO START|Application run failed' \
+       "$WORK/mockup.log" 2>/dev/null; then
+    break
+  fi
+  if [ -n "$APP_PID" ] && ! kill -0 "$APP_PID" 2>/dev/null; then
+    break
+  fi
   sleep 1
 done
 
-if grep -q 'Application run failed' "$WORK/mockup.log" 2>/dev/null; then
-  echo "the application failed to start; last lines of $WORK/mockup.log:" >&2
-  tail -25 "$WORK/mockup.log" >&2
+# Report the first line that names a cause. Spring prints a "Description:"
+# block for some failures (port clash) and only a stack trace for others (a bean
+# that could not be created), so look for both.
+startup_reason() {
+  # The innermost "Caused by" is the actual cause; the outer ones only restate
+  # it. Written without relying on line-anchored matching: the log carries ANSI
+  # colour codes, so a pattern like "^Caused by:" only matches when colour is
+  # off.
+  inner=$(grep -a 'Caused by:' "$WORK/mockup.log" 2>/dev/null | tail -1)
+  if [ -n "$inner" ]; then
+    echo "$inner" | sed 's/.*Caused by: *//' | cut -c1-300
+    return
+  fi
+  # Spring's own summary, when it prints one (a port clash does).
+  grep -a -A 3 'APPLICATION FAILED TO START' "$WORK/mockup.log" 2>/dev/null \
+    | grep -av 'APPLICATION FAILED' | grep -av '^\*' | grep -av '^$' | head -1 | cut -c1-300
+}
+
+if grep -qaE 'APPLICATION FAILED TO START|Application run failed' "$WORK/mockup.log" 2>/dev/null \
+   || { [ -n "$APP_PID" ] && ! kill -0 "$APP_PID" 2>/dev/null; }; then
+  reason=$(startup_reason || true)
+  echo "the application failed to start." >&2
+  [ -n "$reason" ] && echo "  $reason" >&2
+  echo >&2
+  echo "full log: $WORK/mockup.log" >&2
   exit 3
 fi
 
