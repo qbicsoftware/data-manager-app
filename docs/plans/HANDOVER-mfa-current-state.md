@@ -215,16 +215,32 @@ window decides rather than falling through, so a job that was down for a day sen
 minutes apart. Two nullable columns were added to `user_mfa_grace`; the ALTER and the reasoning are in
 `docs/migrations/NEXT.md`.
 
-**Unresolved on the test instance (2026-11-24): grace write, unreadable read-back.** After the reminder
-columns were added, one deployment reported `grace window for user … was not readable after insert` →
-HTTP 500 on every login attempt of that account. The write succeeded; the JPQL read-back that follows it
-in the same transaction, on the same connection, returned nothing. **Root cause not established** — the
-adapter's read-back is now (a) followed by a native re-read, (b) never fatal (it returns the candidate and
-logs the effective schema, the affected-row count and the ORM-vs-native outcome), so the next occurrence
-names its own cause instead of denying a legitimate login. Two diagnostics that would settle it, both in
-`JpaMfaGraceRepositorySpec`'s failure mode: whether `SELECT DATABASE()` in that session is the schema the
-migration was applied to, and whether a `BEFORE INSERT` trigger or a view shadows `user_mfa_grace`.
-A `SELECT … WHERE userId = '<id>'` run from the *application's* schema answers the first directly.
+**Solved (2026-11-24): a committed grace row read as absent, and the login was denied for it.** Reported
+as `grace window for user … was not readable after insert` → HTTP 500 on every login attempt of one
+account, while the row could be read from a SQL client with exactly the `startedAt` that login used.
+
+The cause was the read, not the write, and not the schema. MariaDB runs **REPEATABLE READ** by default: a
+plain `SELECT` keeps reading the snapshot taken at the transaction's first read, so a row committed by a
+*concurrent* login stays invisible for the rest of this transaction. The sequence was
+
+1. `findByUserId` → no row (snapshot taken);
+2. `INSERT … ON DUPLICATE KEY UPDATE` → 0 rows affected, because a concurrent login had committed the row;
+3. read-back `SELECT` → still the old snapshot → nothing;
+4. the adapter threw, and the login failed.
+
+Three lessons, all recorded in code:
+
+- **The insert's row count is the answer.** 1 means this call inserted, so no read follows at all — which
+  deletes the failing read from the common path. Only "0 = someone else's row" needs a read, and that one
+  is a locking read (`PESSIMISTIC_WRITE`), which InnoDB evaluates against current state in every
+  isolation level.
+- **A bookkeeping value no caller reads must never deny a login.** The guard discards the return value;
+  returning the candidate is bounded (at worst one login runs under a deadline one window later), a 500
+  is not.
+- **H2 cannot validate this.** Forcing REPEATABLE READ on H2 was tried and abandoned: H2's locking reads
+  still read the snapshot (InnoDB's do not), and the global setting broke an unrelated spec inside H2's
+  own `FOR UPDATE` evaluation. The failure is therefore pinned in `JpaMfaGraceRepositorySpec` (no read
+  after a successful insert; the remaining read is locking) rather than end-to-end on H2.
 
 **Not done, and known:** the enrolment page and the mailed link have **not been verified visually** (no
 frontend build here); the reminder job has **not been run against a database** (unit-level only, the

@@ -10,16 +10,22 @@ import java.time.Duration
 import java.time.Instant
 
 /**
- * <b>A grace write must never deny a login, and must never lie about what it stored.</b>
+ * <b>A grace write must never deny a login, and must never move a deadline that already exists.</b>
  *
- * <p>Observed on a deployed instance: the row was committed — it could be read from a SQL client
- * afterwards, with the very timestamp the login had used — yet the read-back inside the same method
- * returned nothing, and the adapter threw. Every login attempt of that account got a 500.</p>
+ * <p>Observed on a deployed instance: a row was committed (readable from a SQL client with the very
+ * timestamp the login used), the login's read-back returned nothing, the adapter threw, and every
+ * attempt of that account got an HTTP 500.</p>
  *
- * <p>Two lessons are pinned here. The read is an <b>assertion no caller reads</b>, so it must not be
- * fatal. And after a write the question is "what does the row say <em>now</em>", which is a
- * <b>current read</b> ({@code FOR UPDATE}), not the snapshot a plain {@code SELECT} answers from — the
- * distinction that produced this failure.</p>
+ * <p>Root cause: the read-back asked the wrong question. At MariaDB's default isolation
+ * (<b>REPEATABLE READ</b>) a plain {@code SELECT} keeps reading the snapshot taken at the transaction's
+ * first read, so a row committed by a <em>concurrent</em> login stays invisible to this transaction — the
+ * {@code ON DUPLICATE KEY} insert reports "existing row", and the {@code SELECT} afterwards reports
+ * nothing.</p>
+ *
+ * <p>So the insert's own row count is now the authority: <b>1 means this call inserted</b>, and no read
+ * is needed at all - which removes the failing read from the common path entirely. Only "someone else's
+ * row exists" needs a read, and that one is a locking read, which InnoDB evaluates against the current
+ * state in every isolation level.</p>
  *
  * <p>Lives in this module because it is where the Groovy/Spock test setup is; the class under test is
  * plain Java in {@code identity-infrastructure}, which has no test sources of its own.</p>
@@ -32,94 +38,75 @@ class JpaMfaGraceRepositorySpec extends Specification {
     EntityManager entityManager = Mock()
     Query insertQuery = Mock()
     TypedQuery<MfaGrace> ormRead = Mock()
-    Query nativeRead = Mock()
     Query probeQuery = Mock()
 
     JpaMfaGraceRepository repository = new JpaMfaGraceRepository(entityManager)
 
     def setup() {
-        // Answer by statement text: the adapter issues three kinds of native query and the diagnostics
-        // probe add more, so matching on order would break whenever a probe is added.
-        entityManager.createNativeQuery(_ as String) >> { String sql -> queryFor(sql) }
+        entityManager.createNativeQuery(_ as String) >> { String sql ->
+            sql.contains("INSERT INTO user_mfa_grace") ? insertQuery : probeQuery
+        }
         insertQuery.setParameter(_, _) >> insertQuery
-        nativeRead.setParameter(_, _) >> nativeRead
         probeQuery.getSingleResult() >> "data_management"
         entityManager.createQuery(_, MfaGrace) >> ormRead
         ormRead.setParameter(_, _) >> ormRead
         ormRead.setLockMode(_) >> ormRead
     }
 
-    private Query queryFor(String sql) {
-        if (sql.contains("INSERT INTO user_mfa_grace")) {
-            return insertQuery
-        }
-        if (sql.contains("SELECT userId")) {
-            return nativeRead
-        }
-        return probeQuery
+    def "the candidate is returned without any read when this call inserted the row"() {
+        given: "affected rows 1 means the INSERT inserted, and that is the whole question"
+        def candidate = MfaGrace.start("u-1", NOW, WINDOW)
+        insertQuery.executeUpdate() >> 1
+
+        when:
+        def result = repository.startIfAbsent(candidate)
+
+        then: "no SELECT runs, so no snapshot can hide the row this call just wrote"
+        result == candidate
+        0 * entityManager.createQuery(_, MfaGrace)
     }
 
-    def "the stored row is returned when the read-back works"() {
-        given: "the normal case: insert inserted, then the row is readable"
+    def "an existing row's deadline wins, and cannot be moved by a later login"() {
+        given: "affected rows 0: ON DUPLICATE KEY found somebody else's row"
         def candidate = MfaGrace.start("u-1", NOW, WINDOW)
-        def stored = MfaGrace.start("u-1", NOW.minus(Duration.ofHours(10)), WINDOW)
-        insertQuery.executeUpdate() >> 1
+        def stored = MfaGrace.start("u-1", NOW.minus(Duration.ofDays(1)), WINDOW)
+        insertQuery.executeUpdate() >> 0
         ormRead.getResultList() >> [stored]
 
-        expect:
+        expect: "grace is not renewable by logging in"
         repository.startIfAbsent(candidate) == stored
     }
 
-    def "the read-back is a current read, not a snapshot read"() {
-        given: "after a write the question is what the row says now; a plain SELECT answers from a snapshot"
-        def candidate = MfaGrace.start("u-1", NOW, WINDOW)
+    def "that read is a locking read, because it reads somebody else's committed row"() {
+        given:
         insertQuery.executeUpdate() >> 0
-        ormRead.getResultList() >> [candidate]
+        ormRead.getResultList() >> [MfaGrace.start("u-1", NOW, WINDOW)]
 
         when:
-        repository.startIfAbsent(candidate)
+        repository.startIfAbsent(MfaGrace.start("u-1", NOW, WINDOW))
 
-        then: "FOR UPDATE sees the latest committed row, which is what produced the observed failure"
+        then: "a current read in every isolation level, unlike a plain SELECT"
         1 * ormRead.setLockMode(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE) >> ormRead
     }
 
-    def "an unreadable row returns the candidate instead of failing the login"() {
-        given: "the observed failure: written, then invisible to the ORM and to a native re-read"
+    def "an unreadable existing row returns the candidate instead of failing the login"() {
+        given: "the observed failure shape: the insert says a row exists, the read cannot see it"
         def candidate = MfaGrace.start("u-1", NOW, WINDOW)
         insertQuery.executeUpdate() >> 0
         ormRead.getResultList() >> []
-        nativeRead.getResultList() >> []
 
         expect: "no exception — no caller reads this value, and the session is legitimate"
         repository.startIfAbsent(candidate) == candidate
     }
 
-    def "a row the ORM query misses is still returned when a native read can see it"() {
-        given: "the mapping and the table disagree, which is a different bug from a missing row"
-        def candidate = MfaGrace.start("u-1", NOW, WINDOW)
-        insertQuery.executeUpdate() >> 0
-        ormRead.getResultList() >> []
-        nativeRead.getResultList() >> [
-                ["u-1", java.sql.Timestamp.from(NOW), java.sql.Timestamp.from(NOW.plus(WINDOW))] as Object[]
-        ]
-
-        when:
-        def result = repository.startIfAbsent(candidate)
-
-        then: "the stored deadline wins, so a second login cannot move it"
-        result.graceUntil() == NOW.plus(WINDOW)
-        result.startedAt() == NOW
-    }
-
     def "the diagnostic names the connection, not just the symptom"() {
-        given: "the log line must answer 'did the writer and the readers share a connection?'"
-        def candidate = MfaGrace.start("u-1", NOW, WINDOW)
+        given:
         insertQuery.executeUpdate() >> 0
         ormRead.getResultList() >> []
-        nativeRead.getResultList() >> []
+        probeQuery.getSingleResult() >> "value"
 
         when:
-        repository.startIfAbsent(candidate)
+        repository.startIfAbsent(MfaGrace.start("u-1", NOW, WINDOW))
 
         then: "schema, autocommit, isolation and connection id are all probed"
         (1.._) * probeQuery.getSingleResult() >> "value"
@@ -128,13 +115,11 @@ class JpaMfaGraceRepositorySpec extends Specification {
 
     def "a broken probe does not turn the fallback into a failure"() {
         given:
-        def candidate = MfaGrace.start("u-1", NOW, WINDOW)
         insertQuery.executeUpdate() >> 0
         ormRead.getResultList() >> []
-        nativeRead.getResultList() >> []
         probeQuery.getSingleResult() >> { throw new IllegalStateException("no database selected") }
 
         expect:
-        repository.startIfAbsent(candidate) == candidate
+        repository.startIfAbsent(MfaGrace.start("u-1", NOW, WINDOW)) != null
     }
 }

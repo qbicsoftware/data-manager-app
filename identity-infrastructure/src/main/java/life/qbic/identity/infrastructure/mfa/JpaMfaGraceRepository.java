@@ -60,85 +60,45 @@ public class JpaMfaGraceRepository implements MfaGraceRepository {
         .setParameter("graceUntil", candidate.graceUntil())
         .executeUpdate();
 
-    // Read back instead of returning the candidate: when the row already existed this call changed
-    // nothing, and the stored deadline — not the one this caller computed — is the truth.
+    // ── The insert itself is the answer, so no read is needed to know what happened ────────────
     //
-    // A JPQL query, not find(): if findByUserId was called earlier in this transaction and found
-    // nothing, JPA may remember that "absent" result and find() would keep returning empty even
-    // though the native insert above just wrote the row.
+    // MariaDB/MySQL report 1 row affected when the INSERT inserted, and 0 when ON DUPLICATE KEY
+    // found an existing row and updated nothing ("userId = userId" is a no-op). Connector/J sends
+    // CLIENT_FOUND_ROWS off, so a no-op update really does report 0.
     //
-    // PESSIMISTIC_WRITE, because this must be a *current* read, not a consistent one. After an insert
-    // the truth is the row as it is now; a plain SELECT answers "what did my snapshot show", which is
-    // a different question and the reason a committed row can be invisible here. It also serialises the
-    // two logins that race on the same account, which is what "first write wins" needs.
+    // This is not a stylistic preference. The read-back that used to run here was the bug: at
+    // REPEATABLE READ (MariaDB's default) a plain SELECT keeps reading the snapshot taken at the
+    // transaction's first read, so a row committed by a concurrent login stays invisible forever —
+    // the insert returns 0, the row exists, and the SELECT reports nothing. Observed on a deployed
+    // instance as an HTTP 500 on every login of one account.
+    //
+    // When the insert is authoritative, this is exact:
+    if (affected == 1) {
+      return candidate;
+    }
+
+    // affected == 0: a row existed when this statement ran. Somebody else's committed row is now the
+    // truth, and its deadline must not be moved by this login (grace is not renewable).
     List<MfaGrace> stored = entityManager
         .createQuery("SELECT g FROM MfaGrace g WHERE g.userId = :userId", MfaGrace.class)
         .setParameter("userId", candidate.userId())
+        // PESSIMISTIC_WRITE for the *read of somebody else's row*, which is the case where the
+        // snapshot can be stale. In InnoDB a locking read is a current read in every isolation level,
+        // so it sees the row the duplicate check just saw.
         .setLockMode(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
         .getResultList();
-    if (stored.isEmpty()) {
-      // A native re-read before giving up: if the ORM-level query misses a row the native one can see,
-      // the problem is in the mapping or the query, and the log must say which. If both miss it, the
-      // row is not there for this connection, which is a different diagnosis again.
-      Optional<MfaGrace> nativeRow = readBackNatively(candidate.userId());
-      if (nativeRow.isPresent()) {
-        log.warn("Grace window for user %s was invisible to the ORM query but readable natively; "
-            .formatted(candidate.userId())
-            + "returning the stored row. The entity mapping and the table disagree.");
-        return nativeRow.get();
-      }
-      // Do NOT throw. This read is an assertion, and no caller reads its result — the login guard
-      // discards it. Throwing here turned one unreadable row into a failed login (observed on a
-      // deployed instance: a 500 for every attempt), which is the worst possible trade: the write
-      // succeeded, the session is legitimate, and the account is denied because a bookkeeping read
-      // came back empty.
-      //
-      // The cost of returning the candidate is bounded: at worst this login proceeds under a deadline
-      // one window later than the stored one. The stored row is untouched and first-write-wins still
-      // holds, so the next login reads the real deadline again.
-      log.error("Grace window for user %s was written (affected rows: %d) but is not readable in the "
-          .formatted(candidate.userId(), affected)
-          + "same transaction, by ORM or by native query; proceeding with the candidate until %s. %s"
-          .formatted(candidate.graceUntil(), describeSchema()));
-      return candidate;
+    if (!stored.isEmpty()) {
+      return stored.getFirst();
     }
-    return stored.getFirst();
-  }
 
-  /**
-   * The same row, read without Hibernate's mapping in the way.
-   *
-   * <p>Deliberately minimal: three columns, no entity, no query plan. It exists to separate "the row is
-   * not there" from "our query does not see it", which are different problems with different fixes.</p>
-   */
-  private Optional<MfaGrace> readBackNatively(String userId) {
-    try {
-      Object[] row = (Object[]) entityManager
-          .createNativeQuery("SELECT userId, startedAt, graceUntil FROM user_mfa_grace "
-              + "WHERE userId = :userId")
-          .setParameter("userId", userId)
-          .getResultList().stream().findFirst().orElse(null);
-      if (row == null) {
-        return Optional.empty();
-      }
-      return Optional.of(MfaGrace.start(String.valueOf(row[0]),
-          toInstant(row[1]),
-          java.time.Duration.between(toInstant(row[1]), toInstant(row[2]))));
-    } catch (RuntimeException e) {
-      // Reported by the caller's log line; a failure here must not mask the original observation.
-      return Optional.empty();
-    }
-  }
-
-  private static java.time.Instant toInstant(Object value) {
-    return switch (value) {
-      case java.time.Instant instant -> instant;
-      case java.sql.Timestamp timestamp -> timestamp.toInstant();
-      case java.time.LocalDateTime local -> local.toInstant(java.time.ZoneOffset.UTC);
-      case String text -> java.time.Instant.parse(text.replace(' ', 'T') + "Z");
-      case null, default -> throw new IllegalStateException(
-          "unexpected column type " + (value == null ? "null" : value.getClass().getName()));
-    };
+    // Still nothing. Whatever the cause, this value is never read by a caller — the login guard
+    // discards it — so denying the login over it would be the wrong trade: the session is legitimate
+    // and only a bookkeeping figure is missing.
+    log.error("Grace window for user %s reported an existing row (affected rows: 0) but no row can be "
+        .formatted(candidate.userId())
+        + "read back; proceeding with the candidate until %s. %s"
+        .formatted(candidate.graceUntil(), describeSchema()));
+    return candidate;
   }
 
   /**

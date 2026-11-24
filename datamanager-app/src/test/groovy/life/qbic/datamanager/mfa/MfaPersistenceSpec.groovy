@@ -475,6 +475,62 @@ class MfaPersistenceSpec extends Specification {
         stored[1].graceUntil() == NOW.plus(TWO_DAYS)
     }
 
+    def "N concurrent first logins all read a window back, and they agree on the deadline"() {
+        // A new account under REQUIRED, several logins in flight, all deciding "no window, grant one".
+        //
+        // Honest scope: this does NOT reproduce the reported failure. It runs on H2, whose default
+        // isolation is READ COMMITTED, so a concurrent commit is visible to this transaction's next
+        // statement. MariaDB defaults to REPEATABLE READ, where a plain SELECT keeps reading the
+        // snapshot taken at the first read - which is how a committed row stayed invisible and made
+        // one login return HTTP 500.
+        //
+        // Forcing REPEATABLE READ on H2 was tried and abandoned: H2's locking reads still read the
+        // snapshot (InnoDB's do not), and the global setting broke an unrelated spec inside H2's own
+        // FOR UPDATE evaluation. A spec that fails for a reason the engine invented is worse than no
+        // spec.
+        //
+        // So the failure is pinned where it can be stated exactly: JpaMfaGraceRepositorySpec asserts
+        // that a successful insert performs NO read at all (so no snapshot can hide the row), and that
+        // the only remaining read is a locking one. This test keeps the end-to-end invariant.
+        given:
+        int threads = 8
+        def start = new CountDownLatch(1)
+        def pool = Executors.newFixedThreadPool(threads)
+        def outcomes = Collections.synchronizedList([])
+
+        when:
+        (1..threads).each { index ->
+            pool.submit({
+                start.await()
+                try {
+                    def read = inTransaction { em ->
+                        def repo = graces(em)
+                        repo.findByUserId(USER).isEmpty() ? repo.startIfAbsent(
+                                MfaGrace.start(USER, NOW.plus(Duration.ofSeconds(index)), TWO_DAYS))
+                                : repo.findByUserId(USER).get()
+                    }
+                    outcomes << read
+                } catch (Throwable t) {
+                    outcomes << t
+                }
+            } as Callable)
+        }
+        start.countDown()
+        pool.shutdown()
+        pool.awaitTermination(30, TimeUnit.SECONDS)
+
+        then: "every login got a window back - none is denied because its read-back lost a race"
+        outcomes.size() == threads
+        outcomes.findAll { it instanceof Throwable }*.toString() == []
+
+        and: "each one is a real window, not the candidate of a login that gave up"
+        outcomes.every { it instanceof MfaGrace }
+
+        and: "and they all agree on which deadline is stored"
+        def deadlines = outcomes.findAll { it instanceof MfaGrace }*.graceUntil() as Set
+        deadlines.size() == 1
+    }
+
     def "an account that was never subject to REQUIRED has no window, which means 'grant one'"() {
         expect: "absence is not 'grace is over' — the gate turns it into GraceGranted (ADR 0011 item 3)"
         inTransaction { em -> graces(em).findByUserId(USER) }.isEmpty()
