@@ -15,6 +15,7 @@
 #
 # USAGE
 #   ./scripts/mockup/run.sh              # start (builds if needed)
+#   ./scripts/mockup/run.sh --no-proxy    # app on 48013 directly; log in by hand
 #   ./scripts/mockup/run.sh --rebuild    # rebuild the jar first
 #   ./scripts/mockup/run.sh --reset-db   # recreate the databases, keep the vault
 #   ./scripts/mockup/run.sh --clean      # forget everything, including the vault
@@ -41,15 +42,24 @@ JAR="$REPO/datamanager-app/target/datamanager-app-1.19.2.jar"
 REBUILD=0
 RESET_DB=0
 CLEAN=0
+NO_PROXY=0
 for arg in "$@"; do
   case "$arg" in
     --rebuild) REBUILD=1 ;;
     --reset-db) RESET_DB=1 ;;
     --clean) CLEAN=1; RESET_DB=1; REBUILD=0 ;;
-    -h|--help) sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    # The proxy exists only so a tool that cannot fill in a login form can still
+    # reach a protected page. It costs a hop on every request, so it is optional:
+    # with --no-proxy the app listens on PORT directly and you log in by hand.
+    --no-proxy) NO_PROXY=1 ;;
+    -h|--help) sed -n '2,34p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown option: $arg" >&2; exit 1 ;;
   esac
 done
+
+if [ "$NO_PROXY" = 1 ]; then
+  APP_PORT=$PORT
+fi
 
 # --- Java -------------------------------------------------------------------
 # The JDK is often absent from PATH even when installed; look where it usually is.
@@ -127,13 +137,48 @@ if [ "$REBUILD" = 1 ] || [ ! -f "$JAR" ]; then
       -Dsigstore.skip=true -P '!sigcheck' install )
 fi
 
-# --- application ------------------------------------------------------------
-for busy in "$PORT" "$APP_PORT"; do
-  if lsof -ti:"$busy" >/dev/null 2>&1; then
-    echo "==> port $busy is busy; stopping the old instance"
-    kill -9 "$(lsof -ti:"$busy")" 2>/dev/null || true
+# --- stopping an earlier run -------------------------------------------------
+# The previous run records what it started. Do NOT rediscover processes by port
+# with "lsof -ti:PORT": on this platform Tomcat binds an IPv6 socket (netstat
+# shows tcp46 *.48014) and lsof reports no pid for it, so the lookup silently
+# matched nothing, the old JVM survived, and every restart leaked another one.
+# A pile of orphaned JVMs competing for the same database is what made the
+# application feel slow -- not any single request being expensive.
+stop_recorded() {
+  pidfile=$1
+  label=$2
+  [ -f "$pidfile" ] || return 0
+  pid=$(cat "$pidfile" 2>/dev/null || true)
+  rm -f "$pidfile"
+  case "$pid" in
+    ''|*[!0-9]*) return 0 ;;
+  esac
+  kill -0 "$pid" 2>/dev/null || return 0
+  echo "==> stopping the $label from the previous run (pid $pid)"
+  # TERM first: the JVM shuts down and H2 closes its files cleanly. kill -9
+  # leaves the databases locked and the next start fails with "Database may be
+  # already in use", which reads like corruption rather than a leftover.
+  kill -TERM "$pid" 2>/dev/null || true
+  for _ in $(seq 1 20); do
+    kill -0 "$pid" 2>/dev/null || break
+    sleep 1
+  done
+  if kill -0 "$pid" 2>/dev/null; then
+    echo "    did not stop within 20s; forcing"
+    kill -9 "$pid" 2>/dev/null || true
     sleep 2
   fi
+}
+
+stop_recorded "$WORK/proxy.pid" "session proxy"
+stop_recorded "$WORK/app.pid" "application"
+
+# Only reached if a forced stop happened: the ports are free, so any lock left
+# behind belongs to a process that no longer exists.
+for stale in "$WORK"/db-*.lock.db; do
+  [ -e "$stale" ] || continue
+  echo "==> removing stale database lock $(basename "$stale")"
+  rm -f "$stale"
 done
 
 set -a
@@ -164,6 +209,11 @@ set +a
 mkdir -p "$WORK/tmp" "$WORK/logs"
 cd "$WORK"
 
+# Start from an empty log. Without this, a failure line from an earlier run is
+# still in the file and the wait loop below reports a start that actually
+# succeeded as failed.
+: > "$WORK/mockup.log"
+
 echo "==> starting the application"
 # productionMode: without it Vaadin serves an empty shell, because the dev-mode
 # bundle expects a Vite dev server on another port.
@@ -187,7 +237,8 @@ echo "==> starting the application"
     -Djobrunr.database.datasource.password= \
     -Djobrunr.background-job-server.enabled=false \
     -Djobrunr.dashboard.enabled=false \
-    -jar "$JAR" > "$WORK/mockup.log" 2>&1 & )
+    -jar "$JAR" > "$WORK/mockup.log" 2>&1 &
+  echo $! > "$WORK/app.pid" )
 
 for i in $(seq 1 180); do
   if grep -qE 'Tomcat started|Application run failed' "$WORK/mockup.log" 2>/dev/null; then break; fi
@@ -200,20 +251,28 @@ if grep -q 'Application run failed' "$WORK/mockup.log" 2>/dev/null; then
   exit 3
 fi
 
-echo "==> starting the session proxy"
-node "$REPO/scripts/mockup/session-proxy.js" \
-  --listen "$PORT" --target "$APP_PORT" > "$WORK/proxy.log" 2>&1 &
+if [ "$NO_PROXY" = 1 ]; then
+  echo
+  echo "  application  http://localhost:$PORT   (login form, no proxy)"
+  echo "  log          $WORK/mockup.log"
+else
+  echo "==> starting the session proxy"
+  node "$REPO/scripts/mockup/session-proxy.js" \
+    --listen "$PORT" --target "$APP_PORT" > "$WORK/proxy.log" 2>&1 &
+  echo $! > "$WORK/proxy.pid"
 
-for i in $(seq 1 60); do
-  if curl -sf -o /dev/null -m 2 "http://localhost:$PORT/login" 2>/dev/null; then break; fi
-  sleep 1
-done
+  for i in $(seq 1 60); do
+    if curl -sf -o /dev/null -m 2 "http://localhost:$PORT/login" 2>/dev/null; then break; fi
+    sleep 1
+  done
 
-echo
-echo "  application  http://localhost:$PORT   (already logged in)"
-echo "  direct       http://localhost:$APP_PORT   (login form)"
-echo "  log          $WORK/mockup.log"
-echo "  proxy log    $WORK/proxy.log"
+  echo
+  echo "  application  http://localhost:$PORT   (already logged in)"
+  echo "  direct       http://localhost:$APP_PORT   (login form)"
+  echo "  log          $WORK/mockup.log"
+  echo "  proxy log    $WORK/proxy.log"
+fi
+
 echo
 echo "  accounts (login with the EMAIL address, not the username):"
 echo "    dev@qbic.local     DevPassword123!"

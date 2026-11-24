@@ -58,6 +58,34 @@ a specific failure:
   accessible projects and renders the empty state.
 - **`./tmp` must exist in the working directory**, and Vaadin wants a writable
   home; the script sets both.
+- **Stopping the app by port does not work on this platform.** Tomcat binds an
+  IPv6 socket and `lsof -ti:PORT` finds no pid for it, so the previous run
+  survived every restart and the orphans then competed for the database — which
+  is what made navigation feel slow. The pids are now recorded and stopped
+  explicitly.
+
+## If navigation feels slow
+
+Check how many instances are running. An orphaned JVM from an earlier run keeps
+the previous database open and competes for it, and the application then feels
+sluggish without anything obviously failing:
+
+```sh
+lsof +D .mockup | grep -c java     # want 1
+```
+
+`run.sh` records the pids it starts in `.mockup/app.pid` and
+`.mockup/proxy.pid` and stops them on the next run. It deliberately does not
+look the processes up by port: Tomcat binds an IPv6 socket here (`netstat`
+shows `tcp46 *.48014`) and `lsof -ti:48014` returns nothing for it, so a
+port-based lookup silently matched nothing and every restart leaked another
+JVM. If you find a pile of them, stop the one in `app.pid` and start again.
+
+The session proxy is optional (`--no-proxy`). It exists so a tool that cannot
+fill in a login form can still reach a protected page, and it keeps a keep-alive
+connection to the application so `LONG_POLLING` push traffic does not churn
+sockets — but it is still one extra hop, so if you are driving the app with a
+real browser, `--no-proxy` is the faster and simpler choice.
 
 ## What is not covered
 

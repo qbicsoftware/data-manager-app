@@ -38,12 +38,22 @@ const HOST = '127.0.0.1';
 const EMAIL = args.email || 'dev@qbic.local';
 const PASSWORD = args.password || 'DevPassword123!';
 
+/**
+ * A keep-alive agent shared by every upstream request.
+ *
+ * Vaadin pushes with LONG_POLLING, so the client keeps several requests in
+ * flight at all times. Without an agent each of those opened a brand-new TCP
+ * connection to the application and discarded it, which is socket churn on
+ * every navigation -- the whole point of this proxy is to stay out of the way.
+ */
+const agent = new http.Agent({ keepAlive: true, maxSockets: 64 });
+
 let cookie = '';
 
 /** Minimal request helper: resolves with { status, headers, body }. */
 function request(path, { method = 'GET', headers = {}, body } = {}) {
   return new Promise((resolve, reject) => {
-    const req = http.request({ host: HOST, port: TARGET, path, method, headers }, (res) => {
+    const req = http.request({ host: HOST, port: TARGET, path, method, headers, agent }, (res) => {
       let data = '';
       res.on('data', (c) => (data += c));
       res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: data }));
@@ -118,7 +128,7 @@ function sessionLost(status, headers) {
 
 const server = http.createServer((req, res) => {
   const upstream = http.request(
-    { host: HOST, port: TARGET, method: req.method, path: req.url, headers: forwardHeaders(req.headers) },
+    { host: HOST, port: TARGET, method: req.method, path: req.url, headers: forwardHeaders(req.headers), agent },
     (upRes) => {
       if (sessionLost(upRes.statusCode, upRes.headers) && !req.url.startsWith('/login')) {
         // Re-authenticate once, then let the client retry. Doing it here keeps
@@ -127,7 +137,7 @@ const server = http.createServer((req, res) => {
         login()
           .then(() => {
             const retry = http.request(
-              { host: HOST, port: TARGET, method: req.method, path: req.url, headers: forwardHeaders(req.headers) },
+              { host: HOST, port: TARGET, method: req.method, path: req.url, headers: forwardHeaders(req.headers), agent },
               (again) => {
                 res.writeHead(again.statusCode, again.headers);
                 again.pipe(res);
