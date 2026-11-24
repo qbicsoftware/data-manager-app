@@ -4,7 +4,6 @@ import jakarta.mail.Multipart
 import jakarta.mail.Session
 import jakarta.mail.internet.MimeBodyPart
 import jakarta.mail.internet.MimeMessage
-import life.qbic.identity.application.communication.CommunicationException
 import org.springframework.mail.javamail.JavaMailSender
 import spock.lang.Specification
 
@@ -91,7 +90,7 @@ class EmailServiceProviderSpec extends Specification {
         thrown(NullPointerException)
     }
 
-    def "throws a CommunicationException when sending a plain text email fails"() {
+    def "throws an EmailSubmissionException when sending a plain text email fails"() {
         given:
         def mailSender = Mock(JavaMailSender)
         mailSender.createMimeMessage() >> new MimeMessage((Session) null)
@@ -106,12 +105,12 @@ class EmailServiceProviderSpec extends Specification {
                 new Recipient("Jane Doe", "not a valid address"),
                 new Content("Hello there"))
 
-        then:
-        def e = thrown(CommunicationException)
+        then: 'the infrastructure type, not a context type borrowed from identity'
+        def e = thrown(EmailSubmissionException)
         e.message == "Notification of recipient failed!"
     }
 
-    def "throws a CommunicationException when sending an email with an attachment fails"() {
+    def "throws an EmailSubmissionException when sending an email with an attachment fails"() {
         given:
         def mailSender = Mock(JavaMailSender)
         mailSender.createMimeMessage() >> new MimeMessage((Session) null)
@@ -125,8 +124,8 @@ class EmailServiceProviderSpec extends Specification {
                 new Content("Hello there"),
                 new Attachment("report.txt", "report payload"))
 
-        then:
-        def e = thrown(CommunicationException)
+        then: 'the infrastructure type, not a context type borrowed from identity'
+        def e = thrown(EmailSubmissionException)
         e.message == "Notification of recipient failed!"
     }
 

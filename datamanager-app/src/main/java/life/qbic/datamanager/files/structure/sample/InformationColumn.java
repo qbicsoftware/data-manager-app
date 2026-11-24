@@ -5,6 +5,7 @@ import java.util.Optional;
 import life.qbic.datamanager.files.structure.Column;
 import life.qbic.datamanager.files.structure.ExampleProvider;
 import life.qbic.datamanager.files.structure.ExampleProvider.Helper;
+import life.qbic.projectmanagement.application.sample.SampleFieldLength;
 
 public enum InformationColumn implements Column {
   SAMPLE_ID("QBiC Sample Id", 0, true),
@@ -47,7 +48,9 @@ public enum InformationColumn implements Column {
         case BATCH -> new Helper("Free text, e.g. Batch1, CohortA, Collection_1", """
             A defined group of samples that are intended to be processed together
             or were collected under the same experimental conditions.""");
-        case COMMENT -> new Helper("Free text", "Notes about the sample. (Max 500 characters)");
+        case COMMENT -> new Helper("Free text",
+            "Notes about the sample. (Max " + SampleFieldLength.COMMENT
+                + " characters)");
       };
     }
     throw new IllegalArgumentException(

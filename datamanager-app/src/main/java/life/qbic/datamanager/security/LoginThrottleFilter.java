@@ -9,6 +9,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
+import life.qbic.identity.application.throttle.ClientOrigin;
+import life.qbic.identity.application.throttle.ClientOriginResolver;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -46,6 +48,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * own call sites — see {@code EmailConfirmationMain} — because they are Vaadin round-trips, not form
  * posts, and never reach this filter.</p>
  *
+ * <h3>Origin scope</h3>
+ * <p>The check also considers the request origin, so an origin that is flooding many accounts is
+ * refused even when the account in this particular request is clean (AUTH-NFR-03, #1691). The
+ * resolver supplies {@link ClientOrigin#unknown()} on a deployment without a trusted client address,
+ * in which case the check degrades to exactly the account-scope behaviour it had before.</p>
+ *
+ * <p>Nothing about the rejection changes because of it: the same {@link BadCredentialsException}, the
+ * same handler, the same constant work. The visitor must not be able to tell which bucket — if any —
+ * decided.</p>
+ *
  * @since 1.0.0
  */
 public class LoginThrottleFilter extends OncePerRequestFilter {
@@ -56,13 +68,16 @@ public class LoginThrottleFilter extends OncePerRequestFilter {
   static final String USERNAME_PARAMETER = "username";
 
   private final AuthAttemptThrottle throttle;
+  private final ClientOriginResolver originResolver;
   private final AuthenticationFailureHandler failureHandler;
   private final java.util.function.Consumer<String> constantWorkPerformer;
 
   public LoginThrottleFilter(AuthAttemptThrottle throttle,
+      ClientOriginResolver originResolver,
       AuthenticationFailureHandler failureHandler,
       java.util.function.Consumer<String> constantWorkPerformer) {
     this.throttle = requireNonNull(throttle, "throttle must not be null");
+    this.originResolver = requireNonNull(originResolver, "originResolver must not be null");
     this.failureHandler = requireNonNull(failureHandler, "failureHandler must not be null");
     this.constantWorkPerformer = requireNonNull(constantWorkPerformer,
         "constantWorkPerformer must not be null");
@@ -86,7 +101,8 @@ public class LoginThrottleFilter extends OncePerRequestFilter {
       return;
     }
 
-    if (!throttle.isThrottled(AuthAttemptThrottle.Scope.LOGIN, address, Instant.now())) {
+    if (!throttle.isThrottled(AuthAttemptThrottle.Scope.LOGIN, address,
+        originResolver.resolve(), Instant.now())) {
       filterChain.doFilter(request, response);
       return;
     }
@@ -95,7 +111,7 @@ public class LoginThrottleFilter extends OncePerRequestFilter {
     // carries no signal (see property 2 above).
     constantWorkPerformer.accept(address);
 
-    log.info("Rejected a login attempt for a throttled account");
+    log.info("Rejected a login attempt for a throttled account or origin");
     try {
       failureHandler.onAuthenticationFailure(request, response,
           new BadCredentialsException("Bad credentials"));

@@ -4,7 +4,9 @@ import static life.qbic.logging.service.LoggerFactory.logger;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
@@ -12,11 +14,13 @@ import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ValidationException;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationPxP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificPxP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationPxP;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.measurement.ProteomicsMeasurementMetadata;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.validation.LengthValidation;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,7 +116,8 @@ public class MeasurementProteomicsValidator {
         .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE()))
         .combine(validationPolicy.validateInjectionVolume(metadata.injectionVolume()))
         .combine(missingLabelsValidation)
-        .combine(distinctLabelsValidation);
+        .combine(distinctLabelsValidation)
+        .combine(validateCommentLength(metadata.specificMetadata()));
   }
 
   @PreAuthorize("hasPermission(#projectId,'life.qbic.projectmanagement.domain.model.project.Project','WRITE')")
@@ -132,7 +137,17 @@ public class MeasurementProteomicsValidator {
         .combine(validationPolicy.validateOrganisation(metadata.organisationId()))
         .combine(validationPolicy.validateMsDevice(metadata.msDeviceCURIE()))
         .combine(validationPolicy.validateDigestionMethod(metadata.digestionMethod()))
-        .combine(validationPolicy.validateInjectionVolume(metadata.injectionVolume()));
+        .combine(validationPolicy.validateInjectionVolume(metadata.injectionVolume()))
+        .combine(validateCommentLength(metadata.specificMetadata()));
+  }
+
+  private static ValidationResult validateCommentLength(
+      Map<String, MeasurementSpecificPxP> specificMetadata) {
+    var commentsBySample = new HashMap<String, String>();
+    specificMetadata.forEach((sampleId, specific) ->
+        commentsBySample.put(sampleId, specific == null ? null : specific.comment()));
+    return LengthValidation.validateAll("Comment", MeasurementFieldLength.PROTEOMICS_COMMENT,
+        commentsBySample);
   }
 
   public enum PROTEOMICS_PROPERTY {

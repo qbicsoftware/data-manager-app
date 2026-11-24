@@ -41,25 +41,25 @@ class AuthAttemptThrottleSpec extends Specification {
 
   def "attempts below the threshold are allowed"() {
     expect:
-    throttle.record(Scope.LOGIN, ADDRESS, T0) == Decision.ALLOWED
-    throttle.record(Scope.LOGIN, ADDRESS, T0.plusSeconds(1)) == Decision.ALLOWED
-    throttle.record(Scope.LOGIN, ADDRESS, T0.plusSeconds(2)) == Decision.ALLOWED
+    throttle.recordAttempt(Scope.LOGIN, ADDRESS, T0) == Decision.ALLOWED
+    throttle.recordAttempt(Scope.LOGIN, ADDRESS, T0.plusSeconds(1)) == Decision.ALLOWED
+    throttle.recordAttempt(Scope.LOGIN, ADDRESS, T0.plusSeconds(2)) == Decision.ALLOWED
   }
 
   def "the attempt that crosses the threshold is itself throttled"() {
     given: 'three allowed attempts at a limit of three'
-    3.times { throttle.record(Scope.LOGIN, ADDRESS, T0) }
+    3.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, T0) }
 
     expect: 'the fourth is rejected, and so is every later one'
-    throttle.record(Scope.LOGIN, ADDRESS, T0.plusSeconds(10)) == Decision.THROTTLED
-    throttle.record(Scope.LOGIN, ADDRESS, T0.plusSeconds(11)) == Decision.THROTTLED
+    throttle.recordAttempt(Scope.LOGIN, ADDRESS, T0.plusSeconds(10)) == Decision.THROTTLED
+    throttle.recordAttempt(Scope.LOGIN, ADDRESS, T0.plusSeconds(11)) == Decision.THROTTLED
   }
 
   def "a block survives a new throttle instance, because it is in the store and not in the UI"() {
     // This is the actual defect being fixed. The old lockout was a counter in a UIScope bean, so a
     // page reload reset it to zero and the "lockout" was not a control at all.
     given:
-    4.times { throttle.record(Scope.LOGIN, ADDRESS, T0) }
+    4.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, T0) }
 
     when: 'a completely new service instance is built over the same store (i.e. a reload/restart)'
     def afterReload = new AuthAttemptThrottle(counter,
@@ -72,7 +72,7 @@ class AuthAttemptThrottleSpec extends Specification {
 
   def "the block expires after its duration"() {
     given:
-    4.times { throttle.record(Scope.LOGIN, ADDRESS, T0) }
+    4.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, T0) }
 
     expect: 'blocked inside the block duration'
     throttle.isThrottled(Scope.LOGIN, ADDRESS, T0.plus(Duration.ofMinutes(14)))
@@ -83,16 +83,16 @@ class AuthAttemptThrottleSpec extends Specification {
 
   def "a successful authentication clears the counter"() {
     given: 'one attempt away from the limit'
-    2.times { throttle.record(Scope.LOGIN, ADDRESS, T0) }
+    2.times { throttle.recordAttempt(Scope.LOGIN, ADDRESS, T0) }
 
     when: 'the user gets it right'
     throttle.onSuccess(Scope.LOGIN, ADDRESS)
 
     then: 'the allowance is whole again rather than nearly exhausted'
-    3.times { assert throttle.record(Scope.LOGIN, ADDRESS, T0.plusSeconds(5)) == Decision.ALLOWED }
+    3.times { assert throttle.recordAttempt(Scope.LOGIN, ADDRESS, T0.plusSeconds(5)) == Decision.ALLOWED }
 
     and:
-    throttle.record(Scope.LOGIN, ADDRESS, T0.plusSeconds(6)) == Decision.THROTTLED
+    throttle.recordAttempt(Scope.LOGIN, ADDRESS, T0.plusSeconds(6)) == Decision.THROTTLED
   }
 
   def "the outcome reports the counts a view needs, so it never has to guess"() {
@@ -144,7 +144,7 @@ class AuthAttemptThrottleSpec extends Specification {
 
     expect:
     (1..4).every { i ->
-      t1.record(Scope.LOGIN, ADDRESS, T0.plusSeconds(i)) ==
+      t1.recordAttempt(Scope.LOGIN, ADDRESS, T0.plusSeconds(i)) ==
           t2.recordAndReport(Scope.LOGIN, ADDRESS, T0.plusSeconds(i)).decision()
     }
   }
@@ -153,7 +153,7 @@ class AuthAttemptThrottleSpec extends Specification {
 
   def "the stored key is a hash, never the address"() {
     when:
-    throttle.record(Scope.LOGIN, ADDRESS, T0)
+    throttle.recordAttempt(Scope.LOGIN, ADDRESS, T0)
 
     then: 'the store holds one 64-character hex digest'
     counter.keys().size() == 1
@@ -174,7 +174,7 @@ class AuthAttemptThrottleSpec extends Specification {
                     '  alice@example.org  ']
 
     when:
-    variants.each { throttle.record(Scope.LOGIN, it, T0) }
+    variants.each { throttle.recordAttempt(Scope.LOGIN, it, T0) }
 
     then: 'exactly one bucket, and it is already at the limit'
     counter.keys().size() == 1
@@ -183,7 +183,7 @@ class AuthAttemptThrottleSpec extends Specification {
 
   def "different flows do not share a bucket"() {
     given: 'the resend limit is 2'
-    3.times { throttle.record(Scope.PASSWORD_RESET_RESEND, ADDRESS, T0) }
+    3.times { throttle.recordAttempt(Scope.PASSWORD_RESET_RESEND, ADDRESS, T0) }
 
     expect: 'a reset-resend block does not block login'
     throttle.isThrottled(Scope.PASSWORD_RESET_RESEND, ADDRESS, T0.plusSeconds(1))
@@ -209,8 +209,8 @@ class AuthAttemptThrottleSpec extends Specification {
     def unknown = 'nobody@example.org'
 
     when:
-    (1..5).each { throttle.record(Scope.LOGIN, ADDRESS, T0) }
-    (1..5).each { throttle.record(Scope.LOGIN, unknown, T0) }
+    (1..5).each { throttle.recordAttempt(Scope.LOGIN, ADDRESS, T0) }
+    (1..5).each { throttle.recordAttempt(Scope.LOGIN, unknown, T0) }
 
     then: 'both end up blocked'
     throttle.isThrottled(Scope.LOGIN, ADDRESS, T0.plusSeconds(1))
@@ -229,11 +229,11 @@ class AuthAttemptThrottleSpec extends Specification {
     def victim = 'victim@example.org'
 
     when: 'an attacker exhausts five other addresses'
-    (1..5).each { i -> throttle.record(Scope.LOGIN, "target$i@example.org", T0) }
+    (1..5).each { i -> throttle.recordAttempt(Scope.LOGIN, "target$i@example.org", T0) }
 
     then: 'the victim has a full allowance'
     !throttle.isThrottled(Scope.LOGIN, victim, T0.plusSeconds(1))
-    3.times { assert throttle.record(Scope.LOGIN, victim, T0.plusSeconds(2)) == Decision.ALLOWED }
+    3.times { assert throttle.recordAttempt(Scope.LOGIN, victim, T0.plusSeconds(2)) == Decision.ALLOWED }
   }
 
   @Unroll
@@ -255,9 +255,9 @@ class AuthAttemptThrottleSpec extends Specification {
 
   def "a blank identifier is allowed, because there is no bucket to fill"() {
     expect:
-    throttle.record(Scope.LOGIN, '', T0) == Decision.ALLOWED
-    throttle.record(Scope.LOGIN, '   ', T0) == Decision.ALLOWED
-    throttle.record(Scope.LOGIN, null, T0) == Decision.ALLOWED
+    throttle.recordAttempt(Scope.LOGIN, '', T0) == Decision.ALLOWED
+    throttle.recordAttempt(Scope.LOGIN, '   ', T0) == Decision.ALLOWED
+    throttle.recordAttempt(Scope.LOGIN, null, T0) == Decision.ALLOWED
     !throttle.isThrottled(Scope.LOGIN, '', T0)
   }
 

@@ -946,4 +946,94 @@ class MeasurementIPValidatorSpec extends Specification {
                 "MS Run 1"
         )
     }
+
+    private static MeasurementSpecificIP createSpecificWithComment(String comment) {
+        def valid = createValidSpecific()
+        return new MeasurementSpecificIP(
+                valid.sampleMass(),
+                valid.sampleVolume(),
+                valid.cycleFractionName(),
+                valid.mhcAntibody(),
+                valid.mhcTypingMethod(),
+                valid.enrichmentMethod(),
+                valid.prepDate(),
+                valid.msRunDate(),
+                valid.lcmsMethod(),
+                valid.lcColumn(),
+                valid.dataAcquisition(),
+                valid.massRange(),
+                valid.retentionTimeRange(),
+                valid.chargeRange(),
+                valid.ionMobilityRange(),
+                comment
+        )
+    }
+
+    def "A comment longer than 255 characters fails registration validation"() {
+        given: "a validator whose sample lookups cannot resolve"
+        def experimentId = ExperimentId.create()
+        def projectId = ProjectId.create()
+        def validator = new MeasurementIPValidator(
+                Mock(SampleInformationService) {
+                    findSampleId(_ as SampleCode) >> Optional.empty()
+                },
+                Mock(TerminologyService) { findByCurie(_) >> Optional.empty() },
+                Mock(ProjectInformationService) {
+                    find(_ as ProjectId) >> Optional.of(Mock(Project) {
+                        experiments() >> [experimentId]
+                    })
+                },
+                Mock(MeasurementService))
+
+        and: "a registration with a 256 character comment"
+        def registration = new MeasurementRegistrationInformationIP(
+                "https://ror.org/03a1kwz48",
+                "EFO:0008637",
+                "",
+                "QBiC",
+                "",
+                Map.of("QTEST001AE", createSpecificWithComment("c" * 256)),
+                "MS Run 1"
+        )
+
+        when:
+        def result = validator.validateRegistration(registration, experimentId.value(), projectId)
+
+        then: "the length failure is reported and names the field and the sample"
+        result.failures().contains(
+                "Comment: exceeds the maximum length of 255 characters for 'QTEST001AE' (got 256)")
+    }
+
+    def "A comment of exactly 255 characters does not fail the length validation"() {
+        given:
+        def experimentId = ExperimentId.create()
+        def projectId = ProjectId.create()
+        def validator = new MeasurementIPValidator(
+                Mock(SampleInformationService) {
+                    findSampleId(_ as SampleCode) >> Optional.empty()
+                },
+                Mock(TerminologyService) { findByCurie(_) >> Optional.empty() },
+                Mock(ProjectInformationService) {
+                    find(_ as ProjectId) >> Optional.of(Mock(Project) {
+                        experiments() >> [experimentId]
+                    })
+                },
+                Mock(MeasurementService))
+
+        def registration = new MeasurementRegistrationInformationIP(
+                "https://ror.org/03a1kwz48",
+                "EFO:0008637",
+                "",
+                "QBiC",
+                "",
+                Map.of("QTEST001AE", createSpecificWithComment("c" * 255)),
+                "MS Run 1"
+        )
+
+        when:
+        def result = validator.validateRegistration(registration, experimentId.value(), projectId)
+
+        then: "no length failure is reported"
+        !result.failures().any { it.startsWith("Comment:") }
+    }
 }

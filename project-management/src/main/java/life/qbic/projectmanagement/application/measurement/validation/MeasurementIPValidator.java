@@ -8,18 +8,22 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.ProjectInformationService;
 import life.qbic.projectmanagement.application.ValidationResult;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationIP;
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificIP;
 import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementUpdateInformationIP;
 import life.qbic.projectmanagement.application.measurement.MeasurementService;
 import life.qbic.projectmanagement.application.ontology.TerminologyService;
 import life.qbic.projectmanagement.application.sample.SampleInformationService;
+import life.qbic.projectmanagement.application.validation.LengthValidation;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import life.qbic.projectmanagement.domain.model.sample.SampleCode;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,6 +89,7 @@ public class MeasurementIPValidator {
     result = result.combine(validateOrganisation(registration));
     result = result.combine(validateInstrument(registration));
     result = result.combine(validateMandatoryFields(registration));
+    result = result.combine(validateCommentLength(registration.specificMetadata()));
     return result;
   }
 
@@ -109,7 +114,17 @@ public class MeasurementIPValidator {
         .combine(validationPolicy.validateMeasurementCode(update.measurementId()))
         .combine(validationPolicy.validateMandatoryMetadataDataForUpdate(update))
         .combine(validationPolicy.validateOrganisation(update.organisationId()))
-        .combine(validationPolicy.validateInstrument(update.instrumentCURIE()));
+        .combine(validationPolicy.validateInstrument(update.instrumentCURIE()))
+        .combine(validateCommentLength(update.specificMetadata()));
+  }
+
+  private static ValidationResult validateCommentLength(
+      Map<String, MeasurementSpecificIP> specificMetadata) {
+    var commentsBySample = new HashMap<String, String>();
+    specificMetadata.forEach((sampleId, specific) ->
+        commentsBySample.put(sampleId, specific == null ? null : specific.comment()));
+    return LengthValidation.validateAll("Comment", MeasurementFieldLength.IMMUNOPEPTIDOMICS_COMMENT,
+        commentsBySample);
   }
 
   private class ValidationPolicy {
