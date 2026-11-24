@@ -2,6 +2,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -57,14 +58,23 @@ public class MockDatabase {
   }
 
   /**
-   * Loads the data-management schema.
+   * Loads the data-management schema into an empty schema.
    *
    * <p>Tables are created before views, always, because the DDL declares views
    * that read tables defined further down the file.</p>
+   *
+   * <p>The schema is dropped first. Making each statement individually
+   * idempotent does not work: the DDL drops and recreates views in file order,
+   * but H2 refuses to drop a view that another view selects from
+   * ("Cannot drop project_measurements because project_overview depends on it").
+   * Dropping the whole schema with CASCADE removes them in dependency order, so
+   * re-running against an existing database gives the same result as the first
+   * run.</p>
    */
   static void loadSchema(Path schemaFile, String dbFile) throws Exception {
     try (Connection c = DriverManager.getConnection(url(dbFile), "sa", "")) {
       Statement s = c.createStatement();
+      s.execute("DROP SCHEMA IF EXISTS data_management CASCADE");
       s.execute("CREATE SCHEMA IF NOT EXISTS data_management");
       s.execute("SET SCHEMA data_management");
 
@@ -108,8 +118,20 @@ public class MockDatabase {
         }
       }
 
+      // Report what actually exists, not how many statements ran. The DDL drops
+      // and recreates some views, so counting executed DROP VIEW statements
+      // overstates the result -- "9/9" when six views exist.
+      int liveViews = 0;
+      try (ResultSet rs = s.executeQuery(
+          "SELECT count(*) FROM information_schema.views WHERE table_schema = 'data_management'")) {
+        if (rs.next()) {
+          liveViews = rs.getInt(1);
+        }
+      }
+
       System.out.println("tables: " + tablesOk + "/" + tables.size()
-          + "  views: " + viewsOk + "/" + views.size());
+          + "  views created: " + viewsOk + "/" + views.size()
+          + "  views present: " + liveViews);
       if (!failures.isEmpty()) {
         System.out.println("FAILURES:");
         failures.forEach(f -> System.out.println("  " + f));

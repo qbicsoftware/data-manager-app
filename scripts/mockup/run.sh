@@ -87,7 +87,7 @@ fi
 
 # --- database ---------------------------------------------------------------
 if [ "$RESET_DB" = 1 ]; then
-  rm -f "$WORK"/db-*.mv.db "$WORK"/db-*.trace.db
+  rm -f "$WORK"/db-*.mv.db "$WORK"/db-*.trace.db "$WORK"/.database-ready
 fi
 
 # The schema and fixture programs talk to H2 directly, so they need the driver
@@ -101,8 +101,15 @@ h2_jar() {
   return 1
 }
 
-if [ ! -f "$WORK/db-dm.mv.db" ]; then
+# Guard on a marker written only after BOTH steps succeed, never on the database
+# file. The database file exists as soon as schema loading starts, so checking
+# for it treats a half-built database as ready -- which is exactly the state a
+# failed load leaves behind.
+READY="$WORK/.database-ready"
+
+if [ ! -f "$READY" ]; then
   echo "==> building the mock-up database"
+  rm -f "$READY"
   H2=$(h2_jar) || {
     echo "H2 is not in the local Maven repository yet; build the app once first:" >&2
     echo "  ./mvnw -Duser.home=$WORK/home -Dmaven.test.skip=true -P '!sigcheck' install" >&2
@@ -115,6 +122,7 @@ if [ ! -f "$WORK/db-dm.mv.db" ]; then
     || { echo "schema load failed" >&2; exit 2; }
   java -cp "$H2" "$REPO/scripts/mockup/Fixtures.java" "$REPO/sql/insert-default-values.sql" "$WORK/db-dm" \
     || { echo "fixture seeding failed" >&2; exit 2; }
+  : > "$READY"
 fi
 
 # --- vault ------------------------------------------------------------------
