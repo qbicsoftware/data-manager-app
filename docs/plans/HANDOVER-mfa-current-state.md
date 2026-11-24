@@ -242,6 +242,21 @@ Three lessons, all recorded in code:
   own `FOR UPDATE` evaluation. The failure is therefore pinned in `JpaMfaGraceRepositorySpec` (no read
   after a successful insert; the remaining read is locking) rather than end-to-end on H2.
 
+**Factors can be named (2026-11-24).** The setup dialog has an optional "Name this app" field, prefilled
+with "Authenticator app", and the settings list has a *Rename* action on every factor card, so a name is
+not permanent once chosen. `SecondFactor.rename` and its 255-character limit existed but no UI called
+them; the service now exposes `SecondFactorService.rename`, which checks ownership and reports another
+account's factor as missing (the same answer as a non-existent one, so the method cannot enumerate ids).
+
+> **An empty name means the default, never an empty label.** The domain refuses blank, so an empty
+> submission would fail *after* the code was accepted and the QR code scanned. `TwoFactorSettingsCopy
+> .factorName` resolves it in one place, and it treats a value of only invisible characters as empty —
+> `String.strip()` does **not** remove a non-breaking space, and a name pasted from a word processor is
+> often exactly that: "not blank" while rendering as nothing.
+
+`SecondFactor.MAX_DISPLAY_NAME_LENGTH` became public so the form caps input at the column's width; a form
+that allows more fails on submit, after the user has done the work.
+
 **Not done, and known:** the enrolment page and the mailed link have **not been verified visually** (no
 frontend build here); the reminder job has **not been run against a database** (unit-level only, the
 missing piece is one integration test against `MfaPersistenceSpec`'s harness); and an account whose owner
