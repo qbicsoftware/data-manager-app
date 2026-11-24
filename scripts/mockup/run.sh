@@ -368,6 +368,56 @@ for _ in $(seq 1 180); do
   sleep 1
 done
 
+# "Tomcat started" only means the servlet container is up. The application can
+# still be unusable -- most often when it came up against a database without the
+# expected schema, which fails at the first query with a 500 on the login POST.
+# Prove a login actually works before telling the reader the port is ready.
+verify_login() {
+  jar=$(mktemp)
+  csrf=$(curl -s -c "$jar" -m 10 "http://localhost:$APP_PORT/login" 2>/dev/null \
+    | grep -o 'name="_csrf" content="[^"]*"' | sed 's/.*content="//;s/"//')
+  if [ -z "$csrf" ]; then
+    rm -f "$jar"
+    echo "no CSRF token on the login page"
+    return 1
+  fi
+  code=$(curl -s -b "$jar" -c "$jar" -o /dev/null -w '%{http_code}' -m 15 \
+    -X POST "http://localhost:$APP_PORT/login" \
+    --data-urlencode "username=dev@qbic.local" \
+    --data-urlencode "password=DevPassword123!" \
+    --data-urlencode "_csrf=$csrf" 2>/dev/null)
+  if [ "$code" != "302" ]; then
+    rm -f "$jar"
+    echo "login POST returned HTTP $code"
+    return 1
+  fi
+  code=$(curl -s -b "$jar" -o /dev/null -w '%{http_code}' -m 15 \
+    "http://localhost:$APP_PORT/projects/list" 2>/dev/null)
+  rm -f "$jar"
+  if [ "$code" != "200" ]; then
+    echo "login succeeded but /projects/list returned HTTP $code"
+    return 1
+  fi
+  return 0
+}
+
+# Note "if !" here, not "if x=$(f); then ... else": with the latter the
+# substitution's exit status is swallowed by the if, so a broken instance still
+# ended with exit 0.
+if ! login_problem=$(verify_login); then
+  echo >&2
+  echo "the application started but cannot log anyone in: $login_problem" >&2
+  # The usual cause is a database without the schema; say so rather than making
+  # the reader infer it from a stack trace.
+  if grep -qa 'Schema .* not found' "$WORK/mockup.log" 2>/dev/null; then
+    echo "  the database has no data_management schema -- it was built while an" >&2
+    echo "  earlier instance still held the file. Remove $WORK/db-*.mv.db and" >&2
+    echo "  $WORK/.database-ready, then run again." >&2
+  fi
+  echo "  log: $WORK/mockup.log" >&2
+  exit 5
+fi
+
 # Report the first line that names a cause. Spring prints a "Description:"
 # block for some failures (port clash) and only a stack trace for others (a bean
 # that could not be created), so look for both.
