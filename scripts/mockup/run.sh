@@ -36,6 +36,9 @@ WORK=${DM_MOCKUP_WORK:-$REPO/.mockup}
 # session proxy can sit in front of it.
 PORT=${DM_MOCKUP_PORT:-48013}
 APP_PORT=${DM_MOCKUP_APP_PORT:-48014}
+# Remembered so the closing summary can say when the run had to move ports.
+DEFAULT_PORT=$PORT
+DEFAULT_APP_PORT=$APP_PORT
 VAULT_PASS='Zx9!vQ2#mK7$wR4^pL8&nB3*tY6'   # fixed: the vault needs >100 bits of entropy
 JAR="$REPO/datamanager-app/target/datamanager-app-1.19.2.jar"
 
@@ -100,50 +103,6 @@ h2_jar() {
   done
   return 1
 }
-
-# Guard on a marker written only after BOTH steps succeed, never on the database
-# file. The database file exists as soon as schema loading starts, so checking
-# for it treats a half-built database as ready -- which is exactly the state a
-# failed load leaves behind.
-READY="$WORK/.database-ready"
-
-if [ ! -f "$READY" ]; then
-  echo "==> building the mock-up database"
-  rm -f "$READY"
-  H2=$(h2_jar) || {
-    echo "H2 is not in the local Maven repository yet; build the app once first:" >&2
-    echo "  ./mvnw -Duser.home=$WORK/home -Dmaven.test.skip=true -P '!sigcheck' install" >&2
-    exit 2
-  }
-  node "$REPO/scripts/mockup/schema-to-h2.js" \
-       "$REPO/sql/complete-schema.sql" "$WORK/schema-h2.sql"
-  # Single-file program: java runs it directly, no compile step.
-  java -cp "$H2" "$REPO/scripts/mockup/MockDatabase.java" "$WORK/schema-h2.sql" "$WORK" \
-    || { echo "schema load failed" >&2; exit 2; }
-  java -cp "$H2" "$REPO/scripts/mockup/Fixtures.java" "$REPO/sql/insert-default-values.sql" "$WORK/db-dm" \
-    || { echo "fixture seeding failed" >&2; exit 2; }
-  : > "$READY"
-fi
-
-# --- vault ------------------------------------------------------------------
-# The vault has no dev bypass: it insists on a real PKCS12 keystore holding a
-# 32-byte AES key under the alias the app reads at startup.
-if [ ! -f "$WORK/keystore.p12" ]; then
-  echo "==> generating a throwaway vault"
-  keytool -genkeypair -alias dummy -keyalg RSA -keysize 2048 \
-    -keystore "$WORK/keystore.p12" -storetype PKCS12 -storepass "$VAULT_PASS" \
-    -dname "CN=Mockup,OU=Dev,O=QBiC,L=Tuebingen,ST=BW,C=DE" -validity 3650 >/dev/null 2>&1
-  java "$REPO/scripts/mockup/VaultKey.java" "$WORK/keystore.p12" "$VAULT_PASS" \
-    external-credential-master-key
-fi
-
-# --- jar --------------------------------------------------------------------
-if [ "$REBUILD" = 1 ] || [ ! -f "$JAR" ]; then
-  echo "==> building the application (this takes a few minutes)"
-  # -Duser.home: Vaadin insists on ~/.vaadin, which is not writable in every sandbox.
-  ( cd "$REPO" && ./mvnw -B -Duser.home="$WORK/home" -Dmaven.test.skip=true \
-      -Dsigstore.skip=true -P '!sigcheck' install )
-fi
 
 # --- stopping an earlier run -------------------------------------------------
 # The previous run records what it started. Do NOT rediscover processes by port
@@ -282,6 +241,56 @@ for stale in "$WORK"/db-*.lock.db; do
   rm -f "$stale"
 done
 
+# --- database build ---------------------------------------------------------
+# Runs AFTER the previous instance has been stopped. Rebuilding while that
+# instance still holds the database file leaves this script reporting success
+# while the application serves an empty schema ("Schema data_management not
+# found" on the first request that touches it).
+
+# Guard on a marker written only after BOTH steps succeed, never on the database
+# file. The database file exists as soon as schema loading starts, so checking
+# for it treats a half-built database as ready -- which is exactly the state a
+# failed load leaves behind.
+READY="$WORK/.database-ready"
+
+if [ ! -f "$READY" ]; then
+  echo "==> building the mock-up database"
+  rm -f "$READY"
+  H2=$(h2_jar) || {
+    echo "H2 is not in the local Maven repository yet; build the app once first:" >&2
+    echo "  ./mvnw -Duser.home=$WORK/home -Dmaven.test.skip=true -P '!sigcheck' install" >&2
+    exit 2
+  }
+  node "$REPO/scripts/mockup/schema-to-h2.js" \
+       "$REPO/sql/complete-schema.sql" "$WORK/schema-h2.sql"
+  # Single-file program: java runs it directly, no compile step.
+  java -cp "$H2" "$REPO/scripts/mockup/MockDatabase.java" "$WORK/schema-h2.sql" "$WORK" \
+    || { echo "schema load failed" >&2; exit 2; }
+  java -cp "$H2" "$REPO/scripts/mockup/Fixtures.java" "$REPO/sql/insert-default-values.sql" "$WORK/db-dm" \
+    || { echo "fixture seeding failed" >&2; exit 2; }
+  : > "$READY"
+fi
+
+# --- vault ------------------------------------------------------------------
+# The vault has no dev bypass: it insists on a real PKCS12 keystore holding a
+# 32-byte AES key under the alias the app reads at startup.
+if [ ! -f "$WORK/keystore.p12" ]; then
+  echo "==> generating a throwaway vault"
+  keytool -genkeypair -alias dummy -keyalg RSA -keysize 2048 \
+    -keystore "$WORK/keystore.p12" -storetype PKCS12 -storepass "$VAULT_PASS" \
+    -dname "CN=Mockup,OU=Dev,O=QBiC,L=Tuebingen,ST=BW,C=DE" -validity 3650 >/dev/null 2>&1
+  java "$REPO/scripts/mockup/VaultKey.java" "$WORK/keystore.p12" "$VAULT_PASS" \
+    external-credential-master-key
+fi
+
+# --- jar --------------------------------------------------------------------
+if [ "$REBUILD" = 1 ] || [ ! -f "$JAR" ]; then
+  echo "==> building the application (this takes a few minutes)"
+  # -Duser.home: Vaadin insists on ~/.vaadin, which is not writable in every sandbox.
+  ( cd "$REPO" && ./mvnw -B -Duser.home="$WORK/home" -Dmaven.test.skip=true \
+      -Dsigstore.skip=true -P '!sigcheck' install )
+fi
+
 set -a
 DATAMANAGER_VAULT_KEY=$VAULT_PASS
 DATAMANAGER_VAULT_ENTRY_PASSWORD=$VAULT_PASS
@@ -397,16 +406,40 @@ else
     --listen "$PORT" --target "$APP_PORT" > "$WORK/proxy.log" 2>&1 &
   echo $! > "$WORK/proxy.pid"
 
-  for i in $(seq 1 60); do
-    if curl -sf -o /dev/null -m 2 "http://localhost:$PORT/login" 2>/dev/null; then break; fi
+  # Wait for the proxy to be up AND authenticated. Checking /login is not
+  # enough: that returns 200 before the proxy has obtained a session, so the
+  # script used to print "already logged in" while the first request still
+  # landed on the login form. A protected route is the honest check.
+  authenticated=0
+  for _ in $(seq 1 60); do
+    code=$(curl -s -o /dev/null -w '%{http_code}' -m 3 \
+      "http://localhost:$PORT/projects/list" 2>/dev/null || echo 000)
+    if [ "$code" = "200" ]; then
+      authenticated=1
+      break
+    fi
     sleep 1
   done
 
   echo
-  echo "  application  http://localhost:$PORT   (already logged in)"
+  if [ "$authenticated" = 1 ]; then
+    echo "  application  http://localhost:$PORT   (already logged in)"
+  else
+    echo "  application  http://localhost:$PORT   (NOT authenticated -- check $WORK/proxy.log)"
+  fi
   echo "  direct       http://localhost:$APP_PORT   (login form)"
   echo "  log          $WORK/mockup.log"
   echo "  proxy log    $WORK/proxy.log"
+fi
+
+# Repeat any port change here. Announced mid-run it scrolls past, and the
+# reader is left typing the default port into a URL that is now served by a
+# stale process -- which looks like "the login form is back".
+if [ "$PORT" != "$DEFAULT_PORT" ] || [ "$APP_PORT" != "$DEFAULT_APP_PORT" ]; then
+  echo
+  echo "  NOTE: expected ports were $DEFAULT_PORT / $DEFAULT_APP_PORT but they are"
+  echo "        held by leftover sockets, so this run uses $PORT / $APP_PORT."
+  echo "        Use the URLs above, not the defaults."
 fi
 
 echo
