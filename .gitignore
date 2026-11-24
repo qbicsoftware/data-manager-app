@@ -80,3 +80,7 @@ types.d.ts
 
 # collation repair (sql/repair) writes a foreign-key backup next to where it is run
 collation-repair-*-fk-backup.sql
+
+# Mock-up runtime: generated database, throwaway vault, screenshots and logs.
+# Recreated from scratch by ./scripts/mockup/run.sh --clean, never committed.
+.mockup/

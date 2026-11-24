@@ -1,0 +1,24 @@
+# Named routes for ./scripts/mockup/capture.sh
+#
+# Format:  <name>|<path>
+#
+# Paths must be routes the application actually serves. A route that does not
+# exist renders the not-found page, which looks like a screenshot but tells you
+# nothing -- so add a route here only after confirming it resolves.
+#
+# Commented entries are routes that exist but currently render empty for
+# fixture users, because the seeded account holds no ACL entries on the
+# projects. They become useful once fixtures write access-control rows.
+#
+projects-list|/projects/list
+project-creation|/projects/create
+groups|/groups
+settings|/settings
+login|/login
+registration|/registration
+test-view|/test-view
+test-view-associated-datasets|/test-view/associated-datasets
+test-view-project-page|/test-view/project-page
+
+# project-detail|/projects/10000000-0000-0000-0000-000000000001/info
+# project-experiments|/projects/10000000-0000-0000-0000-000000000001/experiments
