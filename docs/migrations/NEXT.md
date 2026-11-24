@@ -153,6 +153,13 @@ vault key: ADR 0011 B1 requires recovery codes to keep working when the vault ke
 whole point of having them outside the encrypted-seed path. **Back it up with the application
 configuration** — a lost or rotated pepper invalidates every outstanding recovery code.
 
+> **`application.properties` carries no default, and that is deliberate.** It used to default to a
+> literal value, which is the same string on every installation — a per-deployment secret that is public
+> in a public repository, protecting nothing against an attacker holding one leaked hash. The property is
+> now `${RECOVERY_CODE_PEPPER}` with no fallback, and the application **refuses to start** without it
+> rather than silently running with a known key. GitGuardian flagged the old default on the MFA pull
+> request; removing it is the fix, not suppressing the finding.
+
 > **The application still starts if neither secret is provisioned.** The protector resolves its key on
 > first use, so a missing alias fails *the enrolment* (closed) rather than the process. That changes in
 > M4, when the login path starts depending on factors: provision both secrets **before** the release
