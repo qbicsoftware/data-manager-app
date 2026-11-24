@@ -105,6 +105,14 @@ ALTER TABLE `user_mfa_grace`
         COMMENT 'When the final "hours left" reminder was sent.';
 ```
 
+> **Deploy order matters, and this one breaks logins rather than a job.** Hibernate selects every
+> mapped column when it loads the entity, and the login guard loads `user_mfa_grace` on **every password
+> login**, in every mode. A build that maps these columns against an un-migrated database therefore
+> fails *all* logins — not just the reminder pass, which is merely the first thing to notice. Apply the
+> `ALTER` **before** (or together with) the code; adding nullable columns is backwards compatible, so
+> running it against the old build is safe. `MfaSchemaPreflight` now says this at startup instead of
+> letting the log show a column name and an exception class.
+
 **Both columns null is the correct state for every existing row**: nothing has been sent yet, so the
 next pass sends the appropriate reminder if the window is still running, and nothing if it has already
 expired. Do not backfill them — a past timestamp would suppress a reminder the user still needs.
