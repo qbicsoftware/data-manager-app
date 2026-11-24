@@ -9,7 +9,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import life.qbic.datamanager.views.general.CopyToClipboardButton;
 import life.qbic.datamanager.views.general.dialog.AppDialog;
 import life.qbic.datamanager.views.general.dialog.DialogBody;
@@ -45,18 +45,23 @@ public class TotpEnrolmentDialog extends Div {
   @Serial
   private static final long serialVersionUID = 1L;
 
+  /** What the factor is called when the user does not choose a name. */
+  public static final String DEFAULT_DISPLAY_NAME = TwoFactorSettingsCopy.DEFAULT_FACTOR_NAME;
+
   private final AppDialog dialog;
+  private final TextField displayName = new TextField("Name this app (optional)");
   private final TextField code = new TextField("Code from the app");
   private final Span error = new Span();
   private final List<ComponentEventListener<EnrolledEvent>> enrolledListeners = new ArrayList<>();
 
   /**
    * @param pending the enrolment to confirm
-   * @param verify  verifies the typed code; throws {@link InvalidTotpCodeException} when it does not
-   *                match, {@link EnrolmentExpiredException} when the setup window has passed
+   * @param verify  verifies the typed code <em>and</em> stores the factor under the chosen name; throws
+   *                {@link InvalidTotpCodeException} when the code does not match,
+   *                {@link EnrolmentExpiredException} when the setup window has passed
    */
   public TotpEnrolmentDialog(PendingTotpEnrolment pending,
-      Function<String, SecondFactor> verify) {
+      BiFunction<String, String, SecondFactor> verify) {
     dialog = AppDialog.medium();
     DialogHeader.with(dialog, "Set up an authenticator app");
 
@@ -86,11 +91,22 @@ public class TotpEnrolmentDialog extends Div {
     code.setMaxLength(8);
     code.setPlaceholder("123456");
 
+    // Optional, and last before the code: the user is mid-task with an app open, so the name must not
+    // stand between them and the two things they have to do. It defaults to DEFAULT_DISPLAY_NAME, which
+    // is what every factor is called until the account has more than one.
+    displayName.setValue(DEFAULT_DISPLAY_NAME);
+    displayName.setWidthFull();
+    displayName.setMaxLength(SecondFactor.MAX_DISPLAY_NAME_LENGTH);
+    displayName.setHelperText("How this app appears in your settings. Useful if you add more than one.");
+    // Clearing the field means "call it the default", not "save an empty name" — the domain refuses a
+    // blank label, so an empty submission would fail with a validation error after the code was accepted.
+    displayName.setClearButtonVisible(true);
+
     error.addClassName("mfa-error");
     error.getStyle().set("color", "var(--lumo-error-text-color)");
     error.setVisible(false);
 
-    Div body = new Div(instructions, qrBlock, setupKeyRow, code, error);
+    Div body = new Div(instructions, qrBlock, setupKeyRow, displayName, code, error);
     body.addClassName("mfa-enrol-body");
 
     DialogBody.with(dialog, body, new CodeInput(verify));
@@ -121,6 +137,20 @@ public class TotpEnrolmentDialog extends Div {
   }
 
   /**
+   * The name the factor will carry.
+   *
+   * <p>An empty field means the default rather than "no name": the domain refuses a blank label, and
+   * failing the whole submission after the code was accepted would be a confusing way to learn that a
+   * label is required. The field is prefilled with the default, so this only matters when somebody
+   * clears it on purpose.</p>
+   *
+   * @return the label to store
+   */
+  String chosenDisplayName() {
+    return TwoFactorSettingsCopy.factorName(displayName.getValue());
+  }
+
+  /**
    * Reads the shared key out of the {@code otpauth://} URI.
    *
    * <p>The URI is the domain's interface for "what the authenticator needs"; the manual-entry field is
@@ -146,9 +176,9 @@ public class TotpEnrolmentDialog extends Div {
    */
   private class CodeInput implements UserInput {
 
-    private final Function<String, SecondFactor> verify;
+    private final BiFunction<String, String, SecondFactor> verify;
 
-    CodeInput(Function<String, SecondFactor> verify) {
+    CodeInput(BiFunction<String, String, SecondFactor> verify) {
       this.verify = verify;
     }
 
@@ -162,7 +192,9 @@ public class TotpEnrolmentDialog extends Div {
         return InputValidation.failed();
       }
       try {
-        verify.apply(presented);
+        // The code and the name go together: the factor cannot be stored without both, so passing them
+        // as one call keeps "half enrolled" impossible rather than merely unlikely.
+        verify.apply(presented, chosenDisplayName());
         return InputValidation.passed();
       } catch (InvalidTotpCodeException e) {
         // The one case worth advising on: a phone whose clock has drifted is the usual cause.

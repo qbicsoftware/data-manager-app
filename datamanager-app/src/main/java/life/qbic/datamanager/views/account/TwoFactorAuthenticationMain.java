@@ -12,6 +12,7 @@ import jakarta.annotation.security.PermitAll;
 import java.io.Serial;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.general.dialog.AlertDialog;
@@ -19,6 +20,7 @@ import life.qbic.datamanager.views.general.dialog.DialogAction;
 import life.qbic.datamanager.views.settings.SettingsMainLayout;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.application.mfa.MfaPolicy;
+import life.qbic.identity.application.mfa.PendingTotpEnrolment;
 import life.qbic.identity.application.mfa.RecoveryCodeService;
 import life.qbic.identity.application.mfa.SecondFactorService;
 import life.qbic.identity.application.mfa.TotpEnrolmentService;
@@ -91,6 +93,7 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
     add(component);
     component.addEnrolListener(event -> onEnrolRequested());
     component.addRemoveListener(event -> onRemoveRequested(event.factorId()));
+    component.addRenameListener(event -> onRenameRequested(event.factorId()));
     component.addGenerateRecoveryCodesListener(event -> onGenerateRecoveryCodesRequested());
   }
 
@@ -139,14 +142,39 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
   private void onEnrolRequested() {
     String userId = currentUserId();
     var user = userInformationService.findById(userId).orElseThrow();
-    var pending = totpEnrolmentService.begin(userId, "Authenticator app", user.emailAddress(),
-        Instant.now());
+    var pending = totpEnrolmentService.begin(userId, TotpEnrolmentDialog.DEFAULT_DISPLAY_NAME,
+        user.emailAddress(), Instant.now());
     // The verification callback is passed in rather than the service, so the dialog cannot create a
     // factor by itself; "no factor without a verified code" stays a property of the application layer.
     var dialog = new TotpEnrolmentDialog(pending,
-        code -> totpEnrolmentService.confirm(pending, code, Instant.now()));
+        (code, chosenName) -> enrolWithName(userId, pending, code, chosenName));
     dialog.addEnrolledListener(event -> onEnrolled(userId, user.emailAddress()));
     dialog.open();
+  }
+
+  /**
+   * Confirms the enrolment and stores the chosen name in the same transaction.
+   *
+   * <p>Name first would be a factor that exists under a label nobody asked for if the code fails; code
+   * first and name after would leave a window in which the factor is enrolled under the default. So the
+   * factor is created and relabelled together, under the application service's transaction.</p>
+   *
+   * @param userId     the account enrolling
+   * @param pending    the enrolment started earlier
+   * @param code       the six-digit code from the app
+   * @param chosenName what the user called the app; may be blank, in which case the default stands
+   * @return the stored factor
+   */
+  private SecondFactor enrolWithName(String userId, PendingTotpEnrolment pending, String code,
+      String chosenName) {
+    SecondFactor created = totpEnrolmentService.confirm(pending, code, Instant.now());
+    String name = chosenName == null ? "" : chosenName.strip();
+    if (name.isEmpty() || name.equals(created.displayName())) {
+      return created;
+    }
+    // The factor exists and the code verified; a rename cannot fail in a way that should hide the
+    // enrolment, so an unexpected failure is logged and the default label stands.
+    return secondFactorService.rename(userId, created.id(), name).orElse(created);
   }
 
   /**
@@ -198,6 +226,38 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
         "Remove it",
         "Keep it",
         () -> removeAndRefresh(factorId)).open();
+  }
+
+  /**
+   * Opens the rename dialog for one factor.
+   *
+   * <p>A one-field dialog rather than inline editing: the factor list is a read surface, and turning a
+   * card into a form to change one word makes every other card look editable too.</p>
+   *
+   * @param factorId the factor to relabel
+   */
+  private void onRenameRequested(long factorId) {
+    String userId = currentUserId();
+    Optional<SecondFactor> factor = secondFactorService.activeFactors(userId).stream()
+        .filter(candidate -> candidate.id() == factorId)
+        .findFirst();
+    if (factor.isEmpty()) {
+      // Removed in another tab, or never the caller's. Reload rather than show a dialog for a factor
+      // that is gone.
+      refresh();
+      return;
+    }
+    new RenameFactorDialog(factor.get().displayName(), newName -> {
+      try {
+        secondFactorService.rename(userId, factorId, newName);
+      } catch (IllegalArgumentException e) {
+        // The domain refuses a blank or over-long label; the dialog validates first, so this is a
+        // backstop for a hand-crafted request rather than a path a user reaches.
+        return false;
+      }
+      refresh();
+      return true;
+    }).open();
   }
 
   private void removeAndRefresh(long factorId) {

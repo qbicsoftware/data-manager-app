@@ -43,6 +43,70 @@ class SecondFactorServiceSpec extends Specification {
         new SecondFactorService(repository, recoveryCodes, new MfaPolicy(mode.name(), MfaPolicy.DEFAULT_GRACE, ""))
     }
 
+    // ---------------------------------------------------------------- renaming
+
+    def "a factor can be relabelled without re-enrolling it"() {
+        given: "AUTH-R-02: the label is not a credential, so changing it must not touch the secret"
+        def factor = repository.save(SecondFactor.enrolTotp("u-1", SECRET, "Authenticator app", NOW))
+        def secretBefore = factor.secret()
+
+        when:
+        def renamed = service.rename("u-1", factor.id(), "iPhone (1Password)")
+
+        then:
+        renamed.present
+        renamed.get().displayName() == "iPhone (1Password)"
+        renamed.get().id() == factor.id()
+        renamed.get().secret() == secretBefore
+        renamed.get().createdAt() == NOW
+    }
+
+    def "the new name is stripped"() {
+        given:
+        def factor = repository.save(SecondFactor.enrolTotp("u-1", SECRET, "Authenticator app", NOW))
+
+        expect: "a paste with a trailing space must not become part of the label"
+        service.rename("u-1", factor.id(), "  Work phone  ").get().displayName() == "Work phone"
+    }
+
+    def "a blank name is refused by the domain, and the old name survives"() {
+        given:
+        def factor = repository.save(SecondFactor.enrolTotp("u-1", SECRET, "Authenticator app", NOW))
+
+        when:
+        service.rename("u-1", factor.id(), "   ")
+
+        then: "one definition of a valid label, in the domain, not a second one in the service"
+        thrown(IllegalArgumentException)
+        repository.findById(factor.id()).get().displayName() == "Authenticator app"
+    }
+
+    def "another account's factor is reported as missing, not as forbidden"() {
+        given:
+        def factor = repository.save(SecondFactor.enrolTotp("someone-else", SECRET, "iPhone", NOW))
+
+        when:
+        def renamed = service.rename("u-1", factor.id(), "Mine now")
+
+        then: "no distinction, so this cannot be used to discover other accounts' factor ids"
+        renamed.isEmpty()
+        repository.findById(factor.id()).get().displayName() == "iPhone"
+    }
+
+    def "a removed factor cannot be renamed"() {
+        given: "it is not in the account's list any more, so the dialog could only be stale"
+        def factor = repository.save(SecondFactor.enrolTotp("u-1", SECRET, "iPhone", NOW))
+        service.remove("u-1", factor.id(), NOW)
+
+        expect:
+        service.rename("u-1", factor.id(), "Ghost").isEmpty()
+    }
+
+    def "an unknown factor id is reported as missing"() {
+        expect:
+        service.rename("u-1", 4711L, "Nope").isEmpty()
+    }
+
     // ---------------------------------------------------------------- reads + ownership
 
     def "active factors of the account are listed, disabled ones are not"() {

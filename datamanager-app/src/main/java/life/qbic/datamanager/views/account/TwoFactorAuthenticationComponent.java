@@ -349,7 +349,7 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
     header.addClassName("mfa-card__header");
     Span name = new Span(factor.displayName());
     name.addClassName("mfa-card__name");
-    header.add(name, removalControl(factor, outcome));
+    header.add(name, cardActions(factor, outcome));
 
     // The card title already names the factor, and for an authenticator app that name *is* the type
     // label — printing both reads as "Authenticator app / Authenticator app · added …".
@@ -384,6 +384,25 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
    * removal is refused, so the button is disabled with the reason in the card rather than hidden —
    * a missing button leaves the user guessing why.</p>
    */
+  /**
+   * The per-factor actions: rename, then remove.
+   *
+   * <p>Rename is tertiary and neutral — it changes a label, not a credential — and it is the only way to
+   * fix a name after enrolment. Without it, a typo made in the setup dialog would be permanent, which is
+   * the kind of thing that makes people remove and re-enrol a factor they did not need to touch.</p>
+   */
+  private Div cardActions(SecondFactor factor, SecondFactorRemoval.Outcome outcome) {
+    Button rename = new Button("Rename");
+    rename.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+    rename.setAriaLabel("Rename " + factor.displayName());
+    rename.addClickListener(event -> fireEvent(
+        new RenameFactorRequestedEvent(this, event.isFromClient(), factor.id())));
+
+    Div actions = new Div(rename, removalControl(factor, outcome));
+    actions.addClassName("mfa-card__actions");
+    return actions;
+  }
+
   private Button removalControl(SecondFactor factor, SecondFactorRemoval.Outcome outcome) {
     if (outcome == SecondFactorRemoval.Outcome.TURNS_OFF_TWO_FACTOR) {
       Button turnOff = new Button("Turn off two-factor authentication");
@@ -446,6 +465,36 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
     public EnrolRequestedEvent(TwoFactorAuthenticationComponent source, boolean fromClient) {
       super(source, fromClient);
     }
+  }
+
+  /** The user wants to relabel one factor, identified by its id. */
+  public static class RenameFactorRequestedEvent
+      extends ComponentEvent<TwoFactorAuthenticationComponent> {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+    private final long factorId;
+
+    public RenameFactorRequestedEvent(TwoFactorAuthenticationComponent source, boolean fromClient,
+        long factorId) {
+      super(source, fromClient);
+      this.factorId = factorId;
+    }
+
+    public long factorId() {
+      return factorId;
+    }
+  }
+
+  /**
+   * Registers a listener for rename requests.
+   *
+   * @param listener called with the factor the user wants to relabel
+   * @return a registration that removes the listener again
+   */
+  public com.vaadin.flow.shared.Registration addRenameListener(
+      ComponentEventListener<RenameFactorRequestedEvent> listener) {
+    return addListener(RenameFactorRequestedEvent.class, listener);
   }
 
   /** The user wants to remove one factor, identified by its id. */

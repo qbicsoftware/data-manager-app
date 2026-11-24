@@ -42,8 +42,13 @@ import java.util.Optional;
 @Table(name = "user_second_factor")
 public class SecondFactor {
 
-  /** Matches {@code user_second_factor.displayName varchar(255)}. */
-  static final int MAX_DISPLAY_NAME_LENGTH = 255;
+  /**
+   * Matches {@code user_second_factor.displayName varchar(255)}.
+   *
+   * <p>Public because the enrolment dialog has to cap its input at the same number: a form that allows
+   * more than the column holds would fail on submit, after the user has already scanned the QR code.</p>
+   */
+  public static final int MAX_DISPLAY_NAME_LENGTH = 255;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

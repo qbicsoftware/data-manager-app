@@ -134,6 +134,48 @@ public final class TwoFactorSettingsCopy {
     return hasFactor && unusedCodes > 0 ? "Generate a new set" : "Generate recovery codes";
   }
 
+  /** What a factor is called when the user does not choose a name. */
+  static final String DEFAULT_FACTOR_NAME = "Authenticator app";
+
+  /**
+   * The label a factor gets, given what the user typed in the optional name field.
+   *
+   * <p>An empty field means the default, not "no name": the domain refuses a blank label, and failing the
+   * submission <em>after</em> the code was accepted would be a confusing way to learn that a label is
+   * required. The field is prefilled with the default, so this only matters when somebody clears it on
+   * purpose.</p>
+   *
+   * @param typed what is in the field, possibly null, possibly only whitespace
+   * @return the label to store
+   */
+  static String factorName(String typed) {
+    String chosen = typed == null ? "" : collapseBlankToEmpty(typed);
+    return chosen.isEmpty() ? DEFAULT_FACTOR_NAME : chosen.strip();
+  }
+
+  /**
+   * Treats a value made only of <em>invisible</em> characters as empty.
+   *
+   * <p>{@link String#strip()} removes characters {@code Character.isWhitespace} accepts, and a
+   * non-breaking space ({@code U+00A0}) is not one of them — it is a format character. A name pasted out
+   * of a word processor is therefore frequently "not blank" while being completely invisible, which would
+   * store a factor whose label renders as nothing at all. In a list whose whole purpose is telling your
+   * apps apart, that is worse than an empty field.</p>
+   *
+   * @param value what the user typed
+   * @return the value with invisible-only content reduced to the empty string
+   */
+  private static String collapseBlankToEmpty(String value) {
+    // Character.isWhitespace covers tabs and spaces; the explicit cases cover the format characters that
+    // pasting brings in and that the domain would happily accept.
+    boolean invisible = value.codePoints().allMatch(codePoint ->
+        Character.isWhitespace(codePoint)
+            || Character.isSpaceChar(codePoint)
+            || codePoint == 0x200B   // zero-width space
+            || codePoint == 0xFEFF); // byte-order mark
+    return invisible ? "" : value;
+  }
+
   /**
    * @param hasFactor whether the account already has an active factor
    * @return the label of the enrolment action

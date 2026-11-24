@@ -56,7 +56,16 @@ public class MfaReminderJob {
     try {
       reminderService.sendDueReminders(Instant.now());
     } catch (RuntimeException e) {
-      log.error("Second-factor reminder pass failed: %s".formatted(e.getClass().getSimpleName()));
+      String hint = "";
+      String message = String.valueOf(e.getMessage());
+      if (message.contains("Unknown column") || message.contains("42S22")) {
+        // The schema is older than the code. Say what to run: this exception travels through three
+        // layers of wrapping and reaches the log as a column name and nothing else.
+        hint = " — the database is missing a column this code maps; apply the user_mfa_grace "
+            + "migration from docs/migrations/NEXT.md";
+      }
+      log.error("Second-factor reminder pass failed: %s%s"
+          .formatted(e.getClass().getSimpleName(), hint));
     }
   }
 

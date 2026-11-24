@@ -152,6 +152,45 @@ public class SecondFactorService {
     return remove(userId, factorId, now) != Outcome.NOT_REMOVABLE;
   }
 
+  /**
+   * Renames one of the account's own factors.
+   *
+   * <p>The name is the only thing the user can change about a factor after enrolment: it labels the
+   * factor in the settings list, and with more than one app enrolled "Authenticator app" three times
+   * tells nobody which is which. AUTH-R-02 requires that relabelling does not mean re-enrolling.</p>
+   *
+   * <p>Ownership is checked here rather than trusted from the caller, and a factor that is not the
+   * caller's is reported as missing — the same answer as a factor that does not exist, so the method
+   * cannot be used to discover which ids belong to other accounts (AUTH-NFR-03).</p>
+   *
+   * @param userId       the account making the change
+   * @param factorId     the factor to relabel
+   * @param newDisplayName the new label; stripped, and rejected when blank or too long
+   * @return the renamed factor, or empty when the account has no such active factor
+   */
+  @Transactional
+  public Optional<SecondFactor> rename(String userId, long factorId, String newDisplayName) {
+    requireNonNull(userId, "userId must not be null");
+    requireNonNull(newDisplayName, "newDisplayName must not be null");
+
+    Optional<SecondFactor> found = secondFactorRepository.findById(factorId)
+        .filter(factor -> factor.userId().equals(userId))
+        .filter(SecondFactor::isActive);
+    if (found.isEmpty()) {
+      log.info("Refused to rename second factor %d for a user it does not belong to".formatted(factorId));
+      return Optional.empty();
+    }
+    SecondFactor factor = found.get();
+    String previous = factor.displayName();
+    // The domain validates (blank, length); letting it throw keeps one definition of a valid label.
+    factor.rename(newDisplayName);
+    // save() because the entity may be detached; merge() returns the managed copy.
+    SecondFactor renamed = secondFactorRepository.save(factor);
+    log.info("Second factor %d of user %s renamed (was '%s', now '%s')"
+        .formatted(factorId, userId, previous, renamed.displayName()));
+    return Optional.of(renamed);
+  }
+
   private boolean ownsFactor(String userId, long factorId) {
     return secondFactorRepository.findById(factorId)
         .map(factor -> factor.userId().equals(userId))

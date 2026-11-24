@@ -2308,3 +2308,13 @@ a.mfa-recovery-action {
   background-color: transparent;
   border: 1px solid var(--lumo-contrast-30pct);
 }
+
+/* Rename sits next to Remove on a factor card. They are different kinds of action — one changes a
+   label, the other destroys a credential — so they must not read as a single pair of equals: the
+   grouping keeps them adjacent while the error colour on Remove carries the difference. */
+.mfa-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xs);
+  flex: none;
+}
