@@ -23,6 +23,7 @@ import java.util.Map;
 import life.qbic.datamanager.views.general.PageArea;
 import life.qbic.datamanager.views.settings.SettingsSection;
 import life.qbic.identity.domain.model.mfa.MfaPolicyMode;
+import life.qbic.identity.domain.model.mfa.RecoveryCodes;
 import life.qbic.identity.domain.model.mfa.SecondFactor;
 import life.qbic.identity.domain.model.mfa.SecondFactorRemoval;
 import life.qbic.identity.domain.model.mfa.SecondFactorType;
@@ -63,6 +64,7 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
   private final Span emptyStateHint = new Span();
   private final Div factorList = new Div();
   private final Span recoverySummary = new Span();
+  private final Div recoveryMeter = new Div();
   private final Div recoveryCard = new Div();
   private final Button enrolButton = new Button("Set up authenticator app");
   private final Button generateRecoveryCodesButton = new Button("Generate recovery codes");
@@ -121,12 +123,19 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
         "Single-use codes to get back in if you lose access to your app. They are shown once and "
             + "cannot be displayed again.");
     recoverySummary.addClassName("mfa-card__text");
+    // Ten slots, one per code in a full set. Counted rather than read: the point is to answer "how many
+    // have I got left?" in one glance, which "7 unused recovery codes left" in a grey sentence does not
+    // do — the number is buried mid-line and the reader has to parse it.
+    recoveryMeter.addClassName("mfa-recovery-meter");
+    recoveryMeter.getElement().setAttribute("role", "img");
+    Div recoveryText = new Div(recoveryMeter, recoverySummary);
+    recoveryText.addClassName("mfa-recovery-text");
     recoveryCard.addClassName("mfa-card");
     recoveryCard.addClassName("mfa-card--row");
     // Secondary, not tertiary: next to a solid primary the tertiary look read as *disabled* on a
     // deployed build. This reads as an enabled action that still ranks below the primary.
     generateRecoveryCodesButton.addClassName("mfa-secondary-action");
-    recoveryCard.add(recoverySummary, generateRecoveryCodesButton);
+    recoveryCard.add(recoveryText, generateRecoveryCodesButton);
     recoverySection.addContent(recoveryCard);
 
     add(factorSection, recoverySection);
@@ -217,12 +226,28 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
    * button — that made the one action a worried user looks for (new recovery codes) look disabled by
    * comparison.</p>
    */
+  /**
+   * The status classes are mutually exclusive, and that is the whole point of listing them here.
+   *
+   * <p>{@code mfa-status--deadline} was missing from this list, so once an unenrolled account under
+   * {@code REQUIRED} had rendered the deadline treatment, the class stayed. Enrolling then added
+   * {@code mfa-status--enrolled}, but the deadline rule sits <em>later</em> in the stylesheet and
+   * carries the same specificity, so it kept winning: the shield stayed warning-coloured until a reload
+   * rebuilt the element — the exact symptom reported from a deployed build.</p>
+   *
+   * <p>Removing all three before adding one makes the state a function of the current inputs rather than
+   * of everything the element has previously been.</p>
+   */
+  private static final String[] STATUS_CLASSES = {
+      "mfa-status--enrolled", "mfa-status--deadline", "mfa-status--empty"
+  };
+
   private void render() {
     boolean hasFactor = factorCount > 0;
 
     statusState.setText(TwoFactorSettingsCopy.factorSummary(factorCount));
     policyNote.setText(policySentence(hasFactor));
-    status.removeClassNames("mfa-status--enrolled", "mfa-status--empty");
+    status.removeClassNames(STATUS_CLASSES);
     // An unenrolled account under REQUIRED is the one case where the state line has a deadline, so it
     // carries the warning treatment rather than the plain "nothing set up yet".
     boolean onDeadline = !hasFactor && mode == MfaPolicyMode.REQUIRED;
@@ -242,6 +267,7 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
     }
 
     recoverySummary.setText(TwoFactorSettingsCopy.recoverySummary(unusedRecoveryCodes, hasFactor));
+    renderRecoveryMeter(hasFactor);
     generateRecoveryCodesButton.setText(
         TwoFactorSettingsCopy.recoveryActionLabel(unusedRecoveryCodes, hasFactor));
     generateRecoveryCodesButton.setEnabled(hasFactor);
@@ -249,6 +275,51 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
     if (!hasFactor) {
       recoveryCard.addClassName("mfa-card--muted");
     }
+  }
+
+  /**
+   * Renders one slot per recovery code in a full set: filled while unused, hollow once spent.
+   *
+   * <p><b>Why a meter and not just the count.</b> The sentence states the number, but it states it in the
+   * middle of a grey line — the reader has to find it and parse it. Ten slots answer "how many have I got
+   * left?" before the sentence is read at all, and they make the set's finite size visible: "7 unused" is
+   * abstract, seven of ten is not.</p>
+   *
+   * <p><b>A full set is fixed.</b> Generating a new set always issues {@code RecoveryCodes.SET_SIZE}
+   * codes, so the denominator is a constant of the domain, not of this view. That also means the meter
+   * cannot lie about history: codes spent before a regeneration are not shown as spent, because the old
+   * set stopped working entirely — the count is of <em>this</em> set.</p>
+   *
+   * <p>The slots are decoration for the eye. A screen reader gets the same fact from the sentence beside
+   * them, so the meter is one image with an accessible label rather than ten meaningless spans — ten
+   * "item" announcements would be noise in front of the actual sentence.</p>
+   *
+   * @param hasFactor whether the account has an active factor; without one there is no set to show
+   */
+  private void renderRecoveryMeter(boolean hasFactor) {
+    recoveryMeter.removeAll();
+    if (!hasFactor) {
+      // No factor, no challenge, therefore no redeemable set (see the action's disabled state).
+      // Rendering ten hollow slots here would suggest codes exist and are all spent.
+      recoveryMeter.setVisible(false);
+      return;
+    }
+    recoveryMeter.setVisible(true);
+
+    int total = RecoveryCodes.SET_SIZE;
+    // Clamp: a stale read must not draw eleven slots or a negative one. The count comes from the
+    // database and the set size from the domain, and this method is the place they have to agree.
+    int unused = (int) Math.max(0, Math.min(total, unusedRecoveryCodes));
+
+    for (int index = 0; index < total; index++) {
+      Span slot = new Span();
+      slot.addClassName("mfa-recovery-meter__slot");
+      slot.addClassName(index < unused ? "mfa-recovery-meter__slot--unused"
+          : "mfa-recovery-meter__slot--used");
+      recoveryMeter.add(slot);
+    }
+    recoveryMeter.getElement().setAttribute("aria-label",
+        "%d of %d recovery codes unused".formatted(unused, total));
   }
 
   /**

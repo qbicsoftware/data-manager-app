@@ -2264,3 +2264,47 @@ a.mfa-recovery-action {
     justify-content: flex-end;
   }
 }
+
+/* ── Recovery-code meter ───────────────────────────────────────────────────────────────────────────
+   One slot per code in a full set: filled = still unused, hollow = spent. It sits above the sentence
+   rather than replacing it — the sentence stays authoritative for anyone using a screen reader, and
+   the slots carry the same fact as one image with a label instead of ten announcements.
+
+   The states are distinguished by fill AND by border, not by colour alone: "seven filled of ten" has
+   to be readable in greyscale, at a glance, without relying on hue. */
+.mfa-recovery-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+}
+
+.mfa-recovery-meter {
+  display: flex;
+  gap: var(--lumo-space-xs);
+  align-items: center;
+  /* Read left to right as "how much is left is what is filled", so the spent slots do not sit between
+     the reader and the remaining ones. */
+  flex-direction: row;
+}
+
+.mfa-recovery-meter__slot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  flex: none;
+  box-sizing: border-box;
+}
+
+/* Unused: a filled slot in the factor colour, because these are the codes that still work. */
+.mfa-recovery-meter__slot--unused {
+  background-color: var(--lumo-primary-color);
+  border: 1px solid var(--lumo-primary-color);
+}
+
+/* Spent: hollow and quiet — the absence of the fill is the signal, so it must not compete for
+   attention with the codes that are left. */
+.mfa-recovery-meter__slot--used {
+  background-color: transparent;
+  border: 1px solid var(--lumo-contrast-30pct);
+}
