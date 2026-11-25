@@ -15,7 +15,7 @@ functionality · **S4** user-facing defect · **S5** decide, may not need code.
 | Recovery codes lost by refreshing (MFA-91) | S4 | **fixed** — `713fb4649` |
 | Registration broken / confirmed account cannot log in (MFA-74, MFA-75) | S3 | open — see §3 |
 | Invalid samples reported as registered (MFA-83) | S3 | open |
-| No warning when the last recovery code is consumed (MFA-41b) | S4 | open |
+| No warning when the last recovery code is consumed (MFA-41b) | S4 | **fixed** — `775474246` |
 | Enrolment buttons unreachable at low resolution (MFA-93) | S4 | open |
 | Misleading login and MFA error messages (MFA-94) | S4 | open |
 | Deep-link return after login (MFA-80) | S5 | needs a decision |
@@ -104,7 +104,12 @@ functionality · **S4** user-facing defect · **S5** decide, may not need code.
 - **Tests:** MFA-91 (FAILURE) and MFA-40 (recorded Success — contradictory, see §7).
 - **Symptom:** refresh without pressing "I have saved my keys" and the codes can never be shown again.
 
-### S4 — No warning when the last recovery code is consumed
+### S4 — No warning when the last recovery code is consumed — **fixed**
+
+> **Fixed in `775474246`.** The obvious place cannot work: redeeming a code establishes the session
+> and redirects, so text written into the challenge page's components is discarded immediately. The
+> count travels in the session and is rendered by `MfaEnrolmentPrompt` in the application shell,
+> consumed once and not dismissible. Verified by `LastRecoveryCodeWarningSpec`.
 
 - **Test:** MFA-41b. Recorded FAILURE.
 
