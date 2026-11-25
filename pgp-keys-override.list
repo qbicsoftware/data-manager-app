@@ -67,6 +67,12 @@ com.google.oauth-client:google-oauth-client:pom:1.39.0 = 0x47504B76CF89C15C0512D
 com.hierynomus:asn-one:jar:0.6.0 = 0xB200B4AA914DE0340741F598EBE906E1F4ACA3B7
 com.hierynomus:asn-one:pom:0.6.0 = 0xB200B4AA914DE0340741F598EBE906E1F4ACA3B7
 
+# MySQL Connector/J (Spring Boot managed)
+# 26.10.0 is signed by Oracle's "GraalVM Download Service Maven Signing" key,
+# introduced with MySQL Connector/J's new 26.x versioning (was 9.7.0).
+com.mysql:mysql-connector-j:jar:26.10.0 = 0xAC0DEC49536DBA0E75C27D56E3BA60ACAC1A05AE
+com.mysql:mysql-connector-j:pom:26.10.0 = 0xAC0DEC49536DBA0E75C27D56E3BA60ACAC1A05AE
+
 # json-schema-validator (networknt) via ro-crate-java
 com.networknt:json-schema-validator:jar:1.0.87 = 0xAEB1E1AEC035C66FA39589D13EFC46EE83C40224
 com.networknt:json-schema-validator:pom:1.0.87 = 0xAEB1E1AEC035C66FA39589D13EFC46EE83C40224
@@ -122,8 +128,11 @@ gg.jte:*:* = 0x1D7DC2587E655C72EB4463F2E082500F4BE1F6DD
 io.github.erdtman:java-json-canonicalization:jar:1.1 = 0x4556208EBE484FBA3984DC3D3D4FA1A9DB2FB4F4
 io.github.erdtman:java-json-canonicalization:pom:1.1 = 0x4556208EBE484FBA3984DC3D3D4FA1A9DB2FB4F4
 
-# ayza / sude via sonar-maven-plugin
-io.github.hakky54:ayza:10.0.3 = 0xE5138A8E9F2E7E42D38B14D99AEE152CDCCEBFCB
+# ayza / laleler / desidero / sude via sonar-maven-plugin
+# sonar-maven-plugin 5.9.0 raises ayza to 10.1.0 and adds laleler/desidero
+io.github.hakky54:ayza:10.1.0 = 0xE5138A8E9F2E7E42D38B14D99AEE152CDCCEBFCB
+io.github.hakky54:laleler:1.0.0 = 0xE5138A8E9F2E7E42D38B14D99AEE152CDCCEBFCB
+io.github.hakky54:desidero:1.0.1 = 0xE5138A8E9F2E7E42D38B14D99AEE152CDCCEBFCB
 io.github.hakky54:sude:2.0.2 = 0xE5138A8E9F2E7E42D38B14D99AEE152CDCCEBFCB
 
 # gRPC (Google) via sigstore-maven-plugin 2.4.0 -> sigstore-java 2.4.0 (build-time)
