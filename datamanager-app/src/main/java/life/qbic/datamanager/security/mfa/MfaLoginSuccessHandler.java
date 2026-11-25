@@ -98,6 +98,18 @@ public class MfaLoginSuccessHandler implements AuthenticationSuccessHandler {
   public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
       Authentication authentication) throws IOException, ServletException {
     QbicUserDetails principal = principalOf(authentication);
+
+    // A fresh password authentication invalidates whatever a previous login left half-finished in
+    // this session. Without this, the "Use a different account" link on the challenge page is an
+    // identity substitution (MFA-25): account A is challenged, the visitor goes back, signs in as the
+    // factor-free account B, and the default branch below then stores B's session marker while A's
+    // pending login survives — so a code from A's authenticator completes the challenge as A.
+    //
+    // Both attributes go: the pending login names the account that must present the factor, and the
+    // marker answers "this session passed the step" for the account it was issued to. Neither may
+    // outlive the login that produced them.
+    discardStaleLoginState(request);
+
     MfaGateDecision decision = loginGuard.decide(principal.getUserId(), Instant.now());
 
     switch (decision) {
@@ -150,6 +162,21 @@ public class MfaLoginSuccessHandler implements AuthenticationSuccessHandler {
     log.info("Second factor required for user %s; authentication withheld, target %s"
         .formatted(principal.getUserId(), target));
     response.sendRedirect(contextPathOf(request) + target);
+  }
+
+  /**
+   * Clears the two session attributes that describe an in-flight or completed login.
+   *
+   * <p>Called before the gate decides, so every branch — challenge, enrolment, grace, and the plain
+   * allow — starts from a session that describes only the login being handled now.</p>
+   */
+  private static void discardStaleLoginState(HttpServletRequest request) {
+    HttpSession session = request.getSession(false);
+    if (session == null) {
+      return;
+    }
+    MfaPendingLogin.clear(session);
+    MfaSessionState.clear(session);
   }
 
   /**
