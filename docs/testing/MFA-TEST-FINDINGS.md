@@ -6,11 +6,31 @@ Source: `Testing MFA DataManager.docx` (environment `qpylon/dev`, branch `epic/m
 Severity key: **S1** identity compromise · **S2** missing security control · **S3** broken
 functionality · **S4** user-facing defect · **S5** decide, may not need code.
 
+## Status
+
+| Finding | Severity | State |
+|---|---|---|
+| "Choose different account" authenticates as the previous account (MFA-25) | S1 | **fixed** — `710d2001f` |
+| No throttling on repeated failed codes (MFA-68) | S2 | **fixed** — `2cfa52608` |
+| Recovery codes lost by refreshing (MFA-91) | S4 | **fixed** — `713fb4649` |
+| Registration broken / confirmed account cannot log in (MFA-74, MFA-75) | S3 | open — see §3 |
+| Invalid samples reported as registered (MFA-83) | S3 | open |
+| No warning when the last recovery code is consumed (MFA-41b) | S4 | open |
+| Enrolment buttons unreachable at low resolution (MFA-93) | S4 | open |
+| Misleading login and MFA error messages (MFA-94) | S4 | open |
+| Deep-link return after login (MFA-80) | S5 | needs a decision |
+| TOTP replay accepted (MFA-20, recorded Success) | S5 | needs a decision |
+
 ---
 
 ## 1. Security: authentication identity confusion
 
-### S1 — "Choose different account" authenticates as the previous account
+### S1 — "Choose different account" authenticates as the previous account — **fixed**
+
+> **Fixed in `710d2001f`.** `MfaLoginSuccessHandler` only ever added its pending login; it now
+> discards both MFA session attributes at the start of every successful password authentication, so
+> each login starts from a session that describes only itself. `MfaAccountSwitchSpec` reproduces the
+> four-step sequence and failed three of six cases before the change.
 
 - **Test:** MFA-25, *Cancel the MFA challenge*. Recorded FAILURE.
 - **Repro:** log in as account A (TOTP configured, email + password) → at the TOTP challenge choose
@@ -26,7 +46,13 @@ functionality · **S4** user-facing defect · **S5** decide, may not need code.
 
 ## 2. Security: missing control
 
-### S2 — No throttling on repeated failed TOTP attempts
+### S2 — No throttling on repeated failed TOTP attempts — **fixed**
+
+> **Fixed in `2cfa52608`.** The throttle machinery already existed and its `Scope` enum already named
+> this flow as the next user; the scope was simply never added. `Scope.SECOND_FACTOR` now carries its
+> own policy (5 per 15 min, `qbic.auth-throttle.second-factor.*`), enforced in
+> `SecondFactorVerificationService` rather than the view, because the view was the only place that
+> could have checked and did not. No schema change: the `auth_attempt` table takes a fourth scope.
 
 - **Test:** MFA-68. Recorded FAILURE.
 - **Repro:** submit wrong codes repeatedly (~2 min of clicking) — nothing slows, blocks or locks.
@@ -56,7 +82,12 @@ functionality · **S4** user-facing defect · **S5** decide, may not need code.
 
 ## 5. User-facing defects
 
-### S4 — Recovery codes are lost irrecoverably on refresh
+### S4 — Recovery codes are lost irrecoverably on refresh — **fixed**
+
+> **Fixed in `713fb4649` for the "nothing is said" half.** The codes still cannot be re-displayed —
+> only hashes are stored (AUTH-R-03) — but a session marker now survives the refresh and the settings
+> page states plainly that the sheet was not saved, what that costs, and that a new set is the way out.
+> Verified by `RecoveryCodesUnacknowledgedSpec`.
 
 - **Tests:** MFA-91 (FAILURE) and MFA-40 (recorded Success — contradictory, see §7).
 - **Symptom:** refresh without pressing "I have saved my keys" and the codes can never be shown again.
