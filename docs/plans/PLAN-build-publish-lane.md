@@ -106,39 +106,44 @@ release semantics.
   the comment on line 266 that explains why it exists.
 - No other change: the BOM declares no `<repositories>`.
 
-### Task 3 — (Recommended) Park the Nexus coordinates behind an env-var profile
+### Task 3 — ~~Park the Nexus coordinates behind an env-var profile~~ SKIPPED
 
-**File:** `pom.xml`
+**Decision (2026-11-25): deliberately not done.** Do not implement this.
 
-This is the cheap escape hatch if the university restores access. Adding it costs nothing
-at build time because it is never activated without the environment variable:
+An earlier revision of this plan recommended keeping the Nexus coordinates in `pom.xml`
+inside a profile activated by `env.NEXUS_BASE_URL`, so a future reachable mirror would be
+a configuration change rather than a code change. It was dropped on purpose, to avoid
+carrying configuration for a host that does not work:
+
+- The companion inbound plan **deletes** the Nexus entries from `<repositories>` rather
+  than parking them. Landing a profile here would give the two branches contradictory
+  intentions about the same lines, which is the conflict the §9 single-owner table exists
+  to prevent.
+- A dormant profile would preserve a setting that is currently *wrong* — an unreachable
+  host carrying `<updatePolicy>always</updatePolicy>`. Keeping a known-bad configuration
+  alive behind a switch is not a safety net.
+- The way back is already cheap: `git revert` of the commit that removed the entries, and
+  the URLs recorded in the inbound plan.
+
+**If a reachable mirror ever returns**, add the repository entry at that point. Do not add
+`<updatePolicy>always</updatePolicy>` when you do — that setting is what turned an
+unreachable host into a per-build stall instead of a single failed lookup, and it is the
+one mistake worth remembering from this change.
+
+The original profile sketch is preserved here only so this decision has context:
 
 ```xml
 <profile>
   <id>qbic-nexus</id>
-  <activation>
-    <property><name>env.NEXUS_BASE_URL</name></property>
-  </activation>
+  <activation><property><name>env.NEXUS_BASE_URL</name></property></activation>
   <repositories>
     <repository>
       <id>nexus-releases</id>
       <url>${env.NEXUS_BASE_URL}/repository/maven-releases</url>
-      <releases><enabled>true</enabled><checksumPolicy>fail</checksumPolicy></releases>
-      <snapshots><enabled>false</enabled></snapshots>
-    </repository>
-    <repository>
-      <id>nexus-snapshots</id>
-      <url>${env.NEXUS_BASE_URL}/repository/maven-snapshots</url>
-      <releases><enabled>false</enabled></releases>
-      <snapshots><enabled>true</enabled><checksumPolicy>fail</checksumPolicy></snapshots>
     </repository>
   </repositories>
 </profile>
 ```
-
-**Omit `<updatePolicy>always</updatePolicy>`**, which the current entries carry at
-`pom.xml` lines 106 and 116. That single setting is what converts an unreachable host
-from a one-time cost into a per-build stall, and it must not be reintroduced.
 
 ### Task 4 — Remove the deploy step from the release workflow
 
@@ -313,8 +318,9 @@ load-bearing files. The inbound plan then re-points `<repositories>` in a clean 
 ## 11. Out of Scope / Follow-ups
 
 - Inbound dependency hosting → `docs/plans/PLAN-openbis-artifact-hosting.md`.
-- Deciding whether to re-establish a registry if university access returns (Task 3 makes
-  this cheap).
+- Deciding whether to re-establish a registry if university access returns. The Nexus
+  profile that would have made this a config change was skipped on purpose (Task 3); the
+  route back is `git revert` of the commit that removed the entries.
 - Whether the 17 internal module jars belong in the release at all, given
   `datamanager-app-*.jar` (149 MB) is the only runnable artifact and the rest are ~2 MB
   each with no external consumers.
