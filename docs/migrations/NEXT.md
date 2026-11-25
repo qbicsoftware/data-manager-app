@@ -45,7 +45,12 @@ Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
 
 The hardening release's `user_verification_token` and `auth_attempt` are documented in
-[`released/v1.20.4.md`](released/v1.20.4.md); nothing in this release changes them.
+[`released/v1.20.4.md`](released/v1.20.4.md); nothing in this release changes them. In particular,
+second-factor throttling (MFA-68) reuses the existing `auth_attempt` table and adds no migration —
+it only introduces a fourth `scope` value, which the table's design anticipated
+(`sql/migrations/released/v1.20.4/auth-attempt-throttling.sql`). No operator action is required
+beyond optionally tuning `qbic.auth-throttle.second-factor.*`; the defaults are 5 attempts per
+15-minute window with a 15-minute block.
 
 ---
 

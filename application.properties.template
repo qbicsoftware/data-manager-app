@@ -395,6 +395,14 @@ qbic.auth-throttle.resend.max-attempts=3
 qbic.auth-throttle.resend.window=PT15M
 qbic.auth-throttle.resend.block-duration=PT15M
 
+# Second-factor code submissions at the login challenge. Tighter than the password on purpose: a
+# password is one guess at an unbounded secret, whereas a six-digit TOTP code is one guess in a
+# million per thirty-second step -- five submissions per window is what keeps an online brute force
+# uninteresting (MFA-68). Keyed on the account id, since the password step already established it.
+qbic.auth-throttle.second-factor.max-attempts=5
+qbic.auth-throttle.second-factor.window=PT15M
+qbic.auth-throttle.second-factor.block-duration=PT15M
+
 ###############################################################################
 ### Data Server / Download ####################################################
 ###############################################################################
