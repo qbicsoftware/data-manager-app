@@ -207,9 +207,20 @@ Evidence:
 **Fix:** the build step runs `mvn -B verify` instead of `mvn -B package`. Verified locally
 that `verify -DskipTests` succeeds in a module and produces the same jar.
 
-**Follow-up worth considering:** `Collect release assets` should fail loudly when no
-`.sigstore.json` files are found, instead of shipping an unsigned release. A
-`[ -s ]`/count guard would convert this class of silent regression into a red build.
+**Guard implemented.** `Collect release assets` now counts JARs, signature bundles and
+SBOMs and fails the job when signature bundles are fewer than JARs, or when the asset list
+is empty. SBOMs only warn, since a missing SBOM should not block a release while an unsigned
+one must. Three cases were exercised in a shell against the extracted `run:` script:
+healthy (2 jars/2 sigs → exit 0), unsigned (2 jars/0 sigs → exit 1), empty list (exit 1).
+
+Two bugs surfaced only by running it, both worth remembering when editing this step:
+
+- `\`exit 1\`\` inside a backtick pair in the echo message was executed as command
+  substitution, printing `verify: command not found` and eating the exit status. GitHub
+  Actions' `\${{ }}\` and shell quoting interact badly with backticks in one-liners; the
+  message now uses single quotes.
+- An empty `release-assets.txt` left `jars` unset, and `[ "" -eq 0 ]` errors instead of
+  failing cleanly. Guarded with `\`! -s\`\` plus `\${x:-0}\` defaults.
 
 ### Task 7 — Attach the SBOM to the release
 
