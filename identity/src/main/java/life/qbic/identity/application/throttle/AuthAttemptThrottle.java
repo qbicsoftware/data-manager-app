@@ -12,6 +12,7 @@ import java.util.Locale;
 import life.qbic.identity.domain.repository.AuthAttemptCounter;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,7 +94,20 @@ public class AuthAttemptThrottle {
      * application send notification mail, and can repeatedly invalidate a victim's outstanding reset
      * link, since each newly issued token supersedes the previous one.</p>
      */
-    REGISTRATION
+    REGISTRATION,
+    /**
+     * Submissions of a second-factor code at the login challenge or on the mandatory-enrolment page.
+     *
+     * <p>The flow MILESTONE-MFA M5-4 names, and the reason {@link Scope} was made an open set: a
+     * six-digit code is one guess in a million per thirty-second step, which holds only while an
+     * attacker gets <em>one</em> guess per step. Without this bucket the same million guesses are a
+     * few minutes of scripted submissions and the second factor is worth no more than the password
+     * (MFA-68).</p>
+     *
+     * <p>Keyed on the account id rather than an address: the password step already established which
+     * account is mid-login, and one account's failures must not spend another's allowance.</p>
+     */
+    SECOND_FACTOR
   }
 
   /** Whether the caller may perform the work. Never render this; see Rule 2. */
@@ -165,17 +179,47 @@ public class AuthAttemptThrottle {
   private final AuthAttemptCounter counter;
   private final Policy loginPolicy;
   private final Policy resendPolicy;
+  private final Policy secondFactorPolicy;
 
+  /**
+   * Convenience constructor with the default second-factor policy.
+   *
+   * <p>Exists so the many specs and the two flows that never touch a second factor do not have to
+   * repeat three values. Spring uses the annotated constructor below.</p>
+   */
+  public AuthAttemptThrottle(AuthAttemptCounter counter, int loginMaxAttempts,
+      Duration loginWindow, Duration loginBlockDuration, int resendMaxAttempts,
+      Duration resendWindow, Duration resendBlockDuration) {
+    this(counter, loginMaxAttempts, loginWindow, loginBlockDuration, resendMaxAttempts,
+        resendWindow, resendBlockDuration, 5, Duration.ofMinutes(15), Duration.ofMinutes(15));
+  }
+
+  /**
+   * Spring's constructor.
+   *
+   * <p>Annotated explicitly because the class now has two constructors; without it Spring cannot
+   * choose. Same reason as {@code MfaLoginSuccessHandler}.</p>
+   */
+  @Autowired
   public AuthAttemptThrottle(AuthAttemptCounter counter,
       @Value("${qbic.auth-throttle.login.max-attempts:10}") int loginMaxAttempts,
       @Value("${qbic.auth-throttle.login.window:PT15M}") Duration loginWindow,
       @Value("${qbic.auth-throttle.login.block-duration:PT15M}") Duration loginBlockDuration,
       @Value("${qbic.auth-throttle.resend.max-attempts:3}") int resendMaxAttempts,
       @Value("${qbic.auth-throttle.resend.window:PT15M}") Duration resendWindow,
-      @Value("${qbic.auth-throttle.resend.block-duration:PT15M}") Duration resendBlockDuration) {
+      @Value("${qbic.auth-throttle.resend.block-duration:PT15M}") Duration resendBlockDuration,
+      @Value("${qbic.auth-throttle.second-factor.max-attempts:5}") int secondFactorMaxAttempts,
+      @Value("${qbic.auth-throttle.second-factor.window:PT15M}") Duration secondFactorWindow,
+      @Value("${qbic.auth-throttle.second-factor.block-duration:PT15M}")
+      Duration secondFactorBlockDuration) {
     this.counter = requireNonNull(counter, "counter must not be null");
     this.loginPolicy = new Policy(loginMaxAttempts, loginWindow, loginBlockDuration, "login");
     this.resendPolicy = new Policy(resendMaxAttempts, resendWindow, resendBlockDuration, "resend");
+    // Tighter than the password on purpose. A password guess is one of an unbounded space, so ten
+    // per window is already generous; a TOTP guess is one of a million per thirty-second step, so a
+    // handful of submissions per window is what keeps brute force uninteresting (MFA-68).
+    this.secondFactorPolicy = new Policy(secondFactorMaxAttempts, secondFactorWindow,
+        secondFactorBlockDuration, "second-factor");
   }
 
   /**
@@ -244,6 +288,7 @@ public class AuthAttemptThrottle {
     return switch (scope) {
       case LOGIN -> loginPolicy;
       case EMAIL_CONFIRMATION_RESEND, PASSWORD_RESET_RESEND, REGISTRATION -> resendPolicy;
+      case SECOND_FACTOR -> secondFactorPolicy;
     };
   }
 

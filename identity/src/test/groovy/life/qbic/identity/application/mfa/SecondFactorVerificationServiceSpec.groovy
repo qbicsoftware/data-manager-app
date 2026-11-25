@@ -1,11 +1,14 @@
 package life.qbic.identity.application.mfa
 
+import life.qbic.identity.application.throttle.AuthAttemptThrottle
 import life.qbic.identity.domain.model.mfa.ProtectedSecret
 import life.qbic.identity.domain.model.mfa.SecondFactor
 import life.qbic.identity.domain.model.mfa.Totp
+import life.qbic.identity.domain.repository.AuthAttemptCounter
 import life.qbic.identity.domain.repository.SecondFactorRepository
 import spock.lang.Specification
 
+import java.time.Duration
 import java.time.Instant
 
 /**
@@ -21,8 +24,12 @@ class SecondFactorVerificationServiceSpec extends Specification {
 
     FakeProtector protector = new FakeProtector()
     FakeRepository repository = new FakeRepository()
+    // Generous limits by default: these cases are about verification, and the throttle has its own
+    // spec (SecondFactorThrottleSpec). Only the cases that name the throttle arrange a small budget.
+    FakeCounter counter = new FakeCounter()
+    AuthAttemptThrottle throttle = throttleWith(20)
     SecondFactorVerificationService service =
-            new SecondFactorVerificationService(repository, protector)
+            new SecondFactorVerificationService(repository, protector, throttle)
 
     // ---------------------------------------------------------------- the happy path
 
@@ -154,7 +161,100 @@ class SecondFactorVerificationServiceSpec extends Specification {
         thrown(NullPointerException)
     }
 
+    // ---------------------------------------------------------------- throttling (MFA-68)
+
+    def "the configured number of attempts is charged, and the one after is refused without verifying"() {
+        given: "an allowance of two"
+        def limited = new SecondFactorVerificationService(repository, protector, throttleWith(2))
+        def seed = protector.seedOf(enrol("u-1", "iPhone"))
+
+        when: "three wrong codes are submitted, then the correct one"
+        def first = limited.verify("u-1", "000000", NOW)
+        def second = limited.verify("u-1", "000000", NOW)
+        def third = limited.verify("u-1", "000000", NOW)
+        def validAfterLimit = limited.verify("u-1", Totp.code(seed, NOW), NOW)
+
+        then: "the first two reached the verifier, the rest were refused by the throttle"
+        first.outcome() != SecondFactorVerificationService.Outcome.THROTTLED
+        second.outcome() != SecondFactorVerificationService.Outcome.THROTTLED
+        third.outcome() == SecondFactorVerificationService.Outcome.THROTTLED
+        validAfterLimit.outcome() == SecondFactorVerificationService.Outcome.THROTTLED
+
+        and: "no refusal ever counts as a pass"
+        !third.verified()
+        !validAfterLimit.verified()
+    }
+
+    def "a verified code clears the account's allowance"() {
+        given: "an allowance of two, one of which was spent on a typo"
+        def limited = new SecondFactorVerificationService(repository, protector, throttleWith(2))
+        def seed = protector.seedOf(enrol("u-1", "iPhone"))
+        limited.verify("u-1", "000000", NOW)
+
+        when: "the right code goes in"
+        def accepted = limited.verify("u-1", Totp.code(seed, NOW), NOW)
+
+        then:
+        accepted.verified()
+
+        and: "the next typo is the first of a fresh window, not the third of the old one"
+        limited.verify("u-1", "000000", NOW)
+                .outcome() != SecondFactorVerificationService.Outcome.THROTTLED
+    }
+
+    def "a throttled refusal is never mistaken for a pass, even with a valid code"() {
+        given:
+        def limited = new SecondFactorVerificationService(repository, protector, throttleWith(1))
+        def seed = protector.seedOf(enrol("u-1", "iPhone"))
+        limited.verify("u-1", "000000", NOW)
+
+        expect:
+        !limited.verify("u-1", Totp.code(seed, NOW), NOW).verified()
+    }
+
     // ---------------------------------------------------------------- helpers
+
+    private AuthAttemptThrottle throttleWith(int limit) {
+        return new AuthAttemptThrottle(counter,
+                10, Duration.ofMinutes(15), Duration.ofMinutes(15),
+                5, Duration.ofMinutes(15), Duration.ofMinutes(15),
+                limit, Duration.ofMinutes(15), Duration.ofMinutes(15))
+    }
+
+    /**
+     * A permissive in-memory counter: these cases never advance the clock, so the window roll-over
+     * that matters for the block lifetime is exercised in {@code SecondFactorThrottleSpec} instead.
+     */
+    static class FakeCounter implements AuthAttemptCounter {
+        final Map<String, Integer> counts = [:]
+        final Map<String, Instant> blocks = [:]
+
+        @Override
+        Counter increment(String scope, String key, Instant now, Duration window) {
+            def id = scope + "|" + key
+            def next = (counts[id] ?: 0) + 1
+            counts[id] = next
+            return new Counter(next, blocks[id])
+        }
+
+        @Override
+        void block(String scope, String key, Instant blockedUntil) {
+            blocks[scope + "|" + key] = blockedUntil
+        }
+
+        @Override
+        Counter peek(String scope, String key) {
+            def id = scope + "|" + key
+            return new Counter(counts[id] ?: 0, blocks[id])
+        }
+
+        @Override
+        void clear(String scope, String key) {
+            def id = scope + "|" + key
+            counts.remove(id)
+            blocks.remove(id)
+        }
+    }
 
     private SecondFactor enrol(String userId, String name) {
         def seed = Totp.newSeed()
