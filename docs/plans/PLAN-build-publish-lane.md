@@ -321,9 +321,13 @@ load-bearing files. The inbound plan then re-points `<repositories>` in a clean 
 - Deciding whether to re-establish a registry if university access returns. The Nexus
   profile that would have made this a config change was skipped on purpose (Task 3); the
   route back is `git revert` of the commit that removed the entries.
-- Whether the 17 internal module jars belong in the release at all, given
-  `datamanager-app-*.jar` (149 MB) is the only runnable artifact and the rest are ~2 MB
-  each with no external consumers.
+- ~~Whether the 17 internal module jars belong in the release at all.~~ **Resolved
+  2026-11-25:** they do not. A real release (`0.0.0-rc.1`) shipped 54 assets / 164 MB;
+  `datamanager-app-*.jar` is a Spring Boot fat jar with 289 nested jars under
+  `BOOT-INF/lib`, including every internal module and `zzzz-openbis-api`, so the per-module
+  jars are redundant by construction. The release now ships the app jar, its signature
+  bundle and its SBOM only. `Collect release assets` was rewritten to select those three by
+  path (so a version bump cannot silently match nothing) and asserts exactly one jar.
 - Re-evaluating signing/provenance coverage once the published-to-Nexus path is gone:
   confirm Scorecard's Signed-Releases check still passes, since it looks for the
   `.sigstore.json` bundles among release assets.
