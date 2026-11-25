@@ -61,6 +61,18 @@ functionality · **S4** user-facing defect · **S5** decide, may not need code.
 
 ## 3. Regressions blocking other tests
 
+> **To confirm before coding.** Neither of these is reproducible from the repository: both descriptions
+> (`MFA-74`, `MFA-75`) are what the QA runner saw on `qpylon/dev`, and the branch `epic/mfa` is not
+> running there any more. Registration, confirmation and login-after-confirmation all read correctly in
+> the source — confirmation goes through a single-use token and an explicit click (`ConfirmEmailMain`),
+> and `UserDetailsServiceImpl` explicitly handles the no-password and inactive-account cases. So the
+> first question is not "where is the bug" but "was this the instance or the code": a deployment whose
+> mail slot or token parameter differs from the defaults would produce exactly these two symptoms.
+>
+> **Ask:** the instance URL (or its `application.properties` diff), and whether `routing.email-confirmation.token-parameter`
+> was customised. With that, a reproduction is a five-minute test; without it, any "fix" here would be
+> guessing at a defect nobody has seen since.
+
 ### S3 — Registration is broken on the test instance
 
 - **Test:** MFA-74. Recorded Failure. Blocks MFA-30 and MFA-75.
