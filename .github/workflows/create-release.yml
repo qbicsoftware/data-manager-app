@@ -40,9 +40,16 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          # Workflow-scoped key. actions/cache only writes on a key miss, so a key
+          # shared between workflows freezes whichever plugin set was fetched first
+          # and later runs of other workflows must re-fetch the rest from Central
+          # every time. This workflow needs `mvn verify -Pproduction`, so it gets its own
+          # cache. The run id keeps the entry refreshable instead of frozen for the
+          # life of a POM hash; restore-keys keeps it warm across runs.
+          key: ${{ runner.os }}-maven-release-${{ hashFiles('**/pom.xml') }}-${{ github.run_id }}
           restore-keys: |
-            ${{ runner.os }}-maven-
+            ${{ runner.os }}-maven-release-${{ hashFiles('**/pom.xml') }}
+            ${{ runner.os }}-maven-release-
 
       - name: Set version in Maven project
         run: mvn versions:set -DnewVersion="${{ github.event.inputs.versionTag }}" -DprocessAllModules -DgenerateBackupPoms=false
@@ -61,58 +68,83 @@ jobs:
         with:
           subject-path: "**/target/*.jar"
 
-      # The artifacts are signed by the sigstore Maven plugin during `verify`
-      # (part of the `sigcheck` profile), producing a .sigstore.json bundle next
-      # to each JAR. Scorecard's Signed-Releases check looks for these bundles
-      # among the assets attached to the GitHub release below.
+      # The release ships exactly one artifact: the deployable application, which is a
+      # Spring Boot fat jar. It is self-contained - 289 nested jars under BOOT-INF/lib,
+      # including every internal `life.qbic.datamanager` module and
+      # zzzz-openbis-api - so the 17 per-module jars add nothing a consumer can use,
+      # and their signed bundles are 17 extra signatures per release.
       #
-      # The CycloneDX SBOMs are collected too, but only the per-module
-      # `<artifactId>-<version>-sbom.json` files, whose names are unique. The
-      # `bom.json` and `bom.json.sigstore.json` files are excluded: every module
-      # emits those with the same basename and release asset names must be unique.
+      # The SBOM shipped is the app's, not the per-module ones: it describes all 289
+      # transitive components, which is the view vulnerability management needs. The
+      # per-module SBOMs describe subsets of it. `bom.json` is still excluded because
+      # every module emits that same basename and release asset names must be unique.
       #
-      # The GitHub release is the only distribution channel: nothing is deployed
-      # to an external Maven repository. See docs/plans/PLAN-build-publish-lane.md.
+      # The artifact is signed by the sigstore Maven plugin during `verify` (the
+      # `sigcheck` profile), and Scorecard's Signed-Releases check looks for the
+      # bundle attached below.
+      #
+      # The GitHub release is the only distribution channel: nothing is deployed to an
+      # external Maven repository. See docs/plans/PLAN-build-publish-lane.md.
       - name: Collect release assets
         run: |
           set -euo pipefail
-          {
-            find . -path '*/target/*.jar' \
-              -not -name '*-sources.jar' -not -name '*-javadoc.jar'
-            find . -path '*/target/*.jar.sigstore.json'
-            find . -path '*/target/*-sbom.json' -not -name 'bom.json'
-          } | sort > release-assets.txt
+          # Find the application jar by path, not by hardcoded version, so a version
+          # bump cannot silently match nothing. Spring Boot's repackage leaves a
+          # .original file next to it, which is excluded here.
+          app_jar=$(find . -path '*/target/datamanager-app-*.jar' \
+            -not -name '*.original' -not -name '*-sources.jar' -not -name '*-javadoc.jar' \
+            | sort | head -1)
+          if [ -z "$app_jar" ]; then
+            echo "::error::No datamanager-app jar found under any target/ directory."
+            exit 1
+          fi
+          app_dir=$(dirname "$app_jar")
+          app_base=$(basename "$app_jar" .jar)
+          sig=$app_dir/$app_base.jar.sigstore.json
+          sbom=$app_dir/$app_base-sbom.json
+          echo "Application jar: $app_jar"
+
+          # The jar and its signature are required; a missing one is a failed release.
+          : > release-assets.txt
+          for f in "$app_jar" "$sig"; do
+            if [ -f "$f" ]; then
+              echo "$f" >> release-assets.txt
+            else
+              echo "::error::Required release asset is missing: $f"
+              exit 1
+            fi
+          done
+          # The SBOM documents the dependency graph but should not block a release.
+          if [ -f "$sbom" ]; then
+            echo "$sbom" >> release-assets.txt
+          else
+            echo "::warning::No SBOM found at $sbom; the release will not document its dependencies."
+          fi
+
           echo "Release assets:"
           cat release-assets.txt
 
           # Fail loudly when signing did not happen. This checkout once shipped
           # unsigned JARs without any error: the sigstore signing execution is bound
-          # to `verify`, and the build step used to stop at `package`, so no
-          # .sigstore.json bundles were produced while the upload step happily
-          # collected whatever existed. A silent unsigned release is worse than a
-          # red build, so assert instead of assuming.
-          if [ ! -s release-assets.txt ]; then
-            echo "::error::release-assets.txt is missing or empty; nothing to publish."
-            exit 1
-          fi
-          # ${x:-0} guards against grep failing and leaving the variable empty.
+          # to `verify`, and the build step used to stop at `package`. A silent
+          # unsigned release is worse than a red build, so assert instead of assuming.
           jars=$(grep -c '\.jar$' release-assets.txt || true); jars=${jars:-0}
           sigs=$(grep -c '\.jar\.sigstore\.json$' release-assets.txt || true); sigs=${sigs:-0}
           sboms=$(grep -c -- '-sbom\.json$' release-assets.txt || true); sboms=${sboms:-0}
           echo "collected: jars=$jars signature-bundles=$sigs sboms=$sboms"
 
-          if [ "$jars" -eq 0 ]; then
-            echo "::error::No JARs were collected; refusing to publish an empty release."
+          if [ "$jars" -ne 1 ]; then
+            echo "::error::Expected exactly one jar, collected $jars."
             exit 1
           fi
           if [ "$sigs" -lt "$jars" ]; then
-            echo "::error::Only $sigs signature bundles for $jars JARs. The sigstore" \
-                 "signing execution is bound to the 'verify' phase, so check that the build step" \
+            echo "::error::The application jar has no signature bundle. The sigstore signing" \
+                 "execution is bound to the 'verify' phase, so check that the build step" \
                  "runs 'verify' and not 'package'."
             exit 1
           fi
           if [ "$sboms" -eq 0 ]; then
-            echo "::warning::No CycloneDX SBOMs were collected; the release will not document its dependencies."
+            echo "::warning::No CycloneDX SBOM was collected; the release will not document its dependencies."
           fi
 
       - name: Configure Git Credentials for GithubActions
