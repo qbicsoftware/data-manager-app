@@ -94,31 +94,29 @@
         <enabled>false</enabled>
       </snapshots>
     </repository>
+    <!-- QBiC Maven Repository - hosts the one artifact we need that Maven Central does not
+         carry: life.qbic:zzzz-openbis-api (an openBIS API jar, Apache 2.0). It is a static
+         GitHub Pages file tree: no credentials, no snapshots, no maven-metadata.xml.
+
+         This replaced the QBiC Nexus instance as a *dependency source*. Nexus is not
+         reachable from GitHub Actions egress, so a cold cache could not build and a warm one
+         stalled on revalidation. The removal was deliberate, not an accident - see
+         docs/plans/PLAN-openbis-artifact-hosting.md.
+
+         Deliberately no <updatePolicy>always</updatePolicy> here. That setting is what turned
+         an unreachable third-party host from a single failed lookup into a per-build stall.
+         Do not put it back. -->
     <repository>
-      <id>nexus-snapshots</id>
-      <name>QBiC Snapshots</name>
+      <id>qbic-maven-repository</id>
+      <name>QBiC Maven Repository</name>
+      <url>https://qbicsoftware.github.io/maven-repository/releases</url>
       <releases>
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
         <checksumPolicy>fail</checksumPolicy>
         <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
-      </snapshots>
-      <url>https://qbic-repo.qbic.uni-tuebingen.de/repository/maven-snapshots</url>
-    </repository>
-    <repository>
-      <id>nexus-releases</id>
-      <name>QBiC Releases</name>
-      <releases>
-        <checksumPolicy>fail</checksumPolicy>
-        <enabled>true</enabled>
-        <updatePolicy>always</updatePolicy>
       </releases>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
-      <url>https://qbic-repo.qbic.uni-tuebingen.de/repository/maven-releases</url>
     </repository>
   </repositories>
 
