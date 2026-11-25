@@ -35,7 +35,6 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '21'
-          settings-path: ${{ github.workspace }}
 
       - name: Load local Maven repository cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -48,8 +47,13 @@ jobs:
       - name: Set version in Maven project
         run: mvn versions:set -DnewVersion="${{ github.event.inputs.versionTag }}" -DprocessAllModules -DgenerateBackupPoms=false
 
+      # Build to `verify`, not `package`. The sigstore signing execution is bound to
+      # the `verify` phase, so a `package` build yields unsigned JARs with no
+      # .sigstore.json bundles. This step also replaces the old
+      # `mvn ... deploy` call, which reached `verify` only incidentally, because
+      # `deploy` implies every earlier phase.
       - name: Build with Maven
-        run: mvn -B package -Pproduction -Dvaadin.force.production.build=true --file pom.xml
+        run: mvn -B verify -Pproduction -Dvaadin.force.production.build=true --file pom.xml
 
       # Generate provenance (SLSA attestation) for all JARs
       - name: Generate SLSA build provenance
@@ -57,20 +61,18 @@ jobs:
         with:
           subject-path: "**/target/*.jar"
 
-      - name: Publish artefact to QBiC Nexus Repository
-        run: mvn --quiet --settings $GITHUB_WORKSPACE/.github.settings.xml -Pproduction -DskipTests -Dvaadin.force.production.build=true deploy
-        env:
-          MAVEN_REPO_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-          MAVEN_REPO_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-
-      # The deployed artifacts are signed by the sigstore Maven plugin during
-      # `verify` (part of the `sigcheck` profile), producing a .sigstore.json
-      # bundle next to each JAR. Scorecard's Signed-Releases check looks for
-      # these bundles among the assets attached to the GitHub release below.
+      # The artifacts are signed by the sigstore Maven plugin during `verify`
+      # (part of the `sigcheck` profile), producing a .sigstore.json bundle next
+      # to each JAR. Scorecard's Signed-Releases check looks for these bundles
+      # among the assets attached to the GitHub release below.
       #
-      # Only the JAR bundles are collected: the plugin also signs the per-module
-      # SBOM (`target/bom.json`), but every module emits a bundle with the same
-      # `bom.json.sigstore.json` basename and release asset names must be unique.
+      # The CycloneDX SBOMs are collected too, but only the per-module
+      # `<artifactId>-<version>-sbom.json` files, whose names are unique. The
+      # `bom.json` and `bom.json.sigstore.json` files are excluded: every module
+      # emits those with the same basename and release asset names must be unique.
+      #
+      # The GitHub release is the only distribution channel: nothing is deployed
+      # to an external Maven repository. See docs/plans/PLAN-build-publish-lane.md.
       - name: Collect release assets
         run: |
           set -euo pipefail
@@ -78,9 +80,40 @@ jobs:
             find . -path '*/target/*.jar' \
               -not -name '*-sources.jar' -not -name '*-javadoc.jar'
             find . -path '*/target/*.jar.sigstore.json'
+            find . -path '*/target/*-sbom.json' -not -name 'bom.json'
           } | sort > release-assets.txt
           echo "Release assets:"
           cat release-assets.txt
+
+          # Fail loudly when signing did not happen. This checkout once shipped
+          # unsigned JARs without any error: the sigstore signing execution is bound
+          # to `verify`, and the build step used to stop at `package`, so no
+          # .sigstore.json bundles were produced while the upload step happily
+          # collected whatever existed. A silent unsigned release is worse than a
+          # red build, so assert instead of assuming.
+          if [ ! -s release-assets.txt ]; then
+            echo "::error::release-assets.txt is missing or empty; nothing to publish."
+            exit 1
+          fi
+          # ${x:-0} guards against grep failing and leaving the variable empty.
+          jars=$(grep -c '\.jar$' release-assets.txt || true); jars=${jars:-0}
+          sigs=$(grep -c '\.jar\.sigstore\.json$' release-assets.txt || true); sigs=${sigs:-0}
+          sboms=$(grep -c -- '-sbom\.json$' release-assets.txt || true); sboms=${sboms:-0}
+          echo "collected: jars=$jars signature-bundles=$sigs sboms=$sboms"
+
+          if [ "$jars" -eq 0 ]; then
+            echo "::error::No JARs were collected; refusing to publish an empty release."
+            exit 1
+          fi
+          if [ "$sigs" -lt "$jars" ]; then
+            echo "::error::Only $sigs signature bundles for $jars JARs. The sigstore" \
+                 "signing execution is bound to the 'verify' phase, so check that the build step" \
+                 "runs 'verify' and not 'package'."
+            exit 1
+          fi
+          if [ "$sboms" -eq 0 ]; then
+            echo "::warning::No CycloneDX SBOMs were collected; the release will not document its dependencies."
+          fi
 
       - name: Configure Git Credentials for GithubActions
         run: |

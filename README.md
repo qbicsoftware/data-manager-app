@@ -168,18 +168,22 @@ When contributing code:
 
 ## Verify build signature
 
-To mitigate the risk for supply chain attacks, we include signature bundles for every artifact (stable and snapshot) generated with [sigstore](https://www.sigstore.dev/). 
+To mitigate the risk for supply chain attacks, we include signature bundles for every artifact attached to a release, generated with [sigstore](https://www.sigstore.dev/). 
 
 We also run PGP verification during our CI builds for transitive dependencies to raise red flags for unexpected signature changes.
 
-You can use [cosign](https://github.com/sigstore/cosign) to verify the signature for our artifacts, e.g. for development build: 
+Signatures are produced by the [Create Release](../blob/main/.github/workflows/create-release.yml)
+workflow, one `.sigstore.json` bundle per JAR and per CycloneDX SBOM, both attached to the
+GitHub release. Note that `--certificate-identity` pins the branch the workflow ran from,
+so it must match the ref the release was dispatched from (releases are created from `main`).
+You can use [cosign](https://github.com/sigstore/cosign) to verify them:
 
 ```bash
 cosign verify-blob \
-  --bundle user-interface-1.11.0-20250924.124400-2.jar.sigstore.json \
+  --bundle datamanager-app-1.20.4.jar.sigstore.json \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  --certificate-identity 'https://github.com/qbicsoftware/data-manager-app/.github/workflows/nexus-publish-snapshots.yml@refs/heads/development' \
-  user-interface-1.11.0-20250924.124400-2.jar
+  --certificate-identity 'https://github.com/qbicsoftware/data-manager-app/.github/workflows/create-release.yml@refs/heads/main' \
+  datamanager-app-1.20.4.jar
 ```
 
 In case you for some reason cannot verify the signature, please create an issue on GitHub.

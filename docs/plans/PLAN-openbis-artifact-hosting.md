@@ -141,7 +141,7 @@ starts from an empty repo.
   simplest sequence is: create the branch orphan (`git checkout --orphan gh-pages`), add
   the files, commit, push, then set it as the Pages source.
 - Enable Pages: source = `gh-pages` branch, root.
-- Add a `../README.md` stating what is hosted and why, the Apache 2.0 licence of openBIS, the
+- Add a `README.md` stating what is hosted and why, the Apache 2.0 licence of openBIS, the
   pinned version and classifier, and the short `<repository>` snippet for consumers.
 - Confirm serving before touching any POM:
   ```bash
