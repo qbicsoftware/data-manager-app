@@ -30,6 +30,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.Serial;
 import java.time.Instant;
 import java.util.Locale;
@@ -39,6 +40,7 @@ import life.qbic.datamanager.security.mfa.MfaPendingLogin;
 import life.qbic.datamanager.security.mfa.MfaSessionCompletion;
 import life.qbic.identity.application.mfa.MfaReenrolmentService;
 import life.qbic.datamanager.security.mfa.MfaSessionState;
+import life.qbic.datamanager.views.account.MfaEnrolmentPrompt;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.identity.application.mfa.RecoveryCodeService;
 import life.qbic.identity.application.mfa.SecondFactorVerificationService;
@@ -307,6 +309,10 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
       return;
     }
     if (recoveryCodeService.redeemFor(pending.userId(), recoveryCode.getValue(), Instant.now())) {
+      // The set may now be empty. Nothing else in the flow can tell the user that: the settings page
+      // counts what is left, and someone signing in with a recovery code is mid-incident rather than
+      // browsing settings (MFA-41b).
+      warnAboutRemainingRecoveryCodes();
       establishSession();
       return;
     }
@@ -315,6 +321,27 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     error.setText("That recovery code was not accepted. Each code works once.");
     error.setVisible(true);
     recoveryCode.setValue("");
+  }
+
+  /**
+   * Says how many recovery codes are left, and says it loudly when there are none.
+   *
+   * <p>Recorded as the last thing before the session is established, so it survives the redirect and
+   * is read on the page the user lands on. An empty set is the state that turns a lost phone into a
+   * helpdesk ticket, and the moment just after redeeming the last code is the only moment the user is
+   * certainly paying attention to it.</p>
+   */
+  private void warnAboutRemainingRecoveryCodes() {
+    // In the session, not in `error.setText(...)`: the very next statement establishes the session
+    // and redirects, so anything written into this page's components is discarded one instruction
+    // later. MfaEnrolmentPrompt is mounted in the application shell, reads this on attach and shows
+    // it at the top of the page the user lands on.
+    HttpSession session = currentSession();
+    if (session == null) {
+      return;
+    }
+    session.setAttribute(MfaEnrolmentPrompt.RECOVERY_CODES_LEFT_ATTRIBUTE,
+        (int) recoveryCodeService.remaining(pending.userId()));
   }
 
   /**

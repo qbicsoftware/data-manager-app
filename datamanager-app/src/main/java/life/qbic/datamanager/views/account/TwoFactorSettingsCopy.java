@@ -126,6 +126,43 @@ public final class TwoFactorSettingsCopy {
   }
 
   /**
+   * The heading of the notice shown right after a recovery code was redeemed (MFA-41b).
+   *
+   * <p>This is an <em>event</em> notice, not a state summary — the state summary is
+   * {@link #recoverySummary}. The distinction is what the QA run found missing: an account that spent
+   * its last code is in a materially different situation from one that has five left, and only the
+   * event tells it so at the moment it becomes true.</p>
+   *
+   * @param unusedCodes how many codes are left; {@code 0} means the set is spent
+   * @return the heading
+   */
+  static String recoveryCodesLeftTitle(long unusedCodes) {
+    return unusedCodes <= 0 ? "No recovery codes left" : "Recovery code used";
+  }
+
+  /**
+   * The body of the notice shown right after a recovery code was redeemed.
+   *
+   * <p>For an empty set it names the loss and the one action that still exists: enrolling a new
+   * authenticator issues a fresh set. It says nothing about e-mail, because mailbox control must never
+   * read as the way past a factor (ADR 0011 B1) — and a user in exactly this state is the one most
+   * likely to go looking for that shortcut.</p>
+   *
+   * @param unusedCodes how many codes are left; negative is treated as none
+   * @return the body text
+   */
+  static String recoveryCodesLeftBody(long unusedCodes) {
+    if (unusedCodes <= 0) {
+      return "You signed in with your last recovery code, so none are left. Set up a new "
+          + "authenticator app to get a fresh set — without one, losing access to your app means you "
+          + "cannot sign in by yourself.";
+    }
+    return "You signed in with a recovery code. " + unusedCodes
+        + (unusedCodes == 1 ? " code is" : " codes are")
+        + " still unused. Set up a new authenticator app to get a fresh set.";
+  }
+
+  /**
    * @param unusedCodes unused codes on the account
    * @param hasFactor   whether the account has an active factor
    * @return the label of the recovery-code action
