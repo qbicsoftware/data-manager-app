@@ -185,6 +185,32 @@ from a one-time cost into a per-build stall, and it must not be reintroduced.
   `NEXUS_USERNAME` and `NEXUS_PASSWORD` under Settings → Secrets and variables → Actions.
   An agent must not attempt this.
 
+### Task 7a — Build to `verify`, not `package` (signing regression)
+
+**File:** `.github/workflows/create-release.yml`
+
+Found after the deploy step was removed. `mvn ... deploy` reaches the `verify` phase
+incidentally, because `deploy` implies every earlier phase — and
+`sigstore-maven-plugin`'s `sigstore-sign` execution is bound to `verify`. The workflow's
+actual build step ran `mvn -B package`, which never reaches `verify`.
+
+So the `.sigstore.json` bundles that `1.20.4` shipped were produced by the **deploy** step,
+not the build step. Removing the deploy therefore also removed the signatures with no
+error, leaving `Collect release assets` to silently pick up only the JARs.
+
+Evidence:
+
+- `run_tests` (`mvn clean verify`) logs `--- sigstore:2.3.0:sign (sigstore-sign) @ logging ---`
+  per module; the release workflow's `package` build logs no such line.
+- The Deploy Snapshot run printed a `https://search.sigstore.dev?logIndex=…` entry.
+
+**Fix:** the build step runs `mvn -B verify` instead of `mvn -B package`. Verified locally
+that `verify -DskipTests` succeeds in a module and produces the same jar.
+
+**Follow-up worth considering:** `Collect release assets` should fail loudly when no
+`.sigstore.json` files are found, instead of shipping an unsigned release. A
+`[ -s ]`/count guard would convert this class of silent regression into a red build.
+
 ### Task 7 — Attach the SBOM to the release
 
 **File:** `.github/workflows/create-release.yml`

@@ -47,8 +47,13 @@ jobs:
       - name: Set version in Maven project
         run: mvn versions:set -DnewVersion="${{ github.event.inputs.versionTag }}" -DprocessAllModules -DgenerateBackupPoms=false
 
+      # Build to `verify`, not `package`. The sigstore signing execution is bound to
+      # the `verify` phase, so a `package` build yields unsigned JARs with no
+      # .sigstore.json bundles. This step also replaces the old
+      # `mvn ... deploy` call, which reached `verify` only incidentally, because
+      # `deploy` implies every earlier phase.
       - name: Build with Maven
-        run: mvn -B package -Pproduction -Dvaadin.force.production.build=true --file pom.xml
+        run: mvn -B verify -Pproduction -Dvaadin.force.production.build=true --file pom.xml
 
       # Generate provenance (SLSA attestation) for all JARs
       - name: Generate SLSA build provenance

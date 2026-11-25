@@ -174,7 +174,9 @@ We also run PGP verification during our CI builds for transitive dependencies to
 
 Signatures are produced by the [Create Release](../blob/main/.github/workflows/create-release.yml)
 workflow, one `.sigstore.json` bundle per JAR and per CycloneDX SBOM, both attached to the
-GitHub release. You can use [cosign](https://github.com/sigstore/cosign) to verify them:
+GitHub release. Note that `--certificate-identity` pins the branch the workflow ran from,
+so it must match the ref the release was dispatched from (releases are created from `main`).
+You can use [cosign](https://github.com/sigstore/cosign) to verify them:
 
 ```bash
 cosign verify-blob \
