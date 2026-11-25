@@ -68,6 +68,7 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
   private final Div recoveryCard = new Div();
   private final Button enrolButton = new Button("Set up authenticator app");
   private final Button generateRecoveryCodesButton = new Button("Generate recovery codes");
+  private final Div recoveryCodesLost = new Div();
 
   // The three inputs the sentences depend on, kept together: each setter stores its input and
   // re-renders, so a sentence can never be computed without the state it has to be true for.
@@ -75,6 +76,8 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
   private long unusedRecoveryCodes;
   private MfaPolicyMode mode = MfaPolicyMode.OFF;
   private Instant graceDeadline;
+  /** Whether the last one-time sheet was closed without the acknowledgement (MFA-91). */
+  private boolean recoveryCodesUnacknowledged;
 
   public TwoFactorAuthenticationComponent() {
     addClassName("two-factor-authentication-component");
@@ -136,7 +139,14 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
     // deployed build. This reads as an enabled action that still ranks below the primary.
     generateRecoveryCodesButton.addClassName("mfa-secondary-action");
     recoveryCard.add(recoveryText, generateRecoveryCodesButton);
-    recoverySection.addContent(recoveryCard);
+
+    // The lost-sheet notice sits directly above the recovery card, because the action it asks for is
+    // the button on that card. Hidden until a sheet actually goes unacknowledged (MFA-91).
+    recoveryCodesLost.addClassName("mfa-recovery-lost");
+    recoveryCodesLost.getElement().setAttribute("role", "alert");
+    recoveryCodesLost.setVisible(false);
+
+    recoverySection.addContent(recoveryCodesLost, recoveryCard);
 
     add(factorSection, recoverySection);
 
@@ -197,6 +207,20 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
    */
   public void setRecoveryCodeCount(long count) {
     unusedRecoveryCodes = count;
+    render();
+  }
+
+  /**
+   * Reports that a recovery-code sheet was shown and never acknowledged.
+   *
+   * <p>The codes cannot be re-displayed — only their hashes are stored (AUTH-R-03) — so the page
+   * cannot repair the loss. It can refuse to be silent about it, which is the whole of MFA-91: the QA
+   * run found that a refresh discarded the sheet and said nothing at all.</p>
+   *
+   * @param lost {@code true} when a sheet was closed without "I have saved them"
+   */
+  public void setRecoveryCodesLost(boolean lost) {
+    this.recoveryCodesUnacknowledged = lost;
     render();
   }
 
@@ -268,6 +292,10 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
 
     recoverySummary.setText(TwoFactorSettingsCopy.recoverySummary(unusedRecoveryCodes, hasFactor));
     renderRecoveryMeter(hasFactor);
+    // Only while there is a factor: without one, generation is disabled and the sentence would tell
+    // the user to press a button that cannot work.
+    recoveryCodesLost.setText(RecoveryCodesDialog.unacknowledgedCodesNotice());
+    recoveryCodesLost.setVisible(recoveryCodesUnacknowledged && hasFactor);
     generateRecoveryCodesButton.setText(
         TwoFactorSettingsCopy.recoveryActionLabel(unusedRecoveryCodes, hasFactor));
     generateRecoveryCodesButton.setEnabled(hasFactor);

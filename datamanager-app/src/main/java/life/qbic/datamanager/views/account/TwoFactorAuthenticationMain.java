@@ -6,6 +6,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
@@ -57,6 +58,16 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
 
   @Serial
   private static final long serialVersionUID = 1L;
+
+  /**
+   * Session marker: a recovery-code sheet was shown and not acknowledged.
+   *
+   * <p>In the session rather than in this component because the component does not survive the event
+   * that loses the codes. A browser refresh destroys the dialog and the UI instance with it, so a
+   * field on the page would be gone by the time the page is rendered again — the marker has to outlive
+   * the render that follows (MFA-91).</p>
+   */
+  static final String LOST_RECOVERY_CODES_ATTRIBUTE = "qbic.mfa.recovery-codes-unacknowledged";
 
   private final transient TwoFactorAuthenticationComponent component;
   private final transient SecondFactorService secondFactorService;
@@ -128,6 +139,7 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
     component.setFactors(factors, outcomes);
     component.setRecoveryCodeCount(recoveryCodeService.remaining(userId));
     component.setPolicyMode(mfaPolicy.mode());
+    component.setRecoveryCodesLost(isRecoverySheetUnacknowledged());
     // Only meaningful under REQUIRED without a factor: an unenrolled account is on a deadline and the
     // page has to name it, or "until the grace period ends" tells the user nothing they can act on.
     if (mfaPolicy.mode() == MfaPolicyMode.REQUIRED && factors.isEmpty()) {
@@ -137,6 +149,39 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
     } else {
       component.setGraceDeadline(null);
     }
+  }
+
+  /**
+   * Opens a one-time sheet and remembers whether it was acknowledged.
+   *
+   * <p>The marker is set <em>before</em> the dialog opens and cleared only by the acknowledgement, so
+   * every other exit — refresh, navigation, a closed browser tab — leaves it standing and the next
+   * render reports the loss. Nothing else can detect it: the plaintext codes are not stored anywhere
+   * (AUTH-R-03), so "was it saved?" is not a question the database can answer.</p>
+   *
+   * @param dialog the sheet to open
+   */
+  private void showRecoveryCodes(RecoveryCodesDialog dialog) {
+    markRecoverySheetUnacknowledged(true);
+    dialog.addCodesSavedListener(event -> markRecoverySheetUnacknowledged(false));
+    dialog.open();
+  }
+
+  private void markRecoverySheetUnacknowledged(boolean unacknowledged) {
+    var session = VaadinSession.getCurrent();
+    if (session == null) {
+      return;
+    }
+    if (unacknowledged) {
+      session.setAttribute(LOST_RECOVERY_CODES_ATTRIBUTE, Boolean.TRUE);
+    } else {
+      session.setAttribute(LOST_RECOVERY_CODES_ATTRIBUTE, null);
+    }
+  }
+
+  private boolean isRecoverySheetUnacknowledged() {
+    var session = VaadinSession.getCurrent();
+    return session != null && Boolean.TRUE.equals(session.getAttribute(LOST_RECOVERY_CODES_ATTRIBUTE));
   }
 
   private void onEnrolRequested() {
@@ -199,7 +244,8 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
     }
     var codeSet = recoveryCodeService.generate(userId, Instant.now());
     refresh();
-    new RecoveryCodesDialog(codeSet, accountEmail, RecoveryCodesDialog.Reason.FIRST_FACTOR).open();
+    showRecoveryCodes(
+        new RecoveryCodesDialog(codeSet, accountEmail, RecoveryCodesDialog.Reason.FIRST_FACTOR));
   }
 
   private void onRemoveRequested(long factorId) {
@@ -281,8 +327,11 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
       String accountEmail = userInformationService.findById(userId).orElseThrow().emailAddress();
       // Regenerated on purpose, so the dialog may be dismissed: the user has been here before and
       // knows what the sheet is. The first-factor sheet is the one that cannot be waved away.
-      new RecoveryCodesDialog(codeSet, accountEmail, RecoveryCodesDialog.Reason.REGENERATED).open();
+      // Generation retires the previous set, so a lost sheet it replaces is no longer news: the
+      // user has new codes to save, and the notice is cleared with this flow's own acknowledgement.
       refresh();
+      showRecoveryCodes(
+          new RecoveryCodesDialog(codeSet, accountEmail, RecoveryCodesDialog.Reason.REGENERATED));
     };
     if (remaining == 0) {
       generate.execute();
