@@ -19,8 +19,14 @@ Read this first, then
 | §12 sign-off for `auth_attempt` | `development` (#1711) | ✅ merged · recorded on #1690 |
 | **All four, as a patch off `main`** | **#1713** | 🟡 **open, awaiting release checks** |
 
-`FEAT-AUTH-FLOWS-03` (#1675) stays open on exactly **one** criterion: per-origin throttling, which needs the
-proxy work in #1691 and cannot be written from this repository. Everything else in that story is done.
+`FEAT-AUTH-FLOWS-03` (#1675) stays open on exactly **one** criterion: per-origin throttling.
+
+> **Update (#1691): that criterion now has code.** The origin bucket, the combined decision (a victim
+> spammed from another origin is not locked out), the startup gate that refuses a configuration in
+> which origin scope cannot work, and the specs are all in place. What remains is deployment, not
+> code: HAProxy must replace `X-Forwarded-For`, and `server.forward-headers-strategy=native` plus
+> `qbic.auth-throttle.login.origin.enabled=true` must be set — both off by default. See
+> `docs/operations/installation-and-administration.md` §1.7.
 
 ---
 

@@ -127,7 +127,7 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
 
     when: 'five attempts, each 10 seconds after the previous'
     def decisions = (0..4).collect { i ->
-      counter.record(AuthAttemptThrottle.Scope.LOGIN, ADDRESS, T0.plusSeconds(i * 10L))
+      counter.recordAttempt(AuthAttemptThrottle.Scope.LOGIN, ADDRESS, T0.plusSeconds(i * 10L))
     }
 
     then: 'the first three are allowed and the rest are throttled — the threshold was actually reached'
@@ -258,7 +258,7 @@ class AuthAttemptCounterConcurrencySpec extends Specification {
           new AuthAttemptThrottle(new JpaAuthAttemptCounter(em),
               10, Duration.ofMinutes(15), Duration.ofMinutes(15),
               3, Duration.ofMinutes(15), Duration.ofMinutes(15))
-              .record(AuthAttemptThrottle.Scope.LOGIN, ADDRESS, T0)
+              .recordAttempt(AuthAttemptThrottle.Scope.LOGIN, ADDRESS, T0)
         }
       } as Callable)
     }

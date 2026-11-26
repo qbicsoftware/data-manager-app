@@ -1,14 +1,14 @@
 # Migration: Next release
 
-**Current pom version:** 1.20.3
+**Current pom version:** 1.20.5
 **Target release version:** TBD *(renamed to `released/v<version>.md` at release cut)*
 
 **Status:** under development
 
-The v1.20.4 security patch is already documented as released — see
-[`released/v1.20.4.md`](released/v1.20.4.md). This file therefore describes the release **after**
-1.20.4: its schema summary starts empty, while behaviour changes that need an operator note
-(e.g. "ORCID is no longer a login") are recorded below.
+The v1.20.4 security patch and the v1.20.5 release are both documented as released — see
+[`released/v1.20.4.md`](released/v1.20.4.md) and [`released/v1.20.5.md`](released/v1.20.5.md).
+This file therefore describes the release **after** 1.20.5: its schema summary starts empty, while
+behaviour changes that need an operator note (e.g. "ORCID is no longer a login") are recorded below.
 
 > **To operators:** This document describes schema changes for the **upcoming,
 > unreleased** Data Manager version. It is actively being edited as migrations
@@ -18,8 +18,8 @@ The v1.20.4 security patch is already documented as released — see
 
 For the migration documentation structure, see [`README.md`](README.md).
 
-> **Carried over from the hardening release — not yet satisfied.** These were explicitly deferred by
-> [`released/v1.20.4.md`](released/v1.20.4.md) and nothing here changes them. Do not treat their
+> **Carried over from v1.20.5 — not yet satisfied.** These were explicitly deferred by
+> [`released/v1.20.5.md`](released/v1.20.5.md) and nothing here changes them. Do not treat their
 > absence as a gap in the next release until the owning issue says otherwise.
 >
 > - **`FEAT-AUTH-FLOWS-05` / #1683** — ~~ORCID-only accounts still have `encryptedPassword IS NULL`.~~

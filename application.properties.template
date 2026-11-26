@@ -379,9 +379,9 @@ qbic.verification-token.set-password-lifetime=PT1H
 # A non-positive max-attempts, window or block-duration is a STARTUP FAILURE, not a silent no-op.
 #
 # Two properties are NOT configurable, because they are security properties:
-#   * the throttle is keyed per account AND per origin (only account scope ships in this
-#     release -- see docs/migrations/NEXT.md, Migration #6, for why the origin cannot be
-#     derived behind the proxy yet);
+#   * the throttle is keyed per account AND per origin (AUTH-NFR-03). Account scope is always on.
+#     Origin scope is available as of #1691 but ships DISABLED -- see the origin block below and
+#     the "Reverse proxy contract" section of docs/operations/installation-and-administration.md;
 #   * a throttled response is indistinguishable from a normal one. A visitor is never told
 #     they were throttled, because that would confirm the account is real.
 #
@@ -394,6 +394,71 @@ qbic.auth-throttle.login.block-duration=PT15M
 qbic.auth-throttle.resend.max-attempts=3
 qbic.auth-throttle.resend.window=PT15M
 qbic.auth-throttle.resend.block-duration=PT15M
+
+# Origin-scope throttling (#1691).
+#
+# Leave `enabled=false` unless ALL of the following hold, or the control is present and ineffective:
+#   1. server.forward-headers-strategy=native                      (see below)
+#   2. HAProxy REPLACES X-Forwarded-For, e.g.
+#        http-request set-header X-Forwarded-For %[src]
+#      `option forwardfor` alone APPENDS, letting a client keep its own entry at the front of the list;
+#   3. the pre-deployment checklist in the ops doc section 1.7 has been walked on a single node.
+#
+# Setting enabled=true under any other strategy is a STARTUP FAILURE, deliberately: a bucket keyed on
+# an untrusted or proxy address is worse than no bucket at all (an attacker mints a fresh one per
+# request, or one bucket covers the whole deployment).
+#
+# ONE switch for every flow. It is named after login because that is where it started, but it governs
+# the mail and registration buckets too: a per-flow switch would let a deployment be origin-scoped for
+# login and silently account-scoped for the flows that actually send mail.
+qbic.auth-throttle.login.origin.enabled=false
+
+# The origin limit is far above the per-account limit because one origin may legitimately be a whole
+# institution behind one NAT. A value at or below qbic.auth-throttle.login.max-attempts would make the
+# origin the binding constraint for shared networks and lock out a whole institution. The block is
+# shorter than the account block for the same reason: it affects everyone behind that network, so it is
+# kept brief.
+qbic.auth-throttle.login.origin.max-attempts=60
+qbic.auth-throttle.login.origin.window=PT15M
+qbic.auth-throttle.login.origin.block-duration=PT10M
+
+# Link resends (password reset + confirmation) seen from one origin.
+#
+# This is the PRIMARY control for those flows, not a refinement. Account scope cannot bound them: an
+# attacker who sends one reset to a thousand different addresses never reuses an account bucket, so
+# per-account throttling never fires while the application sends a thousand emails.
+#
+# Both resend flows share this bucket on purpose -- separate buckets would give an attacker a doubled
+# allowance for switching between them. The limit is well below the login one because a mail costs a
+# relay message and a notification in someone's inbox.
+qbic.auth-throttle.mail-origin.max-attempts=20
+qbic.auth-throttle.mail-origin.window=PT15M
+qbic.auth-throttle.mail-origin.block-duration=PT15M
+
+# Registration submissions seen from one origin, with far more headroom than a resend.
+#
+# Registration is legitimately bursty: at the start of a semester hundreds of students can create
+# accounts from one campus network in a short window. Sharing the mail bucket would either throttle a
+# whole institution or force the resend limit high enough to stop bounding anything.
+qbic.auth-throttle.registration-origin.max-attempts=100
+qbic.auth-throttle.registration-origin.window=PT15M
+qbic.auth-throttle.registration-origin.block-duration=PT10M
+
+# Trusted client identity behind the reverse proxy (#1691).
+#
+# `none` (the default) means the application ignores X-Forwarded-* entirely and believes it is talking
+# to 127.0.0.1:8080. That is the safe default. Set `native` -- NEVER `framework` -- once the proxy is
+# known to replace X-Forwarded-For. `framework` uses ForwardedHeaderFilter, which takes the LEFTMOST
+# entry with no trust check, so the client controls its own rate-limit identity.
+#
+# `native` uses Tomcat's RemoteIpValve: it trusts the header only when the connecting peer is inside
+# internal-proxies, then walks the list right-to-left and discards everything client-supplied. The
+# defaults below already cover the QBiC HAProxy nodes; they are spelled out so the trust boundary is
+# visible in the configuration rather than implied by a Boot default.
+server.forward-headers-strategy=none
+#server.tomcat.remoteip.remote-ip-header=X-Forwarded-For
+#server.tomcat.remoteip.protocol-header=X-Forwarded-Proto
+#server.tomcat.remoteip.internal-proxies=10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8, ::1/128
 
 ###############################################################################
 ### Data Server / Download ####################################################
