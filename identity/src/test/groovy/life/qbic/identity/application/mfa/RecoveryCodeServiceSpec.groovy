@@ -1,8 +1,10 @@
 package life.qbic.identity.application.mfa
 
+import life.qbic.identity.application.throttle.AuthAttemptThrottle
 import life.qbic.identity.domain.model.mfa.RecoveryCode
 import life.qbic.identity.domain.model.mfa.RecoveryCodeEncoder
 import life.qbic.identity.domain.model.mfa.RecoveryCodes
+import life.qbic.identity.domain.repository.AuthAttemptCounter
 import life.qbic.identity.domain.repository.RecoveryCodeRepository
 import spock.lang.Specification
 
@@ -27,7 +29,12 @@ class RecoveryCodeServiceSpec extends Specification {
     def setup() {
         repository = new FakeRepository()
         encoder = new RecoveryCodeEncoder("p".repeat(RecoveryCodeEncoder.MIN_PEPPER_LENGTH))
-        service = new RecoveryCodeService(repository, encoder)
+        // Generous allowance: these cases are about generation and redemption semantics, and the
+        // throttle has its own spec (RecoveryCodeThrottleSpec).
+        service = new RecoveryCodeService(repository, encoder, new AuthAttemptThrottle(
+                new PermissiveCounter(), 10, Duration.ofMinutes(15), Duration.ofMinutes(15),
+                5, Duration.ofMinutes(15), Duration.ofMinutes(15),
+                1000, Duration.ofMinutes(15), Duration.ofMinutes(15)))
     }
 
     // ---------------------------------------------------------------- generation
@@ -127,11 +134,11 @@ class RecoveryCodeServiceSpec extends Specification {
         def set = service.generate(USER, NOW)
 
         expect:
-        service.redeemFor(USER, set.codes()[0], NOW.plusSeconds(30))
+        service.redeemFor(USER, set.codes()[0], NOW.plusSeconds(30)).redeemed()
         service.remaining(USER) == RecoveryCodes.SET_SIZE - 1
 
         and: "and only once"
-        !service.redeemFor(USER, set.codes()[0], NOW.plusSeconds(60))
+        !service.redeemFor(USER, set.codes()[0], NOW.plusSeconds(60)).redeemed()
     }
 
     def "another account's code is refused AND not spent — the owner may still need it"() {
@@ -139,7 +146,7 @@ class RecoveryCodeServiceSpec extends Specification {
         def other = service.generate("u-2", NOW)
 
         when: "u-1 is mid-login and presents one of them"
-        def accepted = service.redeemFor("u-1", other.codes()[0], NOW.plusSeconds(30))
+        def accepted = service.redeemFor("u-1", other.codes()[0], NOW.plusSeconds(30)).redeemed()
 
         then: "refused, and u-2 still has a working set"
         !accepted
@@ -151,8 +158,8 @@ class RecoveryCodeServiceSpec extends Specification {
 
     def "a malformed recovery code at the challenge is a failed attempt, not an exception"() {
         expect:
-        !service.redeemFor(USER, "nonsense", NOW)
-        !service.redeemFor(USER, "", NOW)
+        !service.redeemFor(USER, "nonsense", NOW).redeemed()
+        !service.redeemFor(USER, "", NOW).redeemed()
     }
 
     def "the challenge path requires an account"() {
@@ -205,6 +212,27 @@ class RecoveryCodeServiceSpec extends Specification {
     // ---------------------------------------------------------------- fake
 
     /** In-memory store with the same semantics the JPA adapter gives: hashes are unique, use is final. */
+    /** Never blocks: the cases here are about semantics, not about the rate limit. */
+    static class PermissiveCounter implements AuthAttemptCounter {
+        @Override
+        Counter increment(String scope, String key, Instant now, Duration window) {
+            return new Counter(1, null)
+        }
+
+        @Override
+        void block(String scope, String key, Instant blockedUntil) {
+        }
+
+        @Override
+        Counter peek(String scope, String key) {
+            return new Counter(0, null)
+        }
+
+        @Override
+        void clear(String scope, String key) {
+        }
+    }
+
     static class FakeRepository implements RecoveryCodeRepository {
 
         final List<RecoveryCode> codes = []

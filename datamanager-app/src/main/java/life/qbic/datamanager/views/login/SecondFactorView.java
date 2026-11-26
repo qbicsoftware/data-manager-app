@@ -33,6 +33,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.Serial;
 import java.time.Instant;
+import java.time.Duration;
 import java.util.Locale;
 import life.qbic.identity.domain.model.mfa.RecoveryCodes;
 import life.qbic.identity.domain.model.mfa.Totp;
@@ -43,6 +44,7 @@ import life.qbic.datamanager.security.mfa.MfaSessionState;
 import life.qbic.datamanager.views.account.MfaEnrolmentPrompt;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.identity.application.mfa.RecoveryCodeService;
+import life.qbic.identity.application.throttle.AuthAttemptThrottle;
 import life.qbic.identity.application.mfa.SecondFactorVerificationService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -86,6 +88,14 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
   private final transient RecoveryCodeService recoveryCodeService;
   private final transient MfaSessionCompletion sessionCompletion;
   private final transient MfaReenrolmentService reenrolmentService;
+  /**
+   * Consulted only to render the wait, never to decide the refusal.
+   *
+   * <p>The decision lives in the two services, so a future page cannot forget to ask; this reference
+   * exists so the sentence says "15 minutes" instead of a hard-coded guess. {@code null} in tests that
+   * do not exercise the throttle.</p>
+   */
+  private final transient AuthAttemptThrottle throttle;
 
   private final TextField code = new TextField("Six-digit code");
   private final TextField recoveryCode = new TextField("Recovery code");
@@ -103,7 +113,8 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
   public SecondFactorView(SecondFactorVerificationService verificationService,
       RecoveryCodeService recoveryCodeService, MfaSessionCompletion sessionCompletion,
       MfaReenrolmentService reenrolmentService,
-      @Value("${qbic.communication.contact.email}") String contactEmail) {
+      @Value("${qbic.communication.contact.email}") String contactEmail,
+      AuthAttemptThrottle throttle) {
     this.verificationService = requireNonNull(verificationService,
         "verificationService must not be null");
     this.recoveryCodeService = requireNonNull(recoveryCodeService,
@@ -112,6 +123,7 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
         "sessionCompletion must not be null");
     this.reenrolmentService = requireNonNull(reenrolmentService,
         "reenrolmentService must not be null");
+    this.throttle = throttle;
 
     // Top-aligned, not centred: the card is taller than the login card, and centring a too-tall
     // element pushes it over the footer instead of letting the page scroll.
@@ -237,6 +249,10 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
       return;
     }
     var result = verificationService.verify(pending.userId(), code.getValue(), Instant.now());
+    if (result.outcome() == SecondFactorVerificationService.Outcome.THROTTLED) {
+      showThrottledNotice();
+      return;
+    }
     if (!result.verified()) {
       // Same message for every refusal reason (AUTH-NFR-03). The attempt stays pending: the user may
       // try the next code without re-entering the password.
@@ -308,7 +324,13 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     if (pending == null) {
       return;
     }
-    if (recoveryCodeService.redeemFor(pending.userId(), recoveryCode.getValue(), Instant.now())) {
+    var redemption = recoveryCodeService.redeemFor(pending.userId(), recoveryCode.getValue(),
+        Instant.now());
+    if (redemption.throttled()) {
+      showThrottledNotice();
+      return;
+    }
+    if (redemption.redeemed()) {
       // The set may now be empty. Nothing else in the flow can tell the user that: the settings page
       // counts what is left, and someone signing in with a recovery code is mid-incident rather than
       // browsing settings (MFA-41b).
@@ -321,6 +343,68 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     error.setText("That recovery code was not accepted. Each code works once.");
     error.setVisible(true);
     recoveryCode.setValue("");
+  }
+
+  /**
+   * Tells the user they have run out of attempts, and for how long.
+   *
+   * <p>The one refusal this page describes accurately. Everything else it says about a failed code is
+   * deliberately uniform (AUTH-NFR-03), because distinguishing "wrong code" from "no such factor"
+   * helps an attacker. A rate limit is different in both directions: reaching it required the correct
+   * password, so the caller already knows the account exists, and hiding it produces the worst
+   * possible experience — a user typing codes that cannot possibly work, told each time that the code
+   * was wrong. Silence here is not security, it is a dead end with no explanation.</p>
+   *
+   * <p>The controls are disabled rather than merely disheartened: leaving them live invites another
+   * attempt on a page that will refuse it, and burns nothing but the user's patience.</p>
+   */
+  private void showThrottledNotice() {
+    error.setText(throttledMessage(blockDuration()));
+    error.setVisible(true);
+    code.setEnabled(false);
+    verify.setEnabled(false);
+    recoveryCode.setEnabled(false);
+    verifyRecovery.setEnabled(false);
+  }
+
+  /**
+   * <b>"Too many attempts."</b>
+   *
+   * <p>States what happened, how long it lasts, and that nothing has been lost — the last part is what
+   * stops a worried user from assuming the account is now locked out for good and calling support.</p>
+   *
+   * @param blockDuration how long the throttle lasts
+   * @return the sentence
+   */
+  static String throttledMessage(Duration blockDuration) {
+    return "Too many attempts. For your account's security, further attempts are blocked for "
+        + describeDuration(blockDuration) + ". Your password and your authenticator app still work — "
+        + "try again when the wait is over.";
+  }
+
+  private Duration blockDuration() {
+    return throttle == null ? Duration.ofMinutes(15)
+        : throttle.blockDuration(AuthAttemptThrottle.Scope.SECOND_FACTOR);
+  }
+
+  /**
+   * Renders a duration as the smallest whole unit a person would say out loud.
+   *
+   * <p>"PT15M" is not a sentence, and "900 seconds" makes a user do arithmetic. Minutes for an hour or
+   * less, hours beyond that; the configured values are quarter-hours, so nothing finer is needed.</p>
+   *
+   * @param duration the block duration
+   * @return e.g. {@code "15 minutes"} or {@code "1 hour"}
+   */
+  static String describeDuration(Duration duration) {
+    long minutes = Math.max(1, duration.toMinutes());
+    if (minutes < 60) {
+      return minutes == 1 ? "1 minute" : minutes + " minutes";
+    }
+    long hours = minutes / 60;
+    long remainder = minutes % 60;
+    String hoursPart = hours == 1 ? "1 hour" : hours + " hours";
+    return remainder == 0 ? hoursPart : hoursPart + " " + remainder + " minutes";
   }
 
   /**
