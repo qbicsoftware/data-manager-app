@@ -188,7 +188,7 @@ def advisories_from_feed(document):
     return advisories
 
 
-def parse_accepted_risks(path):
+def parse_accepted_risks(path, honour_expiry=True):
     """Read the accepted-risk ledger from .github/grype.yaml.
 
     Grype applies its own ignore list inside the scanner, so a merged Spring
@@ -242,11 +242,19 @@ def parse_accepted_risks(path):
         elif stripped.startswith("reason:"):
             current["reason"] = stripped.split(":", 1)[1].strip().strip('"')
             in_package = False
+        elif stripped.startswith("owner:"):
+            current["owner"] = stripped.split(":", 1)[1].strip().strip('"')
     if current:
         entries.append(current)
 
     honoured = []
     for entry in entries:
+        if not honour_expiry:
+            # Audit mode: report every declared entry, stale or not, so the
+            # caller can say why each one is a problem rather than silently
+            # dropping the ones it cannot honour.
+            honoured.append(entry)
+            continue
         match = re.search(r"exp:(\d{4}-\d{2}-\d{2})", entry.get("reason") or "")
         if not match:
             log(
@@ -271,6 +279,70 @@ def parse_accepted_risks(path):
         entry["expires"] = expiry.isoformat()
         honoured.append(entry)
     return honoured
+
+
+def audit_ledger(path):
+    """Fail when the accepted-risk ledger has fallen behind.
+
+    The ledger is the one part of this pipeline that decays silently. It records
+    a decision made at a point in time, and nothing about the file going stale
+    ever surfaces on its own: an expired entry stops being honoured (correctly),
+    but if nobody is watching, the count of stale entries simply grows and the
+    file drifts out of step with reality.
+
+    Two ways it rots, both reported here:
+
+    * An entry expires and is not renewed or deleted. Until it is refreshed, the
+      finding it was suppressing comes back, which can block main.
+    * An entry names no owner. A stale entry with no name on it gets renewed by
+      whoever happens to notice it, or by nobody.
+
+    Expiry is reported, not enforced, here: an expired entry is already refused
+    by parse_accepted_risks, so the finding reappears on its own. What this adds
+    is the name to ask and the size of the overdue gap, so the decay is visible
+    in the job summary instead of being inferred from a red build.
+
+    Returns a list of problem strings; empty means the ledger is healthy.
+    """
+    from datetime import date
+
+    try:
+        with open(path, encoding="utf-8") as handle:
+            handle.read()
+    except FileNotFoundError:
+        return []
+    except OSError as exc:
+        raise CheckError("cannot read accepted-risk ledger {}: {}".format(path, exc))
+
+    problems = []
+    today = date.today()
+    for entry in parse_accepted_risks(path, honour_expiry=False):
+        name = entry["vulnerability"]
+        owner = entry.get("owner")
+        if not owner:
+            problems.append(
+                "{}: no owner: line. Every acceptance needs a named owner so a "
+                "stale entry has someone to ask.".format(name)
+            )
+        match = re.search(r"exp:(\d{4}-\d{2}-\d{2})", entry.get("reason") or "")
+        if not match:
+            problems.append("{}: no exp:YYYY-MM-DD in its reason.".format(name))
+            continue
+        try:
+            expiry = date.fromisoformat(match.group(1))
+        except ValueError:
+            problems.append("{}: unparseable expiry {!r}.".format(name, match.group(1)))
+            continue
+        overdue = (today - expiry).days
+        if overdue > 0:
+            problems.append(
+                "{}: expired {} ({} day(s) ago){} - re-assess, renew with a new "
+                "exp:, or delete the entry if the finding is gone.".format(
+                    name, expiry, overdue,
+                    " [owner: {}]".format(owner) if owner else "",
+                )
+            )
+    return problems
 
 
 def apply_accepted_risks(findings, accepted):
@@ -644,11 +716,41 @@ def main(argv):
         help="accepted-risk ledger (defaults to .github/grype.yaml when present)",
     )
     parser.add_argument("--self-check", action="store_true")
+    parser.add_argument(
+        "--audit-ledger",
+        metavar="PATH",
+        nargs="?",
+        const=DEFAULT_LEDGER,
+        default=None,
+        help="check the accepted-risk ledger for expired or unowned entries",
+    )
     parser.add_argument("--print-table", action="store_true")
     args = parser.parse_args(argv)
 
     if args.self_check:
         return self_check()
+
+    if args.audit_ledger:
+        try:
+            problems = audit_ledger(args.audit_ledger)
+        except CheckError as exc:
+            print("::error::{}".format(exc), file=sys.stderr)
+            return 2
+        for problem in problems:
+            print("::error::accepted-risk ledger: {}".format(problem), file=sys.stderr)
+        if problems:
+            print(
+                "::error::The accepted-risk ledger in {} has {} problem(s). It "
+                "records a security decision, so it is owned, dated and reviewed "
+                "like one. See docs/security/vulnerability-management.md, "
+                "section 4.".format(
+                    args.audit_ledger, len(problems)
+                ),
+                file=sys.stderr,
+            )
+            return 1
+        log("accepted-risk ledger is current")
+        return 0
 
     try:
         advisories = advisories_from_feed(fetch_feed(args.feed))

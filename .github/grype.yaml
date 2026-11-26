@@ -40,3 +40,4 @@ ignore:
       name: tomcat-embed-core
       version: "11.0.29"
     reason: "Tomcat Tribes clustering is not used and org.apache.catalina.tribes is not on the classpath; no fixed release exists yet (11.0.30 unreleased, Apache recommends TLS 1.2 in the interim); exp:2027-01-31; see PR #1771"
+    owner: "@qbicsoftware/itss"
