@@ -54,7 +54,14 @@ fi
   echo "# Dependency vulnerability report"
   echo
   echo "_Generated $(date -u '+%Y-%m-%d %H:%M UTC') from the CycloneDX SBOM of this"
-  echo "revision, scanned with [Grype](https://github.com/anchore/grype)._"
+  echo "revision, scanned with [Grype](https://github.com/anchore/grype) and against"
+  echo "[Spring's security advisory feed](https://spring.io/security)._"
+  echo
+  echo "> Grype covers every ecosystem but only sees a Spring advisory once it has"
+  echo "> reached NVD, OSV or GitHub advisories, which lags Spring's own disclosure"
+  echo "> by days or weeks. The Spring feed is therefore read directly; findings from"
+  echo "> it are merged into this report and are indistinguishable in the tables"
+  echo "> below, by design."
   echo
   echo "## Summary"
   echo

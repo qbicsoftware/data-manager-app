@@ -30,6 +30,10 @@
     <jakarta.persistence.version>3.2.0</jakarta.persistence.version>
     <spock.version>2.5-groovy-5.0</spock.version>
     <spring-boot.version>4.1.1</spring-boot.version>
+    <!-- Tomcat 11.0.27, pinned by Spring Boot 4.2.0, carries 9 Grype findings
+         (2 critical, 6 high). 11.0.29 fixes all of them. Drop this once Boot
+         pins 11.0.29 or later. -->
+    <tomcat.version>11.0.29</tomcat.version>
     <commons-lang3.version>3.18.0</commons-lang3.version>
     <artemis.version>2.55.0</artemis.version>
   </properties>
