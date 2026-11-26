@@ -64,6 +64,53 @@ class EnrolmentRouteSpec extends Specification {
     TwoFactorEnrolmentMain.CONFIRM_LABEL == "Verify and enable"
   }
 
+  // ---------------------------------------------------------------- the way back
+
+  def "the page offers a breadcrumb back to the two-factor settings page"() {
+    given: "this is how every other settings sub-page does back navigation"
+    def field = TwoFactorEnrolmentMain.getDeclaredField("backLink")
+    field.setAccessible(true)
+
+    expect: "a RouterLink, not a Cancel button pretending to be navigation"
+    com.vaadin.flow.router.RouterLink.isAssignableFrom(field.type)
+  }
+
+  def "the breadcrumb is the same shape the group pages use"() {
+    expect: "one shared class, so the styling cannot diverge between settings sub-pages"
+    TwoFactorEnrolmentMain.BACK_LINK_CSS_CLASS == "settings-back-link"
+  }
+
+  def "the breadcrumb names the destination rather than saying 'Back'"() {
+    expect: "a named destination tells the user where they are going"
+    TwoFactorEnrolmentMain.BACK_LINK_TEXT == "Two-factor authentication"
+  }
+
+  // ---------------------------------------------------------------- a setup that timed out
+
+  def "an expired setup is reported instead of accepting a code that cannot succeed"() {
+    expect: "the page mirrors the service's window, so the two cannot disagree"
+    TwoFactorEnrolmentMain.ENROLMENT_WINDOW == java.time.Duration.ofMinutes(15)
+  }
+
+  // ---------------------------------------------------------------- shared copy
+
+  def "the enrolment copy comes from the shared table, not from the page"() {
+    expect: "the screen exists twice (settings and mandatory login); one wording, one place"
+    TwoFactorSettingsCopy.ENROL_TITLE == "Set up an authenticator app"
+    TwoFactorSettingsCopy.ENROL_CONFIRM_LABEL == TwoFactorEnrolmentMain.CONFIRM_LABEL
+    TwoFactorSettingsCopy.ENROL_NAME_LABEL == TwoFactorEnrolmentMain.NAME_LABEL
+  }
+
+  def "the instruction names scanning before typing, in one sentence"() {
+    given:
+    def intro = TwoFactorSettingsCopy.ENROL_INTRO
+
+    expect:
+    intro.toLowerCase().contains("scan")
+    intro.toLowerCase().contains("six-digit code")
+    intro.indexOf("scan") < intro.indexOf("six-digit code")
+  }
+
   // ---------------------------------------------------------------- the recovery sheet still reports
 
   def "the recovery-code acknowledgement is tracked for both entry points"() {

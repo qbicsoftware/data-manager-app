@@ -16,6 +16,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.RouterLink;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.annotation.security.PermitAll;
@@ -25,6 +26,7 @@ import java.util.List;
 import life.qbic.datamanager.views.general.CopyToClipboardButton;
 import life.qbic.datamanager.views.general.Main;
 import life.qbic.datamanager.views.settings.SettingsMainLayout;
+import life.qbic.datamanager.views.settings.SettingsSection;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.api.UserInfo;
 import life.qbic.identity.application.mfa.EnrolmentExpiredException;
@@ -93,7 +95,22 @@ public class TwoFactorEnrolmentMain extends Main implements BeforeEnterObserver 
   /** The label an account gets when the user does not choose one. */
   public static final String DEFAULT_DISPLAY_NAME = TwoFactorSettingsCopy.DEFAULT_FACTOR_NAME;
 
-  static final String NAME_LABEL = "Name this app (optional)";
+  /**
+   * How long a started enrolment may be confirmed.
+   *
+   * <p>Mirrors {@code TotpEnrolmentService.ENROLMENT_WINDOW}; the service is the authority and still
+   * refuses an expired confirmation. This copy exists so the page can disable the action before the
+   * user types a code that cannot succeed.</p>
+   */
+  static final java.time.Duration ENROLMENT_WINDOW = java.time.Duration.ofMinutes(15);
+
+  static final String NAME_LABEL = TwoFactorSettingsCopy.ENROL_NAME_LABEL;
+
+  /** Text of the breadcrumb back to the settings page; names the destination, not "Back". */
+  static final String BACK_LINK_TEXT = "Two-factor authentication";
+
+  /** The shared back-link class, so this page cannot drift from the group sub-pages. */
+  static final String BACK_LINK_CSS_CLASS = "settings-back-link";
   static final String NAME_CSS_CLASS = "mfa-enrol-name";
   static final String CONFIRM_LABEL = "Verify and enable";
 
@@ -116,10 +133,18 @@ public class TwoFactorEnrolmentMain extends Main implements BeforeEnterObserver 
   private final transient UserInformationService userInformationService;
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
 
-  private final TextField code = new TextField("Code from the app");
+  private final TextField code = new TextField(TwoFactorSettingsCopy.ENROL_CODE_LABEL);
   private final TextField displayName = new TextField(NAME_LABEL);
   private final Span error = new Span();
+  private final Span sessionNotice = new Span();
   private final Div content = new Div();
+  /**
+   * The way back, as a breadcrumb above the section — the same shape as {@code GroupDetailMain} and
+   * {@code AdminGroupManagersMain}, which is how this application does back navigation on settings
+   * sub-pages.
+   */
+  private final RouterLink backLink =
+      new RouterLink(BACK_LINK_TEXT, TwoFactorAuthenticationMain.class);
 
   /** Started on entry; see the class documentation for why it is not in the session. */
   private transient PendingTotpEnrolment pending;
@@ -141,6 +166,11 @@ public class TwoFactorEnrolmentMain extends Main implements BeforeEnterObserver 
 
     addClassName("two-factor-enrolment");
     content.addClassName("mfa-enrol-body");
+    backLink.addClassName(BACK_LINK_CSS_CLASS);
+    backLink.setId("enrolment-back");
+    // The breadcrumb sits above the section, matching the group pages: the settings aside already
+    // highlights "Two-factor", and this link says which page of it you came from.
+    add(backLink);
     add(content);
   }
 
@@ -160,30 +190,23 @@ public class TwoFactorEnrolmentMain extends Main implements BeforeEnterObserver 
   private void render(String accountEmail) {
     content.removeAll();
 
-    H2 heading = new H2("Set up an authenticator app");
-    Paragraph intro = new Paragraph(
-        "Scan the QR code, then type the six-digit code your app shows.");
+    SettingsSection section = new SettingsSection(TwoFactorSettingsCopy.ENROL_TITLE,
+        TwoFactorSettingsCopy.ENROL_INTRO);
 
+    // QR beside the code, not stacked above it. Side by side, the two things the user must do —
+    // scan, then type — are visible without scrolling, which is what a stacked layout could not
+    // achieve inside a dialog and still cannot quite achieve on a short window.
     Div qrBlock = new Div(new TotpQrCode(pending.provisioningUri()));
     qrBlock.addClassName("mfa-qr-block");
 
-    TextField setupKey = new TextField("Setup key (if you can't scan)");
-    setupKey.setValue(setupKeyFrom(pending.provisioningUri()));
-    setupKey.setReadOnly(true);
-    setupKey.setWidthFull();
-    CopyToClipboardButton copy = new CopyToClipboardButton("Copy");
-    copy.addClickListener(event -> copy.copy(setupKey.getValue()));
-    Div setupKeyRow = new Div(setupKey, copy);
-    setupKeyRow.addClassName("mfa-setup-key-row");
-
-    // The code is what gates the action, so it leads and takes focus.
+    code.setLabel(TwoFactorSettingsCopy.ENROL_CODE_LABEL);
     code.setWidthFull();
     code.setMaxLength(Totp.DIGITS);
     code.setAllowedCharPattern("\\d");
     code.setAutofocus(true);
     code.setPlaceholder("123456");
 
-    Button verify = new Button(CONFIRM_LABEL);
+    Button verify = new Button(TwoFactorSettingsCopy.ENROL_CONFIRM_LABEL);
     verify.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     verify.addClickShortcut(Key.ENTER);
     verify.addClickListener(event -> verifyCode(accountEmail));
@@ -193,23 +216,43 @@ public class TwoFactorEnrolmentMain extends Main implements BeforeEnterObserver 
     error.getStyle().set("color", "var(--lumo-error-text-color)");
     error.setVisible(false);
 
-    Div codeStep = new Div(code, verify, error);
-    codeStep.addClassName("mfa-enrol-code-step");
+    Div verifyColumn = new Div(code, verify, error);
+    verifyColumn.addClassName("mfa-enrol-verify");
 
-    // Optional and last: it defaults to DEFAULT_DISPLAY_NAME and can be changed later from the list,
-    // so it must not stand between the user and the two things they actually have to do.
+    Div pair = new Div(qrBlock, verifyColumn);
+    pair.addClassName("mfa-enrol-pair");
+
+    // The manual key sits under the pair because it is the fallback path, not a step of its own.
+    TextField setupKey = new TextField(TwoFactorSettingsCopy.ENROL_SETUP_KEY_LABEL);
+    setupKey.setValue(setupKeyFrom(pending.provisioningUri()));
+    setupKey.setReadOnly(true);
+    setupKey.setWidthFull();
+    CopyToClipboardButton copy = new CopyToClipboardButton("Copy");
+    copy.addClickListener(event -> copy.copy(setupKey.getValue()));
+    Div setupKeyRow = new Div(setupKey, copy);
+    setupKeyRow.addClassName("mfa-setup-key-row");
+
+    // Optional and last: it defaults, and it can be changed later from the list, so it must not stand
+    // between the user and the two things they actually have to do.
+    displayName.setLabel(TwoFactorSettingsCopy.ENROL_NAME_LABEL);
     displayName.setValue(DEFAULT_DISPLAY_NAME);
     displayName.setMaxLength(SecondFactor.MAX_DISPLAY_NAME_LENGTH);
-    displayName.setHelperText("Only used to tell your apps apart in settings.");
+    displayName.setHelperText(TwoFactorSettingsCopy.ENROL_NAME_HELPER);
     displayName.setClearButtonVisible(true);
     displayName.addClassName(NAME_CSS_CLASS);
 
+    // Cancel is a secondary button in the content flow. The way *back* is the breadcrumb at the top,
+    // which is how every other settings sub-page in this application does it.
     Button cancel = new Button("Cancel",
         event -> UI.getCurrent().navigate(TwoFactorAuthenticationMain.class));
     Div actions = new Div(cancel);
     actions.addClassName("mfa-enrol-actions");
 
-    content.add(heading, intro, qrBlock, setupKeyRow, codeStep, displayName, actions);
+    sessionNotice.setVisible(false);
+    sessionNotice.addClassName("mfa-enrol-session-notice");
+
+    section.addContent(pair, setupKeyRow, displayName, sessionNotice, actions);
+    content.add(section);
   }
 
   private void verifyCode(String accountEmail) {
@@ -221,6 +264,15 @@ public class TwoFactorEnrolmentMain extends Main implements BeforeEnterObserver 
     String presented = code.getValue() == null ? "" : code.getValue().strip();
     if (presented.isEmpty()) {
       showError("Enter the six-digit code shown by the authenticator app.");
+      return;
+    }
+
+    if (expired()) {
+      // Checked against the same window the service enforces, so the page cannot disagree with it.
+      // Without this the user types a valid code into a setup that has quietly timed out (MFA-35's
+      // neighbourhood: a long-open page must not look live).
+      showError("This setup has expired. Reload the page to get a fresh code.");
+      gameOver();
       return;
     }
 
@@ -275,6 +327,17 @@ public class TwoFactorEnrolmentMain extends Main implements BeforeEnterObserver 
       return;
     }
     secondFactorService.rename(created.userId(), created.id(), name);
+  }
+
+  private boolean expired() {
+    return Instant.now().isAfter(pending.createdAt().plus(ENROLMENT_WINDOW));
+  }
+
+  /** Disables the action that can no longer succeed, so the page stops inviting it. */
+  private void gameOver() {
+    code.setEnabled(false);
+    sessionNotice.setText("Reload the page to start a fresh enrolment.");
+    sessionNotice.setVisible(true);
   }
 
   private void showError(String message) {

@@ -174,6 +174,34 @@ public final class TwoFactorSettingsCopy {
   /** What a factor is called when the user does not choose a name. */
   static final String DEFAULT_FACTOR_NAME = "Authenticator app";
 
+  // ── Enrolment page copy ────────────────────────────────────────────────────
+  //
+  // Here rather than inline in the page for the same reason everything else on this subject is: the
+  // enrolment screen exists twice (settings and mandatory-at-login), and two copies of the same
+  // sentence is how they drift into saying different things.
+
+  /** Title of the enrolment screen. Shared by both entry points. */
+  static final String ENROL_TITLE = "Set up an authenticator app";
+
+  /** The instruction above the QR code. */
+  static final String ENROL_INTRO =
+      "Scan the QR code with your authenticator app, then type the six-digit code it shows.";
+
+  /** Shown when a phone camera cannot be used. */
+  static final String ENROL_SETUP_KEY_LABEL = "Setup key (if you can't scan)";
+
+  /** The primary action: verify the code, which is what creates the factor. */
+  static final String ENROL_CONFIRM_LABEL = "Verify and enable";
+
+  /** Labels the optional naming field; the word "optional" is load-bearing. */
+  static final String ENROL_NAME_LABEL = "Name this app (optional)";
+
+  /** Explains what the name is for, in one line. */
+  static final String ENROL_NAME_HELPER = "Only used to tell your apps apart in settings.";
+
+  /** Label of the code field. */
+  static final String ENROL_CODE_LABEL = "Code from the app";
+
   /**
    * The label a factor gets, given what the user typed in the optional name field.
    *

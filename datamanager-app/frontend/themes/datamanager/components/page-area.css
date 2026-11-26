@@ -2129,6 +2129,37 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   gap: var(--lumo-space-m);
 }
 
+/* QR beside the verification, not above it. Side by side, scanning and typing are both visible at
+   once — the stacked version needed vertical room a fixed-height dialog never had, and this is what
+   made the footer fall below the fold. */
+.mfa-enrol-pair {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xl);
+  flex-wrap: wrap;
+}
+
+.mfa-enrol-verify {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  flex: 1 1 18rem;
+  min-width: 18rem;
+}
+
+/* The page's actions, in the content flow rather than pinned in a dialog footer. */
+.mfa-enrol-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--lumo-space-s);
+}
+
+/* Says the setup timed out and what to do about it. */
+.mfa-enrol-session-notice {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
 /* The code step is the one that gates the action, so it gets a separator from the setup material
    above it: scan (or type the key), then prove it worked. Without this the three inputs stacked at
    equal spacing and the code read as one more optional field.
