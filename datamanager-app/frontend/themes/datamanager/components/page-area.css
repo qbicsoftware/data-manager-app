@@ -2129,6 +2129,38 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   gap: var(--lumo-space-m);
 }
 
+/* The code step is the one that gates the submit button, so it gets a separator from the setup
+   material above it: scan (or type the key), then prove it worked. Without this the three inputs
+   stacked at equal spacing and the code read as one more optional field. */
+.mfa-enrol-code-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  padding-top: var(--lumo-space-s);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+/* The optional name, demoted deliberately.
+   Three things made it look required before: it sat ABOVE the code, its label carried the primary
+   colour (an accent-blue "optional" is a contradiction), and it was full width like the two fields
+   above it. Order and the label colour are fixed in the component; width and weight are fixed here.
+   It stays reachable and usable — the clear button and helper text are untouched — but it no longer
+   competes with the step that actually finishes the task. */
+.mfa-enrol-name {
+  max-width: 22rem;
+  margin-top: var(--lumo-space-s);
+  opacity: 0.85;
+}
+
+.mfa-enrol-name::part(label) {
+  color: var(--lumo-secondary-text-color);
+  font-weight: 400;
+}
+
+.mfa-enrol-name::part(helper-text) {
+  font-size: var(--lumo-font-size-xs);
+}
+
 /* The lockout consequence, shown only on the sheet issued right after the first factor. It carries
    the weight the ordinary helper text does not: this is the one sentence on the screen that decides
    whether the user keeps the codes. */

@@ -150,6 +150,30 @@ functionality · **S4** user-facing defect · **S5** decide, may not need code.
 - **Symptom 2:** the "That code is not valid…" message is sometimes scrolled out of view, so the user
   sees no feedback at all.
 
+### S4 — The enrolment dialog put the optional name before the required code — **fixed**
+
+- **Reported live:** the QR code and setup key led, then a full-width field labelled
+  *"Name this app (optional)"* in accent blue, and only then *"Code from the app"*. Reading top to
+  bottom, the page asked for a nickname before the one step that finishes enrolment.
+- **Three inversions at once:** order (name above code), colour (a primary-coloured label reads as a
+  call to action — "optional" in accent blue contradicts itself), and width (three equal full-width
+  fields made the code look like one more optional input).
+- **Fixed:** scan → setup key → code → name. The code gets a separator, autofocus and the full width;
+  the name is narrower, quiet-grey, smaller helper text, and last. Naming still cannot gate
+  enrolment, and an empty field still means "use the default".
+- **Pinned by** `EnrolmentDialogHierarchySpec` — the step order is asserted from the component, so it
+  cannot drift back silently.
+
+### Not a defect: the recovery sheet dies on refresh — **accepted**
+
+- **Reported:** refreshing while the recovery-code dialog was open closed it.
+- **Decision:** correct as-is, for the reason stated in the report itself — the plaintext codes must
+  not live in session state, so nothing reconstructs them after a reload. Regenerating is one click
+  and retires the lost set.
+- **One caveat worth keeping:** this is only benign because MFA-91 now says the sheet was not saved.
+  Before that fix, a refresh discarded the codes *and* said nothing, which is the failure mode this
+  behaviour would otherwise recreate.
+
 ## 6. Decide before coding
 
 ### S5 — Deep-link return after login

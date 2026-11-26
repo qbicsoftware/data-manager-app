@@ -48,8 +48,36 @@ public class TotpEnrolmentDialog extends Div {
   /** What the factor is called when the user does not choose a name. */
   public static final String DEFAULT_DISPLAY_NAME = TwoFactorSettingsCopy.DEFAULT_FACTOR_NAME;
 
+  /**
+   * The label of the optional naming field.
+   *
+   * <p>Deliberately without the primary-colour treatment the other labels carry: a required step and
+   * an optional one must not look alike. "Optional" in accent blue reads as a call to action, which
+   * is the opposite of what this line is.</p>
+   */
+  static final String NAME_LABEL = "Name this app (optional)";
+
+  /** Lets the stylesheet render the name as the quiet secondary control it is. */
+  static final String NAME_CSS_CLASS = "mfa-enrol-name";
+
+  /** The primary action verifies a code; naming cannot gate enrolment. */
+  static final String CONFIRM_LABEL = "Verify and enable";
+
+  /**
+   * The order of the steps, as the user performs them.
+   *
+   * <p>Extracted because the ordering is the point: the earlier build put the optional name
+   * <em>above</em> the code field, so reading top to bottom asked for a nickname before asking for
+   * the one thing that has to happen. Pinned by {@code EnrolmentDialogHierarchySpec}.</p>
+   *
+   * @return the step keys in visual order
+   */
+  static List<String> stepOrder() {
+    return List.of("qr", "setup-key", "code", "name");
+  }
+
   private final AppDialog dialog;
-  private final TextField displayName = new TextField("Name this app (optional)");
+  private final TextField displayName = new TextField(NAME_LABEL);
   private final TextField code = new TextField("Code from the app");
   private final Span error = new Span();
   private final List<ComponentEventListener<EnrolledEvent>> enrolledListeners = new ArrayList<>();
@@ -87,30 +115,41 @@ public class TotpEnrolmentDialog extends Div {
     Div qrBlock = new Div(new TotpQrCode(pending.provisioningUri()));
     qrBlock.addClassName("mfa-qr-block");
 
+    // The code is the step that gates the submit button, so it is marked as the primary control:
+    // autofocus moves the user to it as soon as the dialog opens (after scanning), and it is the only
+    // field in the dialog that is not "optional something".
     code.setWidthFull();
     code.setMaxLength(8);
     code.setPlaceholder("123456");
+    code.setAutofocus(true);
 
-    // Optional, and last before the code: the user is mid-task with an app open, so the name must not
-    // stand between them and the two things they have to do. It defaults to DEFAULT_DISPLAY_NAME, which
-    // is what every factor is called until the account has more than one.
+    // The name is optional and last. It defaults to DEFAULT_DISPLAY_NAME, which is what every factor is
+    // called until the account has more than one; it is never required to finish enrolment.
     displayName.setValue(DEFAULT_DISPLAY_NAME);
-    displayName.setWidthFull();
     displayName.setMaxLength(SecondFactor.MAX_DISPLAY_NAME_LENGTH);
-    displayName.setHelperText("How this app appears in your settings. Useful if you add more than one.");
+    displayName.setHelperText("Only used to tell your apps apart in settings.");
     // Clearing the field means "call it the default", not "save an empty name" — the domain refuses a
     // blank label, so an empty submission would fail with a validation error after the code was accepted.
     displayName.setClearButtonVisible(true);
+    // Not full width, and carrying its own class: a full-width input stacked under two others looks
+    // exactly as important as the code, which is the hierarchy inversion this fixes.
+    displayName.addClassName(NAME_CSS_CLASS);
 
     error.addClassName("mfa-error");
     error.getStyle().set("color", "var(--lumo-error-text-color)");
     error.setVisible(false);
 
-    Div body = new Div(instructions, qrBlock, setupKeyRow, displayName, code, error);
+    Div codeStep = new Div(code, error);
+    codeStep.addClassName("mfa-enrol-code-step");
+
+    // The order of this list IS the visual order, and it follows the task: scan, or type the key,
+    // then enter the code that proves it worked. The name comes last because it is the only step
+    // that is not needed to finish.
+    Div body = new Div(instructions, qrBlock, setupKeyRow, codeStep, displayName);
     body.addClassName("mfa-enrol-body");
 
     DialogBody.with(dialog, body, new CodeInput(verify));
-    DialogFooter.with(dialog, "Cancel", "Verify and enable");
+    DialogFooter.with(dialog, "Cancel", CONFIRM_LABEL);
     dialog.registerCancelAction(dialog::close);
     dialog.registerConfirmAction(() -> {
       dialog.close();
