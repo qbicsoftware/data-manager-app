@@ -377,6 +377,13 @@ OPENBIS_USER_PASSWORD=mockup
 # silently drop the session cookie on http://localhost. Both must be overridden.
 SESSION_COOKIE_SECURE=false
 SESSION_COOKIE_DOMAIN=''
+# The application expires sessions after 30 minutes by default. That is right for
+# a deployment and wrong for a mock-up: come back to the tab after lunch and the
+# next navigation re-runs the view against an expired session, which surfaces as
+# "Insufficient rights / Error code 500" rather than as a login prompt. Longer
+# timeout so a UI review is not interrupted by an expiry mid-flow.
+SESSION_TIMEOUT=12h
+SESSION_COOKIE_MAX_AGE=12h
 set +a
 
 # TempDirectory resolves "./tmp" against the working directory and fails the
