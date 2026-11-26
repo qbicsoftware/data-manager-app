@@ -34,7 +34,7 @@ public class MockDatabase {
     // H2 rejects implicitly relative paths, so resolve before building the URL.
     String absolute = Path.of(file).toAbsolutePath().toString();
     return "jdbc:h2:file:" + absolute + ";MODE=MySQL;DATABASE_TO_LOWER=TRUE;"
-        + "NON_KEYWORDS=VALUE,KEY,ACTION;AUTO_SERVER=TRUE";
+        + "NON_KEYWORDS=VALUE,KEY,ACTION";
   }
 
   private static final Pattern IS_VIEW =

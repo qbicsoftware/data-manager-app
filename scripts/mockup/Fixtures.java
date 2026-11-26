@@ -47,7 +47,7 @@ public class Fixtures {
     String absolute = Path.of(dbFile).toAbsolutePath().toString();
     try (Connection c = DriverManager.getConnection(
         "jdbc:h2:file:" + absolute + ";MODE=MySQL;DATABASE_TO_LOWER=TRUE;"
-            + "NON_KEYWORDS=VALUE,KEY,ACTION;AUTO_SERVER=TRUE",
+            + "NON_KEYWORDS=VALUE,KEY,ACTION",
         "sa", "")) {
       // CREATE IF NOT EXISTS first: a fresh database has no such schema, and
       // SET SCHEMA alone would fail rather than create it.

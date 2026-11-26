@@ -263,11 +263,19 @@ if [ ! -f "$READY" ]; then
   }
   node "$REPO/scripts/mockup/schema-to-h2.js" \
        "$REPO/sql/complete-schema.sql" "$WORK/schema-h2.sql"
+  # A failed load leaves a database FILE behind that has no schema in it. Remove
+  # it on failure: otherwise the next run finds the file, skips the work, and
+  # the app starts against an empty database -- which only shows up much later as
+  # a 500 on the login form.
+  cleanup_failed_build() {
+    echo "  removing the partial database so the next run rebuilds it" >&2
+    rm -f "$WORK"/db-*.mv.db "$WORK"/db-*.trace.db "$WORK"/db-*.lock.db "$READY"
+  }
   # Single-file program: java runs it directly, no compile step.
   java -cp "$H2" "$REPO/scripts/mockup/MockDatabase.java" "$WORK/schema-h2.sql" "$WORK" \
-    || { echo "schema load failed" >&2; exit 2; }
+    || { echo "schema load failed" >&2; cleanup_failed_build; exit 2; }
   java -cp "$H2" "$REPO/scripts/mockup/Fixtures.java" "$REPO/sql/insert-default-values.sql" "$WORK/db-dm" \
-    || { echo "fixture seeding failed" >&2; exit 2; }
+    || { echo "fixture seeding failed" >&2; cleanup_failed_build; exit 2; }
   : > "$READY"
 fi
 
@@ -331,12 +339,12 @@ echo "==> starting the application"
     -Dspring.profiles.active=development \
     -Dserver.port="$APP_PORT" \
     -Dvaadin.productionMode=true \
-    -Dqbic.data-management.datasource.url="$(printf '%s' "jdbc:h2:file:$WORK/db-dm;MODE=MySQL;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=VALUE,KEY,ACTION;SCHEMA=data_management;AUTO_SERVER=TRUE")" \
+    -Dqbic.data-management.datasource.url="$(printf '%s' "jdbc:h2:file:$WORK/db-dm;MODE=MySQL;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=VALUE,KEY,ACTION;SCHEMA=data_management")" \
     -Dqbic.data-management.datasource.driver-class-name=org.h2.Driver \
     -Dqbic.data-management.datasource.username=sa \
     -Dqbic.data-management.datasource.password= \
     -Dqbic.data-management.datasource.ddl-auto=none \
-    -Dqbic.finance.datasource.url="jdbc:h2:file:$WORK/db-fin;MODE=MySQL;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=VALUE,KEY,ACTION;AUTO_SERVER=TRUE" \
+    -Dqbic.finance.datasource.url="jdbc:h2:file:$WORK/db-fin;MODE=MySQL;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=VALUE,KEY,ACTION" \
     -Dqbic.finance.datasource.driver-class-name=org.h2.Driver \
     -Dqbic.finance.datasource.username=sa \
     -Dqbic.finance.datasource.password= \
