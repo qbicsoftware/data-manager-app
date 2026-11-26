@@ -14,11 +14,20 @@
 #       that cannot fill in a login form
 #
 # USAGE
-#   ./scripts/mockup/run.sh              # start (builds if needed)
-#   ./scripts/mockup/run.sh --no-proxy    # app on 48013 directly; log in by hand
+#   ./scripts/mockup/run.sh              # start, stay in the foreground
+#   ./scripts/mockup/run.sh --stop       # stop it
+#   ./scripts/mockup/run.sh --detach     # start and leave it running
+#   ./scripts/mockup/run.sh --no-proxy   # app on 48013 directly; log in by hand
 #   ./scripts/mockup/run.sh --rebuild    # rebuild the jar first
 #   ./scripts/mockup/run.sh --reset-db   # recreate the databases, keep the vault
 #   ./scripts/mockup/run.sh --clean      # forget everything, including the vault
+#
+# LIFECYCLE
+#   The script starts two processes (the JVM and the session proxy) and records
+#   their pids in <work>/app.pid and <work>/proxy.pid. It stays in the foreground
+#   by default, so Ctrl-C stops both. --detach leaves them running; --stop shuts
+#   them down. Earlier versions only cleaned up at the start of the next run, so
+#   any interruption left a JVM serving and those piled up.
 #
 # RESULTS
 #   http://localhost:48013            the application
@@ -46,6 +55,12 @@ REBUILD=0
 RESET_DB=0
 CLEAN=0
 NO_PROXY=0
+STOP=0
+# Foreground by default: Ctrl-C then stops the app and the proxy. A launcher
+# that exits while leaving a JVM serving requests is a process leak, and that is
+# what the previous version was -- the pids were only collected at the start of
+# the *next* run, so any interruption or crash left them behind.
+FOREGROUND=1
 for arg in "$@"; do
   case "$arg" in
     --rebuild) REBUILD=1 ;;
@@ -55,7 +70,13 @@ for arg in "$@"; do
     # reach a protected page. It costs a hop on every request, so it is optional:
     # with --no-proxy the app listens on PORT directly and you log in by hand.
     --no-proxy) NO_PROXY=1 ;;
-    -h|--help) sed -n '2,34p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    # Stop whatever this work directory started, and exit. Without this the only
+    # way to shut down was to start again, and interrupting a start left both
+    # processes running.
+    --stop) STOP=1 ;;
+    # Leave it running after this script returns (the old behaviour).
+    --detach) FOREGROUND=0 ;;
+    -h|--help) sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown option: $arg" >&2; exit 1 ;;
   esac
 done
@@ -111,6 +132,25 @@ h2_jar() {
 # matched nothing, the old JVM survived, and every restart leaked another one.
 # A pile of orphaned JVMs competing for the same database is what made the
 # application feel slow -- not any single request being expensive.
+# The pidfiles only cover instances this script started. Anything else holding
+# our ports -- an earlier run whose pidfile was deleted, or a process started by
+# hand -- has to be found another way, or the next start dies with
+# "Port 48014 was already in use".
+#
+# "lsof -ti:PORT" is NOT reliable here: Tomcat binds an IPv6 socket (netstat
+# shows tcp46 *.48014) and lsof reports no pid for it. "netstat -anv" prints the
+# owning process in its last column, which works for those.
+pid_on_port() {
+  port=$1
+  pid=$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | head -1 || true)
+  if [ -z "$pid" ]; then
+    pid=$(netstat -anv 2>/dev/null \
+      | grep "[.]$port " | grep LISTEN \
+      | grep -oE '[A-Za-z_.-]+:[0-9]+' | head -1 | cut -d: -f2 || true)
+  fi
+  echo "$pid"
+}
+
 stop_recorded() {
   pidfile=$1
   label=$2
@@ -137,27 +177,45 @@ stop_recorded() {
   fi
 }
 
-stop_recorded "$WORK/proxy.pid" "session proxy"
-stop_recorded "$WORK/app.pid" "application"
-
-# The pidfiles only cover instances this script started. Anything else holding
-# our ports -- an earlier run whose pidfile was deleted, or a process started by
-# hand -- has to be found another way, or the next start dies with
-# "Port 48014 was already in use".
-#
-# "lsof -ti:PORT" is NOT reliable here: Tomcat binds an IPv6 socket (netstat
-# shows tcp46 *.48014) and lsof reports no pid for it. "netstat -anv" prints the
-# owning process in its last column, which works for those.
-pid_on_port() {
-  port=$1
-  pid=$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | head -1 || true)
-  if [ -z "$pid" ]; then
-    pid=$(netstat -anv 2>/dev/null \
-      | grep "[.]$port " | grep LISTEN \
-      | grep -oE '[A-Za-z_.-]+:[0-9]+' | head -1 | cut -d: -f2 || true)
-  fi
-  echo "$pid"
+# --- stop ---------------------------------------------------------------
+# Shared by --stop, the startup path and the exit trap.
+stop_all() {
+  stop_recorded "$WORK/proxy.pid" "session proxy"
+  stop_recorded "$WORK/app.pid" "application"
+  for stale in "$WORK"/db-*.lock.db; do
+    [ -e "$stale" ] || continue
+    rm -f "$stale"
+  done
 }
+
+# Install the handler BEFORE anything is started. Installing it only after the
+# app is up leaves the whole startup window unprotected: a signal there killed
+# run.sh and left the JVM behind, which is one of the ways orphans appeared.
+# The set is cleared while a stop is already in progress so a second signal
+# cannot interrupt the teardown.
+if [ "$FOREGROUND" = 1 ]; then
+  trap 'trap - INT TERM; echo; echo "==> stopping the mock-up"; stop_all; exit 130' INT TERM
+fi
+
+if [ "$STOP" = 1 ]; then
+  stop_all
+  # Anything this work directory started but did not record -- for instance a
+  # run killed before it wrote a pidfile -- is still holding the ports.
+  for p in "$PORT" "$APP_PORT"; do
+    pid=$(pid_on_port "$p")
+    [ -n "$pid" ] || continue
+    case "$pid" in *[!0-9]*) continue ;; esac
+    echo "==> port $p is held by pid $pid; stopping it"
+    kill -TERM "$pid" 2>/dev/null || true
+    sleep 2
+    kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null || true
+  done
+  echo "mock-up stopped"
+  exit 0
+fi
+
+stop_all
+
 
 free_port() {
   port=$1
@@ -451,6 +509,7 @@ if grep -qaE 'APPLICATION FAILED TO START|Application run failed' "$WORK/mockup.
   [ -n "$reason" ] && echo "  $reason" >&2
   echo >&2
   echo "full log: $WORK/mockup.log" >&2
+  stop_all
   exit 3
 fi
 
@@ -506,3 +565,23 @@ echo "    dev@qbic.local     DevPassword123!"
 echo "    admin@qbic.local   AdminPassword123!"
 echo
 echo "  screenshots  ./scripts/mockup/capture.sh"
+
+# Foreground: stay attached so Ctrl-C (or TERM from a supervisor) shuts the
+# mock-up down. Without this the script exits and the JVM keeps serving, which
+# is exactly how orphans accumulated.
+if [ "$FOREGROUND" = 1 ]; then
+  echo
+  echo "  Ctrl-C to stop."
+  # Wait for the app process so the trap fires while it is still alive.
+  APP_PID=$(cat "$WORK/app.pid" 2>/dev/null || true)
+  while [ -n "$APP_PID" ] && kill -0 "$APP_PID" 2>/dev/null; do
+    sleep 1
+  done
+  # The app died on its own; take the proxy with it.
+  stop_all
+  echo "the application exited" >&2
+  exit 1
+else
+  echo
+  echo "  running detached; stop with ./scripts/mockup/run.sh --stop"
+fi
