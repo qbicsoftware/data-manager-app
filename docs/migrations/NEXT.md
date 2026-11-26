@@ -1,14 +1,14 @@
 # Migration: Next release
 
-**Current pom version:** 1.20.3
+**Current pom version:** 1.20.5
 **Target release version:** TBD *(renamed to `released/v<version>.md` at release cut)*
 
 **Status:** under development
 
-The v1.20.4 security patch is already documented as released — see
-[`released/v1.20.4.md`](released/v1.20.4.md). This file therefore describes the release **after**
-1.20.4: its schema summary starts empty, while behaviour changes that need an operator note
-(e.g. "ORCID is no longer a login") are recorded below.
+The v1.20.4 security patch and the v1.20.5 release are both documented as released — see
+[`released/v1.20.4.md`](released/v1.20.4.md) and [`released/v1.20.5.md`](released/v1.20.5.md).
+This file therefore describes the release **after** 1.20.5: its schema summary starts empty, while
+behaviour changes that need an operator note (e.g. "ORCID is no longer a login") are recorded below.
 
 > **To operators:** This document describes schema changes for the **upcoming,
 > unreleased** Data Manager version. It is actively being edited as migrations
@@ -18,8 +18,8 @@ The v1.20.4 security patch is already documented as released — see
 
 For the migration documentation structure, see [`README.md`](README.md).
 
-> **Carried over from the hardening release — not yet satisfied.** These were explicitly deferred by
-> [`released/v1.20.4.md`](released/v1.20.4.md) and nothing here changes them. Do not treat their
+> **Carried over from v1.20.5 — not yet satisfied.** These were explicitly deferred by
+> [`released/v1.20.5.md`](released/v1.20.5.md) and nothing here changes them. Do not treat their
 > absence as a gap in the next release until the owning issue says otherwise.
 >
 > - **`FEAT-AUTH-FLOWS-05` / #1683** — ~~ORCID-only accounts still have `encryptedPassword IS NULL`.~~
@@ -476,8 +476,6 @@ rotates. The bucket is keyed on the account, not the origin — reaching it requ
 password, so it is not an anonymous surface, and being told you hit it is not an enumeration oracle.
 
 
-### Behaviour change for error notification mail
-
 ### New keys for origin-scope throttling (#1691) — all inert by default
 
 `AUTH-NFR-03` asks for throttling per account **and** per request origin. Account scope shipped in
@@ -563,31 +561,6 @@ logback offers `starttls.enable` but no `required`.
 `logback-spring.xml` (host, port, username, password) reach it. Adding e.g. `mail.smtp.from` or a
 custom timeout to `application.properties` will **not** affect error mail. The TLS requirement is
 applied in the appender class, so changing it means editing the class, not the properties file.
-
-### Verifying origin scope once enabled
-
-There is no migration script, but there is a real way for the feature to be **present and inert**:
-the client address is still the proxy. Check the table after a few failed logins on the canary node.
-
-```sql
--- Which origin buckets exist at all. All four scopes must appear once the corresponding flows are
--- exercised; a flow whose bucket is missing is still account-scoped only, i.e. unbounded.
-SELECT scope, COUNT(*) AS rows_
-FROM auth_attempt WHERE scope LIKE '%ORIGIN' GROUP BY scope;
-
--- How many distinct origins are being tracked. A handful is healthy; exactly 1 means the whole
--- deployment is sharing an origin, i.e. getRemoteAddr() is still the proxy -- STOP and roll back.
-SELECT COUNT(DISTINCT attemptKey) AS distinct_origins
-FROM auth_attempt WHERE scope = 'LOGIN_ORIGIN'
-  AND lastAttemptAt > UTC_TIMESTAMP(6) - INTERVAL 15 MINUTE;
-
--- What is currently blocked, in either bucket.
-SELECT scope, attemptCount, blockedUntil FROM auth_attempt
-WHERE blockedUntil > UTC_TIMESTAMP(6);
-```
-
-The application log must also contain no `no trusted client origin could be resolved` warning. If it
-does, the throttle has degraded to account scope and is telling you so.
 
 ---
 

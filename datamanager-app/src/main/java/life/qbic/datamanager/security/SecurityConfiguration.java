@@ -7,9 +7,7 @@ import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.application.security.QBiCPasswordEncoder;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
-
 import life.qbic.identity.application.throttle.ClientOriginResolver;
-
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,14 +41,11 @@ public class SecurityConfiguration {
 
   final VaadinDefaultRequestCache defaultRequestCache;
   private final AuthAttemptThrottle authAttemptThrottle;
-
   private final life.qbic.identity.api.OidcLinkService oidcLinkService;
   private final org.springframework.security.oauth2.client.OAuth2AuthorizedClientService authorizedClientService;
   private final life.qbic.datamanager.security.mfa.MfaLoginSuccessHandler mfaLoginSuccessHandler;
   private final life.qbic.identity.application.mfa.MfaLoginGuard mfaLoginGuard;
   private final ClientOriginResolver clientOriginResolver;
-
-
 
   /**
    * Held directly, not injected.
@@ -108,7 +103,6 @@ public class SecurityConfiguration {
         "defaultRequestCache must not be null");
     this.authAttemptThrottle = requireNonNull(authAttemptThrottle,
         "authAttemptThrottle must not be null");
-
     this.oidcLinkService = requireNonNull(oidcLinkService, "oidcLinkService must not be null");
     this.authorizedClientService = requireNonNull(authorizedClientService,
         "authorizedClientService must not be null");
