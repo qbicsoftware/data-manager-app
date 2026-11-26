@@ -2,26 +2,30 @@ package life.qbic.datamanager.views.general;
 
 import static life.qbic.logging.service.LoggerFactory.logger;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.avatar.AvatarVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.shared.Registration;
 import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Supplier;
 import life.qbic.logging.api.Logger;
 
 /**
  * Stepper Component
  *
  * <p>Horizontal linear stepper component enabling the indication of progress throughout the
- * defined steps  </p>
+ * defined steps. Every defined step carries a {@link StepState} and the state is what the styling
+ * keys off (a green check for completed, solid primary for the current step, an open ring for a
+ * step not reached yet, a dashed ring for an optional step that was skipped). A step defaults to
+ * {@link StepState#NOT_STARTED} until it becomes the selected step or is explicitly marked.</p>
+ *
+ * <p>The steps are held apart by the container's own spacing rather than by decorative separator
+ * glyphs: an arrow between every pair of steps carries no progress information and occupied a
+ * whole band of the page.</p>
  */
 
 public class Stepper extends Div {
@@ -29,10 +33,8 @@ public class Stepper extends Div {
   private static final Logger log = logger(Stepper.class);
   private final List<StepIndicator> stepList = new ArrayList<>();
   private StepIndicator selectedStep;
-  private final Supplier<Component> separator;
 
-  public Stepper(Supplier<Component> separatorSupplier) {
-    this.separator = separatorSupplier;
+  public Stepper() {
     addClassName("stepper");
     log.debug("New instance for %s %s%s created".formatted(this.getClass().getSimpleName(), "#",
         System.identityHashCode(this)));
@@ -64,11 +66,6 @@ public class Stepper extends Div {
    */
   public StepIndicator addStep(String label) {
     StepIndicator newStep = createStep(label);
-    if (!stepList.isEmpty()) {
-      Component separator = this.separator.get();
-      separator.addClassName("separator-" + stepList.size());
-      add(separator);
-    }
     stepList.add(newStep);
     add(newStep);
     return newStep;
@@ -107,6 +104,8 @@ public class Stepper extends Div {
     StepIndicator originalStep = getSelectedStep();
     setStepAsActive(step);
     selectedStep = step;
+    // Revisiting a step makes it current again, whatever it was marked as before.
+    step.setState(StepState.CURRENT);
     fireStepSelected(this, getSelectedStep(), originalStep);
   }
 
@@ -162,6 +161,37 @@ public class Stepper extends Div {
     return stepList.getLast();
   }
 
+  /**
+   * Marks a step as successfully filled in. Without this every step that is not the current one
+   * stayed {@link StepState#NOT_STARTED}, which made a completed step and a step never reached
+   * render identically.
+   *
+   * @param step the step that has been completed
+   */
+  public void markCompleted(StepIndicator step) {
+    step.setState(StepState.COMPLETED);
+  }
+
+  /**
+   * Marks a step that was passed by without being filled in, e.g. an optional wizard step that the
+   * user chose to leave empty. Only meaningful for steps that allow skipping.
+   *
+   * @param step the step that has been skipped
+   */
+  public void markSkipped(StepIndicator step) {
+    step.setState(StepState.SKIPPED);
+  }
+
+  /**
+   * Returns a step to its default state, e.g. when an entry that had completed an optional step is
+   * removed again.
+   *
+   * @param step the step to reset
+   */
+  public void markNotStarted(StepIndicator step) {
+    step.setState(StepState.NOT_STARTED);
+  }
+
   private void setStepAsActive(StepIndicator activatableStep) {
     if (selectedStep != null) {
       selectedStep.getElement().setAttribute("selected", false);
@@ -170,11 +200,8 @@ public class Stepper extends Div {
   }
 
   private StepIndicator createStep(String label) {
-    String stepNumber = String.valueOf(stepList.size() + 1);
-    Avatar stepAvatar = new Avatar(stepNumber);
-    stepAvatar.addClassName("avatar");
-    stepAvatar.addThemeVariants(AvatarVariant.LUMO_XSMALL);
-    StepIndicator step = new StepIndicator(stepAvatar, label);
+    int number = stepList.size() + 1;
+    StepIndicator step = new StepIndicator(label, number);
     step.addClassName("step");
     step.setEnabled(false);
     return step;
@@ -187,25 +214,57 @@ public class Stepper extends Div {
     fireEvent(stepSelectedEvent);
   }
 
+  /**
+   * Where a step stands. {@code SKIPPED} is for an optional step the user moved past without
+   * filling in; a stepper that does not allow skipping never sets it and its steps only move
+   * through the other three states.
+   */
+  public enum StepState {
+    NOT_STARTED,
+    CURRENT,
+    COMPLETED,
+    SKIPPED
+  }
+
   public static class StepIndicator extends Div {
 
-    private final Avatar avatar;
+    private final Span marker = new Span();
     private final String label;
+    private final int number;
+    private StepState state = StepState.NOT_STARTED;
 
-
-    public StepIndicator(Avatar avatar, String label) {
-      this.avatar = avatar;
+    public StepIndicator(String label, int number) {
       this.label = label;
-      this.add(avatar);
+      this.number = number;
+      marker.addClassName("step-marker");
+      this.add(marker);
       this.add(new Span(label));
-    }
-
-    public Avatar getAvatar() {
-      return avatar;
+      applyState();
     }
 
     public String getLabel() {
       return label;
+    }
+
+    public StepState getState() {
+      return state;
+    }
+
+    public void setState(StepState state) {
+      this.state = Objects.requireNonNull(state);
+      applyState();
+    }
+
+    private void applyState() {
+      // The state lives on the element as an attribute so the styling needs no knowledge of the
+      // component, and the glyph is applied together with the colour so the two cannot drift.
+      getElement().setAttribute("data-state", state.name());
+      marker.removeAll();
+      if (state == StepState.COMPLETED) {
+        marker.add(VaadinIcon.CHECK.create());
+      } else {
+        marker.add(new Span(String.valueOf(number)));
+      }
     }
   }
 
@@ -219,7 +278,7 @@ public class Stepper extends Div {
 
     /**
      * Creates a new event using the given source and indicator whether the event originated from
-     * the client side or the server side.
+     * the client side or from the server side.
      *
      * @param selectedStep the StepIndicator which was selected when this event was triggered
      * @param previousStep the previously selected StepIndicator

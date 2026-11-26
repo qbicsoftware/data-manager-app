@@ -9,12 +9,27 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   display: none;
 }
 
+/* The app's density, applied where rem is defined.
+
+   Lumo's size-carrying tokens are rem-based and the app's own spacing tokens are too, so setting the
+   root font size moves the type scale, the spacing scale and the control heights together -- the
+   proportionality a zoom gives, without a second coordinate space, without shrinking 1px hairlines,
+   and without depending on an engine honouring `zoom`. The em-based families (icons, radii) follow
+   their own font size and need nothing.
+
+   Percent rather than a px size on purpose: it composes with the reader's own browser font-size
+   setting instead of overriding it, which is the whole reason the design is expressed in rem.
+
+   The chrome is the one surface that does not take this scale -- see app-shell.css, which divides
+   the design's sizes by --app-density so the header keeps the type size it was designed for. */
+html {
+  font-size: calc(var(--app-density) * 100%);
+}
+
 #main-layout {
   display: flex;
   flex-direction: column;
   height: 100%;
-  /*Default design of components is too big for smaller screens*/
-  zoom: 90%;
 }
 
 .landing-page-layout .landing-page-content {
@@ -58,9 +73,15 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   height: 100%;
 }
 
+/* Page titles. These rules are five near-identical copies (here, the sample/measurement and
+   raw-data variants below, and .page-area .title) that all resolved their colour from
+   --lumo-secondary-text-color, i.e. the muted grey used for supporting text. A 1.75rem bold
+   heading in supporting-text grey reads as disabled, and it made every page header sit lighter
+   than the .section-title headings on the pages that used those instead. They now take
+   --heading-text-color, matching .section-title. */
 .main .title {
   font-weight: bold;
-  color: var(--lumo-secondary-text-color);
+  color: var(--heading-text-color);
   font-size: var(--lumo-font-size-xxl);
   margin-bottom: 0.5rem;
 }
@@ -84,7 +105,7 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-l);
-  width: clamp(450px, 450px, 15vw);
+  width: clamp(28.125rem, 28.125rem, 15vw);
   padding-bottom: var(--lumo-space-xl);
   padding-inline: var(--lumo-space-l);
 }
@@ -94,14 +115,14 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   gap: var(--spacing-03);
 }
 
-.main.experiment .experiment-details-component {
+.main.experiment .experiment-design-component {
   grid-area: experimentdetails;
 }
 
 .main.legal-notice {
   padding: var(--lumo-space-xl);
   height: fit-content;
-  width: clamp(700px, 60vw, 100%);
+  width: clamp(43.75rem, 60vw, 100%);
   display: flex;
   margin: auto;
 }
@@ -109,12 +130,11 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 .main.data-privacy-agreement {
   padding: var(--lumo-space-xl);
   height: fit-content;
-  width: clamp(700px, 50vw, 100%);
+  width: clamp(43.75rem, 50vw, 100%);
   display: flex;
   margin: auto;
 }
 
-.main.sample .page-area,
 .main.measurement .page-area {
   border: 1px solid;
   border-color: var(--lumo-contrast-10pct);
@@ -122,8 +142,6 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 }
 
 /*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
-.main.sample .no-experimental-groups-registered-disclaimer,
-.main.sample .no-samples-registered-disclaimer,
 .main.measurement .no-samples-registered-disclaimer,
 .main.measurement .no-measurements-registered-disclaimer {
   grid-column-start: 1;
@@ -153,15 +171,10 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 }
 
 
-.main.sample .sample-details-component {
-  grid-area: sampledetails;
-}
-
 .main.measurement .measurement-details-component {
   grid-area: measurementdetails;
 }
 
-.main.sample .sample-main-content,
 .main.measurement .measurement-main-content {
   display: flex;
   flex-direction: column;
@@ -170,7 +183,6 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   justify-content: space-between;
 }
 
-.main.sample .sample-main-header,
 .main.measurement .measurement-main-content .measurement-main-header {
   display: flex;
   align-items: center;
@@ -180,22 +192,19 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   column-gap: var(--lumo-space-m);
 }
 
-.main.sample .sample-main-header .title,
 .main.measurement .measurement-main-content .title {
   font-weight: bold;
-  color: var(--lumo-secondary-text-color);
+  color: var(--heading-text-color);
   font-size: var(--lumo-font-size-xxl);
   margin-bottom: 0.5rem;
 }
 
-.main.sample .sample-main-header .buttonsAndInfo,
 .main.measurement .measurement-main-content .buttonsAndInfo {
   display: flex;
   flex-direction: column;
   row-gap: var(--lumo-space-m);
 }
 
-.main.sample .sample-main-header .buttonsAndInfo .info,
 .main.measurement .measurement-main-content .buttonsAndInfo .info {
   border-radius: var(--lumo-border-radius-m);
   column-gap: var(--spacing-03);
@@ -224,33 +233,19 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
  * stretches via flex from .main.ontology-lookup-main (grid-templates.css).
  */
 
-.main.project .page-area {
-  border: 1px solid;
-  border-color: var(--lumo-contrast-10pct);
-  border-radius: var(--lumo-border-radius-m);
-}
+/* The project page's bands are borderless; separation is whitespace, and only the cards/panels
+   (and the not-complete card) carry a border. */
 
-.main.project .project-details-component {
-  grid-area: projectdetails;
-}
-
-.main.project .experiment-list-component {
-  grid-area: experimentlist;
-}
-
-.main.project .offer-list-component {
-  grid-area: offerlist;
-}
-
-.main.project .quality-control-list-component {
-  grid-area: qualitycontrollist;
-}
+/* The project page is a single-column grid now; the former named grid areas
+   (projectdetails / experimentlist / offerlist / qualitycontrollist) are gone. */
 
 /* Slim hero row: the greeting and the description share one baseline and wrap
    only on narrow screens, so the welcome text keeps the grid row above the
    project collection as small as possible (the freed space goes to the grid). */
 .main.project-overview .title-and-description {
-  padding: var(--spacing-03) var(--lumo-space-m);
+  /* The horizontal inset now comes from the shell (grid-templates.css .main.project-overview),
+     so the welcome row starts on the same vertical anchor as the project collection below it. */
+  padding: var(--spacing-03) 0;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: baseline;
@@ -273,7 +268,7 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 .main.project-overview .title-and-description.detailed-welcome {
   flex-direction: column;
   align-items: flex-start;
-  padding: var(--lumo-space-m);
+  padding: var(--lumo-space-m) 0;
 }
 
 .main.project-overview .title-and-description.detailed-welcome .project-overview-title {
@@ -337,7 +332,7 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
 
 .main.raw-data .raw-data-main-content .title {
   font-weight: bold;
-  color: var(--lumo-secondary-text-color);
+  color: var(--heading-text-color);
   font-size: var(--lumo-font-size-xxl);
   margin-bottom: 0;
 }
@@ -350,62 +345,20 @@ vaadin-app-layout:not([drawer-opened])::part(drawer) {
   padding-bottom: var(--lumo-space-m);
 }
 
-.main.sample .page-area {
-  border: 1px solid;
-  border-color: var(--lumo-contrast-10pct);
-  border-radius: var(--lumo-border-radius-m);
-}
-
-/*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
-.main.sample .no-samples-registered-disclaimer {
-  grid-column-start: 1;
-  grid-column-end: -1;
-  grid-row-start: 1;
-  grid-row-end: -1;
-}
-
-/*We want to show disclaimer centralized over the whole main width and height independent of defined areas */
-.main.sample .no-experimental-groups-registered-disclaimer {
-  grid-column-start: 1;
-  grid-column-end: -1;
-  grid-row-start: 1;
-  grid-row-end: -1;
-}
+/* The sample page's bands are borderless, like the project page: separation is whitespace, and
+   the grid carries its own hairline. The bordered page-area box made the page read as one more
+   framed panel among the chrome rows instead of the page's own surface. The measurement page
+   keeps its border -- that page has not been reworked. */
 
 .main.sample .sample-main-content {
   display: flex;
   flex-direction: column;
   row-gap: var(--lumo-space-m);
-  padding: var(--lumo-space-m);
-  justify-content: space-between;
-}
-
-.main.sample .sample-main-content .sample-main-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  column-gap: var(--lumo-space-m);
-}
-
-.main.sample .sample-main-content .title {
-  font-weight: bold;
-  color: var(--lumo-secondary-text-color);
-  font-size: var(--lumo-font-size-xxl);
-  margin-bottom: 0.5rem;
-}
-
-.main.sample .sample-main-content .buttonAndField {
-  display: inline-flex;
-  justify-content: space-between;
-  gap: var(--lumo-space-m);
 }
 
 .main.sample .sample-details-component {
-  grid-area: sampledetails;
-  /* Grid items stretch to fill their area by default; an explicit height: 100%
-     would re-introduce the percentage-resolution trap that broke the grid
-     on short viewports. min-height: 0 allows shrinking within the track. */
+  /* Grid items stretch to fill their area by default; min-height: 0 allows shrinking within the
+     flexible column so the grid cannot push the pager off the page on short viewports. */
   min-height: 0;
 }
 

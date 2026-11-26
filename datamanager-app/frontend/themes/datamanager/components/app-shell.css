@@ -1,0 +1,161 @@
+/* Application shell chrome — the prototype's two rows, shared by the Home scope (projects, groups,
+   settings) and the project scope: an identity bar (wordmark + breadcrumb + account) over one
+   navigation row. Replaces the old single-row top navigation and the retired project drawer.
+
+   The chrome's type renders at the design's own scale, not the app's density: the header is the
+   wayfinding layer, and at 90% its 14px user name renders at 12.6px, which is below what that size
+   is for. The sizes below are therefore the design's size divided by --app-density.
+
+   The chrome can afford to do this because it is a sibling of #main-layout, not a descendant: it is
+   added with addToNavbar, so the root font size that carries the density applies to it just the
+   same, and it simply asks for larger numbers. Its column still comes from the shared
+   --content-shell-max-width, in rem, so one value gives both surfaces the same rendered width. */
+
+.app-chrome {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Full-width rows carry the hairlines; the content inside is capped and centred. */
+.app-identity-bar,
+.app-subnav {
+  width: 100%;
+  border-bottom: 1px solid var(--lumo-contrast-10pct);
+}
+
+.app-identity-bar-row,
+.app-subnav-strip {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: var(--content-shell-max-width);
+  margin-inline: auto;
+  padding-inline: var(--content-shell-gutter);
+  box-sizing: border-box;
+}
+
+/* No post-zoom geometry and no @supports guard: rem is root-relative, so one value gives the chrome
+   and the page the same rendered column whatever their own type scale is. That is what the previous
+   pair of tokens existed to express, and what the engine-support branch existed to work around. */
+
+.app-identity-bar-row {
+  gap: var(--lumo-space-m);
+  min-height: 3.25rem;
+}
+
+.app-identity-bar-row .data-manager-menu {
+  margin-left: auto;
+}
+
+.app-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+.app-wordmark {
+  font-weight: 600;
+  /* 16px: the design's --lumo-font-size-m, divided by the density so it renders at the design's size
+     rather than at the app's. */
+  font-size: calc(1rem / var(--app-density));
+  color: var(--lumo-header-text-color);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.app-wordmark-dot {
+  color: var(--lumo-primary-color);
+}
+
+/* The signed-in user's name. A label, not a control: it sits before the avatar and is not part
+   of the menu item, so it opens nothing and takes no pointer cursor. */
+.app-account-name {
+  /* 14px, as above. */
+  font-size: calc(0.875rem / var(--app-density));
+  color: var(--lumo-secondary-text-color);
+}
+
+.app-crumbs {
+  display: inline-flex;
+  align-items: center;
+  /* em, not rem: the crumb row sets its own font size, so its gap should follow that and not the
+     root. */
+  gap: 0.4em;
+  min-width: 0;
+  /* 14px, as above. */
+  font-size: calc(0.875rem / var(--app-density));
+  color: var(--lumo-secondary-text-color);
+}
+
+.app-crumb {
+  max-width: 42ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--lumo-secondary-text-color);
+  text-decoration: none;
+}
+
+a.app-crumb:hover,
+a.app-crumb:focus {
+  color: var(--lumo-primary-text-color);
+  text-decoration: underline;
+}
+
+.app-crumb-code {
+  font-family: var(--font-family-monospace);
+}
+
+.app-crumb-current {
+  color: var(--lumo-body-text-color);
+  font-weight: 600;
+}
+
+.app-crumb-separator {
+  color: var(--lumo-contrast-40pct);
+}
+
+/* The navigation row. Items carry no counts; the current one is marked by aria-current (weight plus
+   the accent rule), never a filled pill. Items start at a fixed origin; tools are right-aligned. */
+.app-subnav-strip {
+  gap: var(--lumo-space-l);
+  min-height: 3rem;
+}
+
+.app-subnav-items {
+  display: inline-flex;
+  align-items: stretch;
+  gap: var(--lumo-space-l);
+  flex: 0 0 auto;
+}
+
+.app-subnav-tools {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lumo-space-m);
+  flex: 0 0 auto;
+}
+
+.app-subnav-item {
+  display: inline-flex;
+  align-items: center;
+  padding-block: var(--lumo-space-s);
+  color: var(--lumo-secondary-text-color);
+  /* 16px, as above. */
+  font-size: calc(1rem / var(--app-density));
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+}
+
+.app-subnav-item:hover {
+  color: var(--lumo-body-text-color);
+}
+
+.app-subnav-item[aria-current="page"] {
+  color: var(--lumo-body-text-color);
+  font-weight: 600;
+  border-bottom-color: var(--lumo-primary-color);
+}

@@ -127,21 +127,21 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
     // pager/selection bar of the tab container stay authoritative — so each PaginatedGrid only
     // owns page loading, clamping and the empty state for its tab.
     ngsPaginatedGrid = new PaginatedGrid<>(ngsGrid, this::loadNgsPage,
-        info -> info.dataset().measurementId(), "dataset", RawDataSort.DEFAULT, false, false,
+        info -> info.dataset().measurementId(), "datasets", RawDataSort.DEFAULT, false, false,
         false);
     ngsPaginatedGrid.addPageLoadedListener(event -> {
       applySelectionToGrid(ngsGrid, ngsSelection, RawDataDomain.NGS);
       tabPagination.onPageLoaded(RawDataDomain.NGS, event.getPage(), event.getTotal());
     });
     pxpPaginatedGrid = new PaginatedGrid<>(pxpGrid, this::loadPxpPage,
-        info -> info.dataset().measurementId(), "dataset", RawDataSort.DEFAULT, false, false,
+        info -> info.dataset().measurementId(), "datasets", RawDataSort.DEFAULT, false, false,
         false);
     pxpPaginatedGrid.addPageLoadedListener(event -> {
       applySelectionToGrid(pxpGrid, pxpSelection, RawDataDomain.PXP);
       tabPagination.onPageLoaded(RawDataDomain.PXP, event.getPage(), event.getTotal());
     });
     ipPaginatedGrid = new PaginatedGrid<>(ipGrid, this::loadIpPage,
-        info -> info.dataset().measurementId(), "dataset", RawDataSort.DEFAULT, false, false,
+        info -> info.dataset().measurementId(), "datasets", RawDataSort.DEFAULT, false, false,
         false);
     ipPaginatedGrid.addPageLoadedListener(event -> {
       applySelectionToGrid(ipGrid, ipSelection, RawDataDomain.IP);
@@ -729,7 +729,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           BasicSampleInformation::sampleName).toList());
       rawDataItem.addEntry("Number of Files",
           String.valueOf(rawData.dataset().numberOfFiles()));
-      rawDataItem.addEntry("File Size", FileSizeFormatter.formatBytes(rawData.dataset().totalSizeBytes()));
+      rawDataItem.addEntry("File Size", FileSizeFormatter.formatBytesCompact(rawData.dataset().totalSizeBytes()));
       rawDataItem.addListEntry("File Suffixes", rawData.dataset().fileTypes());
       return rawDataItem;
     });
@@ -742,7 +742,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           BasicSampleInformation::sampleName).toList());
       rawDataItem.addEntry("Number of Files",
           String.valueOf(rawData.dataset().numberOfFiles()));
-      rawDataItem.addEntry("File Size", FileSizeFormatter.formatBytes(rawData.dataset().totalSizeBytes()));
+      rawDataItem.addEntry("File Size", FileSizeFormatter.formatBytesCompact(rawData.dataset().totalSizeBytes()));
       rawDataItem.addListEntry("File Suffixes", rawData.dataset().fileTypes());
       return rawDataItem;
     });
@@ -755,7 +755,7 @@ public class RawDataDetailsComponent extends PageArea implements Serializable {
           BasicSampleInformation::sampleName).toList());
       rawDataItem.addEntry("Number of Files",
           String.valueOf(rawData.dataset().numberOfFiles()));
-      rawDataItem.addEntry("File Size", FileSizeFormatter.formatBytes(rawData.dataset().totalSizeBytes()));
+      rawDataItem.addEntry("File Size", FileSizeFormatter.formatBytesCompact(rawData.dataset().totalSizeBytes()));
       rawDataItem.addListEntry("File Suffixes", rawData.dataset().fileTypes());
       return rawDataItem;
     });

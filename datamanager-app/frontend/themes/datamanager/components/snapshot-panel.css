@@ -1,0 +1,268 @@
+/* The snapshot panel — what a surface holds, in what state, and the way in.
+   Shared by the project overview's experiment entries and the experiment overview, because both
+   describe the same two data sets at the same grain, one click apart. It used to be two look-alike
+   card anatomies; the experiment overview had not picked up the revisions and still carried a
+   completeness ring and a state vocabulary the project page had retired. One component, one file. */
+
+.snapshot-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  min-width: 0;
+  padding: var(--lumo-space-m);
+  border: 1px solid var(--lumo-contrast-20pct);
+  border-radius: var(--lumo-border-radius-m);
+  /* No pointer cursor: the panel is not a click target. Its one destination is the "Open …" link in
+     the header, and a pointer cursor promised a click that no longer does anything. The cursor is
+     what tells a reader "this whole thing is clickable", so leaving it here was a lie in the one
+     affordance people trust most. */
+  cursor: default;
+  transition: border-color 150ms ease;
+}
+
+/* Inside the project page's two-across row the panel takes an equal share and wraps when narrow.
+   It shares the card threshold with the dataset cards, so the two halves of that page break
+   together rather than at 656px and 592px. min-width is 0, not a hard floor: the flex basis already
+   decides when to wrap, and a fixed floor would push the card off-screen on a phone. */
+.snapshot-panel--equal {
+  flex: 1 1 var(--card-readable-width);
+}
+
+/* The hover affordance is the primary-colour frame, matching the project cards: a border on an
+   already-rounded box needs no box-shadow, cannot affect layout, and matches the flat, shadow-free
+   card language used everywhere else. The greyed-out background it replaces read as a disabled
+   state rather than as a hover. */
+.snapshot-panel:hover,
+.snapshot-panel:has(:focus-visible) {
+  border-color: var(--lumo-primary-color);
+}
+
+.snapshot-panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-s);
+}
+
+/* Reads the panel as "the samples panel" / "the dataset panel" before the words are parsed.
+   Decorative only -- the label beside it carries the meaning, so it is aria-hidden. */
+.snapshot-panel-icon {
+  flex: 0 0 auto;
+  color: var(--lumo-secondary-text-color);
+}
+
+/* The panel's title, and its one destination. It is an <a>, so it carries the title treatment and the
+   link colour, and the underline is the hover affordance rather than the resting state -- a heading
+   that is permanently underlined competes with the count below it for the first fixation. */
+.snapshot-panel-label {
+  font-weight: 600;
+  font-size: var(--lumo-font-size-m);
+  color: var(--lumo-header-text-color);
+  text-decoration: none;
+}
+
+.snapshot-panel-label:hover,
+.snapshot-panel-label:focus-visible {
+  color: var(--lumo-primary-text-color);
+  text-decoration: underline;
+}
+
+.snapshot-panel-state {
+  padding: 1px var(--lumo-space-s);
+  border-radius: 999px;
+  font-size: var(--lumo-font-size-xs);
+  background-color: var(--lumo-contrast-10pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+.snapshot-panel-state--done {
+  background-color: var(--lumo-success-color-10pct, var(--lumo-contrast-10pct));
+  color: var(--lumo-success-text-color, var(--lumo-secondary-text-color));
+}
+
+/* Partial: some data has arrived, so it takes the informational tone rather than the warning one. */
+.snapshot-panel-state--partial {
+  background-color: var(--info-surface, var(--lumo-contrast-10pct));
+  color: var(--info-text-color, var(--lumo-primary-text-color));
+}
+
+/* Waiting: nothing has arrived yet, which is the normal state of the process. Neutral, not amber --
+   amber would spend the strongest colour on the least alarming fact. */
+.snapshot-panel-state--waiting {
+  background-color: var(--lumo-contrast-5pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+.snapshot-panel-state--active {
+  background-color: var(--lumo-primary-color-10pct, var(--lumo-contrast-10pct));
+  color: var(--lumo-primary-text-color);
+}
+
+.snapshot-panel-state--locked {
+  background-color: var(--lumo-contrast-5pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* A fixed two-line slot: the count, then the qualifier. The second line is always rendered, empty
+   when there is nothing to qualify, because its reserved height is what keeps the status line and the
+   table on one baseline across the pair. A content-sized band let a wrapping qualifier push
+   everything below it a full line down -- the defect the banded layout was introduced to remove. */
+.snapshot-panel-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* Two line boxes: the value's line and the qualifier's. Reserved, not content-driven. */
+  min-height: calc(var(--lumo-font-size-xl) * var(--lumo-line-height-xs) + var(--lumo-font-size-s));
+}
+
+.snapshot-panel-count-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--lumo-space-xs);
+}
+
+/* The qualifier: the fact that gives the total its meaning. On its own line so its wrap cannot move
+   anything below it, and clamped to two lines so an unusually long sentence is truncated rather than
+   pushing the band taller than its reserved slot. */
+.snapshot-panel-qualifier {
+  font-size: var(--lumo-font-size-s);
+  font-weight: 500;
+  color: var(--lumo-body-text-color);
+  line-height: var(--lumo-line-height-xs);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.snapshot-panel-value {
+  font-size: var(--lumo-font-size-xl);
+  font-weight: 600;
+  color: var(--lumo-header-text-color);
+}
+
+.snapshot-panel-unit {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
+.snapshot-panel-status {
+  font-size: var(--lumo-font-size-s);
+  color: var(--lumo-secondary-text-color);
+}
+
+/* The way out of the preview, below a hairline. In the table's header row it sat on the header
+   baseline at header size, so it read as a fourth column with no cells under it. */
+.snapshot-panel-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--lumo-space-xs);
+  padding-top: var(--lumo-space-xs);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+.snapshot-panel-all {
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 500;
+  color: var(--lumo-primary-text-color);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.snapshot-panel-all:hover,
+.snapshot-panel-all:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ONE grid for the whole table, and every row is display: contents (below). The rows used to be
+   individual grids, which sizes each column from that row's own content -- so "Omics domain" was as
+   wide as the word, "Genomics" as wide as that, and "Immunopeptidomics" wider still. The columns
+   then lined up inside a row and nowhere else, and the six cells of one row landed under six
+   different x positions than the six cells of the next:
+
+     Omics domain  Method  Instrument          With data  Data availability
+     Genomics  WGS  Illumina                     1 of 6  Partial
+     Proteomics  WGS  Illumina                  1 of 6  Partial
+
+   This is the same defect fixed once in project-progress.css (commit 132510bed) and never carried
+   over here. Content-sized columns on a container cannot drift per row, because there is only one
+   grid; the table also gets a single baseline, so the header stops floating above the values.
+
+   The column count must equal the number of cells a row emits. The Samples panel emits three (ID,
+   name, changed); the dataset panel six -- five data cells plus the spacer it emits itself -- and
+   the count is declared per panel via a modifier chosen from the rendered cell count in Java. A
+   short declaration does not fail: it wraps the extra cells onto an implicit row, which is how
+   "Partial" once ended up on its own line under every dataset. */
+.snapshot-panel-rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) max-content;
+  gap: 2px var(--lumo-space-s);
+  align-items: baseline;
+  font-size: var(--lumo-font-size-s);
+}
+
+/* Dataset panel: five data cells plus one spacer cell the row emits itself.
+   The spacer carries the slack rather than letting the instrument column do it: with the instrument
+   as the flexible track, a short value ("Illumina") left a wide void in the middle of the row and
+   pushed the numbers away from the identity they belong to. Now the identity group stays tight on the
+   left, the numbers stay on the right edge, and the gap is where a gap is expected.
+
+   Track count matches the rendered cell count INCLUDING the spacer. Both come from the same rule in
+   Java (row() emits the spacer when there are more than three cells), so they cannot drift. */
+.snapshot-panel-rows--6-columns {
+  grid-template-columns:
+      max-content             /* omics domain */
+      max-content             /* method */
+      minmax(0, max-content)  /* instrument: truncates rather than pushing the numbers off */
+      minmax(0, 1fr)          /* spacer: absorbs the free space */
+      max-content             /* measurements with data */
+      max-content;            /* data availability */
+}
+
+/* display: contents -- the row's cells become cells of the table's grid, which is what lets the
+   columns size across ALL rows. The row itself carries no box and no semantics, so nothing is lost. */
+.snapshot-panel-row {
+  display: contents;
+}
+
+/* The stand-in for an empty table is one sentence, not a record: it spans the grid rather than
+   sitting in the first column with the rest of the row blank, and it takes none of the cell
+   treatments the :first-child / :last-child rules below hand to real records. */
+.snapshot-panel-row > span:only-child {
+  grid-column: 1 / -1;
+  text-align: left;
+  overflow: visible;
+  white-space: normal;
+  color: var(--lumo-secondary-text-color);
+}
+
+/* The last column is a timestamp and is right-aligned, so its header is too -- otherwise "Changed"
+   floats between the previous column and its own values and reads as belonging to the wrong one. */
+.snapshot-panel-row > :last-child {
+  text-align: right;
+}
+
+/* A header sits on the same baseline as its values by default, which with a 2px row gap reads as
+   crowded. The padding is on the cells rather than the row because the row has no box (display:
+   contents above), so it could not carry a margin at all. */
+.snapshot-panel-cell-header {
+  padding-bottom: var(--lumo-space-xs);
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 600;
+  color: var(--lumo-secondary-text-color);
+}
+
+/* The first column of the Samples panel is an identifier -- a monospace code the reader may copy. It
+   must never wrap mid code (worst case for a copyable ID) and must never crowd its neighbour, so it
+   truncates with an ellipsis and the component keeps the full value in a title attribute.
+
+   Scoped to the class the component sets, not to :first-child. As a positional rule it also caught
+   the dataset panel's first cell, which is the omics domain -- a word, not a code -- so "Genomics"
+   was monospaced and ellipsis-truncated while every other cell in the same table was proportional. */
+.snapshot-panel-row > .identifier {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+

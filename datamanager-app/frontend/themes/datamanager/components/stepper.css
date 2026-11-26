@@ -1,0 +1,96 @@
+/* Stepper — the single definition of step state.
+
+   A stepper's job is to answer two questions: "how far am I?" and "what is left?". The previous
+   styling answered only the first, and only for the current step: every other node was the same
+   grey, so a completed step, a skipped optional step and a not-yet-reached step were
+   indistinguishable.
+
+   State is deliberately not carried by colour alone. Completed steps show a check glyph, the
+   current step takes the heavier label weight, and the unreached step is an open outline rather
+   than a filled disc — so the bar still reads in greyscale or with colour-blindness. The skipped
+   state is available for any stepper that permits skipping; the project creation wizard does not
+   use it yet. */
+
+.stepper {
+  margin-top: 0.5rem;
+  display: inline-flex;
+  align-items: flex-start;
+  /* Spacing lives here now that the between-step arrows are gone: their only job was to keep the
+     steps apart while consuming a full band of the page, and the state contrast now does the
+     separating that carries meaning. */
+  gap: var(--lumo-space-xl);
+}
+
+.stepper .step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
+  gap: var(--spacing-03);
+}
+
+/* The marker replaces the x-small avatar the stepper used to draw, so a completed step can hold a
+   check glyph: Vaadin's Avatar has no icon slot. Size matches the avatar it replaced. */
+.stepper .step > .step-marker {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--lumo-font-size-s);
+  font-weight: 500;
+  box-sizing: border-box;
+}
+
+.stepper .step-marker vaadin-icon {
+  --lumo-icon-size: 1rem;
+  --vaadin-icon-size: 1rem;
+}
+
+/* --- Node ---------------------------------------------------------------- */
+
+/* Not reached yet: an open ring, so "nothing here yet" is a shape, not only a lighter grey. */
+.stepper .step[data-state="NOT_STARTED"] > .step-marker {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 2px var(--lumo-contrast-20pct);
+  color: var(--lumo-secondary-text-color);
+}
+
+.stepper .step[data-state="CURRENT"] > .step-marker {
+  background-color: var(--lumo-primary-color);
+  color: var(--lumo-primary-contrast-color);
+}
+
+.stepper .step[data-state="COMPLETED"] > .step-marker {
+  background-color: var(--lumo-success-color);
+  color: var(--lumo-success-contrast-color);
+}
+
+.stepper .step[data-state="SKIPPED"] > .step-marker {
+  background-color: transparent;
+  box-shadow: inset 0 0 0 2px var(--lumo-contrast-30pct);
+  color: var(--lumo-secondary-text-color);
+  /* A dashed edge is the conventional "deliberately left out" mark; used together with the
+     skipped glyph at marker level so a skipped step is never mistaken for an untouched one. */
+  border: none;
+  outline: 2px dashed var(--lumo-contrast-30pct);
+  outline-offset: -2px;
+}
+
+/* --- Label --------------------------------------------------------------- */
+
+.stepper .step[data-state="NOT_STARTED"] > span {
+  color: var(--lumo-secondary-text-color);
+}
+
+.stepper .step[data-state="COMPLETED"] > span,
+.stepper .step[data-state="SKIPPED"] > span {
+  color: var(--lumo-body-text-color);
+}
+
+/* The current step is the one being read, so it also carries the heavier weight. */
+.stepper .step[data-state="CURRENT"] > span {
+  color: var(--heading-text-color);
+  font-weight: 600;
+}

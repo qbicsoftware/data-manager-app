@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import life.qbic.datamanager.views.general.Tag;
 import life.qbic.datamanager.views.general.Tag.TagColor;
-import life.qbic.datamanager.views.projects.project.datasets.ConnectedDatasetsMain;
+import life.qbic.datamanager.views.projects.project.datasets.ProjectDatasetsMain;
 import org.springframework.context.annotation.Profile;
 
 /**
@@ -433,7 +433,7 @@ public class ProjectListingDatasetsDemo extends Div {
 
     // ─ Wrap in RouterLink — entire footer is the link ──────────
     var footerLink = new RouterLink(
-        "", ConnectedDatasetsMain.class,
+        "", ProjectDatasetsMain.class,
         new RouteParameters("projectId", project.projectId()));
     footerLink.addClassName("project-dataset-footer");
     footerLink.add(content);

@@ -1,0 +1,373 @@
+/*****************************************
+
+Project Datasets page — projects/:projectId/datasets
+
+The page is the umbrella for both halves of a project's datasets: its own primary datasets (the
+measurement data of its experiments, read from the experiment progress view) and the datasets
+connected to it. The two bands are siblings of equal weight — see .project-datasets-primary and
+.datasets-content — so neither may look like a sub-part of the other.
+
+The list is a plain grid, not a Vaadin grid: it is short (one row per experiment and assay type),
+it needs no paging, filtering or selection, and it is read-only.
+
+*****************************************/
+
+/* --- Vertical rhythm ---
+
+   Three relationships, named, because they are not the same distance:
+
+     page title  "Datasets"
+         |  A  the title introduces the first band
+     band title  "Primary datasets"
+         |  B  a title is closest to its own content
+     [ the band's content ]
+         |  C  the two bands are separate things
+     band title  "Connected datasets"
+         |  B
+     [ the band's content ]
+
+   A uniform grid row gap was doing all three, which made the page title look like the first of three
+   equal bands and pushed it 113px away from the band it introduces. A and C differ for that reason;
+   B is the tightest because a title belongs to what follows it.
+
+   Two other things used to add to this page's spacing and are switched off: Section adds a 36px
+   trailing margin to itself (right for unrelated blocks, wrong here), and the page band's header
+   kept its trailing margin even though that band has no content to separate itself from. */
+
+.main.project.datasets {
+  row-gap: 0;
+  /* Breathing room before the footer, which the page used to leave to whatever the last band's
+     empty state happened to pad itself with. */
+  padding-bottom: var(--spacing-06);
+}
+
+.main.project.datasets .section {
+  margin-bottom: 0;
+}
+
+/* B: a band title to its own content. */
+.main.project.datasets .section-header {
+  margin-bottom: var(--spacing-04);
+}
+
+/* The page band holds nothing but its title, so its header's trailing margin separated it from
+   nothing. Scoped through .main.project.datasets to outrank the band rule above, which it would
+   otherwise tie with and lose to. */
+.main.project.datasets .project-datasets-page-head .section-header {
+  margin-bottom: 0;
+}
+
+/* The empty state is the app's shared component and centres itself in a 40rem card. Centred under
+   a left-aligned band title it opened a second left edge 325px to the right of the first -- and the
+   band titles, the page title and the announcement all share one. Bounded, but on that edge. */
+.main.project.datasets .empty-state {
+  margin-inline: 0;
+  max-width: 44rem;
+}
+
+/* --- The page band. The horizontal inset belongs to the shell (see variables.css,
+       --content-shell-gutter), so a band never sets its own; that is what put the heading, the
+       primary datasets and the connected datasets on three different left edges. --- */
+
+.project-datasets-page-head {
+  padding: var(--spacing-05) 0 0 0;
+}
+
+/* --- The primary datasets band --- */
+
+.project-datasets-primary {
+  /* A: the page title to the first band it introduces. */
+  margin-top: var(--spacing-05);
+  padding: 0;
+}
+
+/* C: band to band, the loosest of the three so the bands read as separate. */
+.main.project.datasets .datasets-content {
+  margin-top: var(--spacing-07);
+}
+
+.project-datasets-primary-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-04);
+}
+
+/* --- The headline figures --- */
+
+/* The project's scale, in two grain groups rather than four equal figures in one line.
+   
+   The single line mixed grains: "3 datasets" sat beside "20 measurements", "3 with primary data" and
+   "17 missing data", with nothing saying which figure belonged to which grain. A reader therefore
+   read "17 missing data" as 17 DATASETS missing data, directly contradicting the 3 beside it. The
+   groups name their grain and their figures are qualified relative to it. */
+.project-datasets-rollup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  /* The groups need to be visibly separate, not merely adjacent. At the previous gap the two group
+     labels sat close enough to read as one line of headings, and the figures underneath flowed
+     together into a single run of five numbers -- so the grouping that was added to fix the grain
+     confusion was itself hard to perceive. */
+  /* No gap: the separation is carried by the rule plus symmetric padding, so the space either side
+     of the divider is equal. A flex gap on top of a padded left edge made the right-hand group sit
+     twice as far from the rule as the left-hand one. */
+  gap: 0;
+  border-top: 1px solid var(--border-color-light);
+  border-bottom: 1px solid var(--border-color-light);
+  padding-block: var(--spacing-03);
+}
+
+.project-datasets-rollup-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-xs);
+  padding-right: var(--lumo-space-xl);
+}
+
+.project-datasets-rollup-group:last-child {
+  padding-right: 0;
+}
+
+/* A rule between the grains. The gap alone was not enough: with two short groups the eye reads
+   across rather than grouping, and a vertical edge is what stops it. */
+.project-datasets-rollup-group + .project-datasets-rollup-group {
+  border-left: 1px solid var(--border-color-light);
+  padding-left: var(--lumo-space-xl);
+}
+
+/* The grain. Small and quiet: it labels the group, it is not itself a figure. */
+.project-datasets-rollup-group-label {
+  font-size: var(--lumo-font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--secondary-text-color);
+}
+
+.project-datasets-rollup-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--lumo-space-m);
+}
+
+/* The figures inside one group stay closer together than the groups are to each other, so proximity
+   does the grouping work as well as the rule does. */
+.project-datasets-rollup-group .project-datasets-stat + .project-datasets-stat {
+  border-left: 1px solid var(--border-color-light);
+  padding-left: var(--lumo-space-m);
+}
+
+.project-datasets-stat {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-02);
+}
+
+.project-datasets-stat-value {
+  font-size: var(--lumo-font-size-xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.1;
+  color: var(--heading-text-color);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The qualifier is what binds a figure to its grain ("20 total", "17 missing"), so it is not
+   decorative and takes body ink rather than the muted label colour. */
+.project-datasets-stat-label {
+  font-size: var(--lumo-font-size-s);
+  color: var(--body-text-color);
+}
+
+/* A figure whose counting rule needs stating carries a tooltip; the dotted underline is the only
+   hint that one is there, since the label itself stays short. */
+.project-datasets-stat--described {
+  cursor: help;
+}
+
+.project-datasets-stat--described .project-datasets-stat-label {
+  text-decoration: underline dotted var(--border-color-light);
+  text-underline-offset: 3px;
+}
+
+.project-datasets-stat--positive .project-datasets-stat-value {
+  color: var(--success-text-color);
+}
+
+.project-datasets-stat--attention .project-datasets-stat-value {
+  color: var(--info-text-color);
+}
+
+.project-datasets-stat--muted .project-datasets-stat-value {
+  color: var(--secondary-text-color);
+}
+
+/* --- One row per primary dataset --- */
+
+/* ONE grid for the whole table, and every row is display: contents.
+
+   The rows used to be their own grids. Each then resolved its own tracks, so a `max-content` column
+   was as wide as THAT row's longest value: the header's "Omics domain" is wider than "Genomics", so
+   the header row laid its columns out differently from every data row and nothing lined up. Mixing
+   `max-content` and `fr` makes it worse, because the fr tracks absorb whatever the max-content
+   tracks leave -- and that remainder differs per row.
+
+   With a single grid the columns size across ALL rows, which is the only construction in which a
+   header can sit exactly over its values. This is the same defect fixed once in project-progress.css
+   and once in project-experiments.css, and never carried over here. */
+.project-datasets-table {
+  display: grid;
+  /* A closed vocabulary gets max-content: the omics domain has three possible labels and the status
+     two, so reserving room for the longest member is exact rather than a guess. The open-ended
+     columns -- experiment, method, instrument -- take fractional tracks and truncate, because their
+     values are user data of unbounded length. */
+  grid-template-columns:
+      minmax(0, 1.6fr)   /* experiment */
+      max-content        /* omics domain: one of exactly three labels */
+      minmax(0, 1fr)     /* method */
+      minmax(0, 1.3fr)   /* instrument */
+      minmax(0, 0.8fr)   /* measurements */
+      minmax(0, 0.9fr)   /* primary data */
+      minmax(0, 0.7fr)   /* size */
+      max-content        /* status: one of exactly two labels */
+      max-content;       /* the row's data-download action */
+  border: 1px solid var(--border-color-light);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* display: contents -- the row's cells become items of the table's grid, which is what lets the
+   columns size across every row. The row itself carries no box, so it also carries no border,
+   background, cursor or outline; each of those moves to the cells below. */
+.project-datasets-table-row {
+  display: contents;
+}
+
+/* The divider between records, on the cells because the row has no box to draw it with. Applied to
+   every row but the first, so the table's own border is the top edge. */
+.project-datasets-table-row + .project-datasets-table-row .project-datasets-cell {
+  border-top: 1px solid var(--border-color-light);
+}
+
+/* The row is the navigation target, but it has no box, so its affordances are drawn per cell. */
+.project-datasets-table-row--clickable .project-datasets-cell {
+  cursor: pointer;
+}
+
+.project-datasets-table-row--clickable:hover .project-datasets-cell {
+  background: var(--shade-color-5pct);
+}
+
+/* A focus ring cannot be drawn on a display: contents element. The frame is assembled from inset
+   shadows on the cells instead: every cell draws the top and bottom edges and the outer two draw
+   the sides, so the four segments meet and read as one rectangle around the row. */
+.project-datasets-table-row--clickable:focus-visible .project-datasets-cell {
+  box-shadow:
+      inset 0 2px 0 var(--primary-color),
+      inset 0 -2px 0 var(--primary-color);
+}
+
+.project-datasets-table-row--clickable:focus-visible .project-datasets-cell:first-child {
+  box-shadow:
+      inset 0 2px 0 var(--primary-color),
+      inset 0 -2px 0 var(--primary-color),
+      inset 2px 0 0 var(--primary-color);
+}
+
+.project-datasets-table-row--clickable:focus-visible .project-datasets-cell:last-child {
+  box-shadow:
+      inset 0 2px 0 var(--primary-color),
+      inset 0 -2px 0 var(--primary-color),
+      inset -2px 0 0 var(--primary-color);
+}
+
+/* A tag is inline-flex with flex-shrink: 0, so it does not shrink to its cell. Capped here as a
+   backstop: if the vocabulary ever gains a longer label, the pill truncates inside its own cell
+   instead of running into the next column. */
+.project-datasets-cell .tag {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Block, not flex. `text-overflow: ellipsis` only applies to the element that establishes the text
+   flow; inside a flex container the text becomes an anonymous flex item and the ellipsis never
+   renders -- which is why a long instrument ("Thermo Fisher Scientific instruction ...") was cut
+   mid-word with no indication that anything was missing. A block truncates properly. Cells that
+   hold a pill are unaffected: the tag is inline-flex and simply sits on the text baseline. */
+.project-datasets-cell {
+  display: block;
+  min-width: 0;
+  padding: var(--spacing-03);
+  font-size: var(--lumo-font-size-s);
+  line-height: var(--lumo-line-height-s);
+  color: var(--body-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Figures share a right edge down the table, so they can be compared without re-reading the
+   header. The header cell keeps its own alignment via the same modifier. */
+.project-datasets-cell--number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A figure that is not a figure. Muted and italic, the same treatment the project details band
+   gives a fact that was never recorded. */
+.project-datasets-cell--missing {
+  color: var(--secondary-text-color);
+  font-style: italic;
+}
+
+/* Coverage state as a pill: two states that have to be told apart while scanning one column. */
+/* inline-block rather than a block: the cell is a block now (so text can ellipsize), and the pill
+   sits on the text baseline the way it did inside the old flex row. */
+.project-datasets-state {
+  display: inline-block;
+  padding: 0.1rem var(--spacing-03);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: var(--lumo-font-size-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.project-datasets-state--done {
+  color: var(--success-text-color);
+  background: hsla(145, 85%, 25%, 0.08);
+  border-color: hsla(145, 85%, 25%, 0.25);
+}
+
+.project-datasets-state--incomplete {
+  color: var(--info-text-color);
+  background: var(--info-surface);
+  border-color: var(--info-border);
+}
+
+/* The row's download action: always visible.
+   
+   It was revealed on row hover, which hid the page's only download path from anyone who had not
+   already discovered it -- an affordance that only appears once you are looking for it is not an
+   affordance. It is a small tertiary button in its own column, so a visible row of them reads as a
+   tool column rather than as competing with the data. Disabled rows keep the button visible so the
+   column stays aligned and the tooltip can explain why there is nothing to fetch. */
+.project-datasets-download {
+  padding-inline: var(--spacing-02);
+  font-size: var(--lumo-font-size-xs);
+  white-space: nowrap;
+}
+
+/* --- Notes, messages and the empty state --- */
+
+.project-datasets-note {
+  font-size: var(--lumo-font-size-s);
+  line-height: 1.5;
+  color: var(--secondary-text-color);
+}
+
+.project-datasets-message {
+  font-size: var(--lumo-font-size-s);
+  color: var(--secondary-text-color);
+}

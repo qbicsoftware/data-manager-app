@@ -10,8 +10,8 @@
   display: grid;
   grid-template-columns:
     minmax(var(--lumo-space-l), 1fr)
-    minmax(240px, 280px)
-    minmax(0, calc(var(--content-shell-max-width) - 280px))
+    minmax(15rem, 17.5rem)
+    minmax(0, calc(var(--content-shell-max-width) - 17.5rem))
     minmax(var(--lumo-space-l), 1fr);
   grid-template-areas:
     ". groups-overview groups-overview ."

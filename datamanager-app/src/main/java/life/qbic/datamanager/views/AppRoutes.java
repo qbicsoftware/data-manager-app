@@ -60,6 +60,11 @@ public class AppRoutes {
     public static final String PROJECTS = "projects/list";
 
     /**
+     * Path to the project creation wizard.
+     */
+    public static final String PROJECT_CREATION = "projects/create";
+
+    /**
      * Path to the page that shows a selected project's information
      */
     public static final String PROJECT_INFO = "projects/%s/info";
@@ -100,9 +105,19 @@ public class AppRoutes {
     public static final String MEASUREMENT = "projects/%s/measurements/%s";
 
     /**
-     * Path to list the raw data generated within the experiment of a project
+     * Path to list the raw data generated within the experiment of a project.
+     *
+     * @deprecated superseded by {@link #MEASUREMENT_DATASET}; kept only until the redirect from
+     * the retired route is removed.
      */
+    @Deprecated
     public static final String RAWDATA = "projects/%s/experiments/%s/rawdata";
+
+    /**
+     * Path to the experiment's measurement dataset: the registered measurement metadata of the
+     * experiment together with the data produced by it, in one surface.
+     */
+    public static final String MEASUREMENT_DATASET = "projects/%s/experiments/%s/dataset";
 
     /**
      * Path to investigate the properties of an analysis

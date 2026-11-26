@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import life.qbic.projectmanagement.application.query.AssayType;
 import life.qbic.projectmanagement.domain.model.project.Project;
 import life.qbic.projectmanagement.domain.model.project.ProjectId;
 import org.hibernate.annotations.Immutable;
@@ -121,6 +122,22 @@ public class ProjectOverview {
 
   public long ipMeasurementCount() {
     return ipMeasurementCount;
+  }
+
+  /**
+   * Number of measurements of the given assay type in this project.
+   *
+   * <p>Same reason as {@link ExperimentProgress#measurementCount(AssayType)}: consumers ask for a
+   * type instead of re-deriving the NGS/PXP/IP triple.</p>
+   *
+   * @param assayType the technology class to read
+   */
+  public long measurementCount(AssayType assayType) {
+    return switch (assayType) {
+      case GENOMICS -> ngsMeasurementCount;
+      case PROTEOMICS -> pxpMeasurementCount;
+      case IMMUNOPEPTIDOMICS -> ipMeasurementCount;
+    };
   }
 
   public int connectedDatasetCount() {

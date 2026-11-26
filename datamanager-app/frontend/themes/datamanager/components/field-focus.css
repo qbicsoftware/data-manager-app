@@ -1,0 +1,52 @@
+/* One focus treatment for every form field in the application.
+
+   Lumo already rings a field when it is focused with the keyboard ([focus-ring]) but suppresses
+   that ring for pointer focus. The opt-in switch for pointer focus is Lumo's own
+   --lumo-input-field-pointer-focus-visible; setting it here means a clicked field is highlighted
+   exactly like a tabbed-to one, and the ring is described in one place instead of three.
+
+   Previously several call sites each hand-rolled their own box-shadow for this — the
+   inline-editable fields in settings.css, the new-group form in my-groups.css, and the three grid
+   search fields (sample/measurement/raw-data) — with two different ring colours, two different
+   selectors ([focused] vs :focus-within) and three different "focused" fills (unchanged, white,
+   blue tint). Those local rules are gone; this is the single definition, so the project-creation
+   wizard and the account settings page finally show the same affordance.
+
+   The ring is inset so it reads as a border on the filled input, plus a soft outer halo. The inset
+   colour is the solid primary (about 4.3:1 against the input fill) rather than the 50% tint
+   (about 3:1), so it clears the 3:1 non-text contrast floor with room to spare. */
+
+:root {
+  --lumo-input-field-pointer-focus-visible: 1;
+}
+
+/* Only animate when the user has not asked for reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  vaadin-text-field::part(input-field),
+  vaadin-text-area::part(input-field),
+  vaadin-password-field::part(input-field),
+  vaadin-email-field::part(input-field),
+  vaadin-number-field::part(input-field),
+  vaadin-integer-field::part(input-field),
+  vaadin-combo-box::part(input-field),
+  vaadin-multi-select-combo-box::part(input-field),
+  vaadin-select::part(input-field),
+  vaadin-date-picker::part(input-field) {
+    transition: box-shadow 120ms ease;
+  }
+}
+
+vaadin-text-field[focused]::part(input-field),
+vaadin-text-area[focused]::part(input-field),
+vaadin-password-field[focused]::part(input-field),
+vaadin-email-field[focused]::part(input-field),
+vaadin-number-field[focused]::part(input-field),
+vaadin-integer-field[focused]::part(input-field),
+vaadin-combo-box[focused]::part(input-field),
+vaadin-multi-select-combo-box[focused]::part(input-field),
+vaadin-select[focused]::part(input-field),
+vaadin-date-picker[focused]::part(input-field) {
+  box-shadow:
+    inset 0 0 0 2px var(--lumo-primary-color),
+    0 0 0 3px var(--lumo-primary-color-10pct);
+}

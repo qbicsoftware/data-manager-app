@@ -850,7 +850,9 @@ Colors
 }
 
 .dialog-step-icon-arrow {
-  font-size: 12px;
+  /* 0.75rem, not 12px: a px size here would stop following the app's density and render 11% larger
+     than every other glyph in the stepper. */
+  font-size: 0.75rem;
 }
 
 /*endregion*/
@@ -1215,10 +1217,18 @@ Icons
    instead of a harsh full-bleed block, so it reads as its own notice and never
    competes with the Projects | Groups | Settings tabs. */
 #announcements {
-  /* Symmetric gutter margin (incl. bottom): the base layout owns the page's default
-     spacing, so whatever follows (content header / content areas) is always separated
-     from the announcement by the same gap — no component has to add its own top margin. */
-  margin: var(--spacing-04);
+  /* Capped to the content column, like the chrome and the page content. It used to be a near
+     full-bleed card spanning the viewport minus 1rem, which put its left edge about 200px left of
+     the chrome's first item and of everything on the page below it.
+
+     The block margin stays symmetric: the base layout owns the page's default spacing, so whatever
+     follows (content header / content areas) is always separated from the announcement by the same
+     gap, and no component adds a top margin of its own. */
+  box-sizing: border-box;
+  width: 100%;
+  max-width: calc(var(--content-shell-max-width) - 2 * var(--content-shell-gutter));
+  margin-inline: auto;
+  margin-block: var(--spacing-04);
   padding: var(--spacing-03) var(--spacing-04);
   background-color: var(--lumo-base-color);
   color: var(--lumo-contrast-80pct);
@@ -1227,7 +1237,6 @@ Icons
   border-radius: var(--lumo-border-radius-m);
   text-align: left;
   font-size: var(--lumo-font-size-s);
-  box-sizing: border-box;
 }
 
 .announcement {
@@ -1259,6 +1268,16 @@ vaadin-menu-bar-overlay vaadin-context-menu-item[theme~="no-prefix"]::part(check
   width: 0;
   margin: 0;
   padding: 0;
+}
+
+/* The account menu's overlay is attached to the document body rather than to the chrome, but it is
+   part of the chrome and reads at the chrome's type size -- the design's, not the app's density.
+   rem resolves against the root, so the Lumo sizes it consumes have to be restated against its own
+   font size; em is then the unit. See app-shell.css for the same statement about the rows. */
+vaadin-menu-bar-overlay {
+  font-size: calc(1rem / var(--app-density));
+  --lumo-font-size-s: 0.875em;
+  --lumo-font-size-m: 1em;
 }
 
 /* Tighten left padding since there's no prefix now */
@@ -1357,10 +1376,25 @@ Older stuff -
   align-items: center;
 }
 
+/* A section title is the most important text in its band, so it takes the heading colour. It used
+   to take --secondary-text-color, which resolves to --shade-color-50pct (#8d97a4) -- roughly 3:1
+   against white. That is the floor for large text and below it at the sizes actually used, so
+   every section title read as greyed-out rather than as a heading. --heading-text-color exists
+   for exactly this and was previously reached only by the .text-heading-color utility. */
 .section-title {
   font-weight: bold;
-  color: var(--secondary-text-color);
+  color: var(--heading-text-color);
   margin-bottom: 0.5rem;
+}
+
+/* Inside a header, the title's own bottom margin is dropped: SectionHeader already supplies a
+   trailing margin, and the title is a centred flex item in section-header-row. So the margin did
+   not sit under the title where it was meant to -- align-items: center turned it into extra row
+   height with the title shifted up inside it, and the header's margin then added again. The
+   project title ended up roughly 16px above its activity line for no reason. The prototype zeroes
+   the title margin for the same reason (.pt-title { margin: 0 }) and lets the container space it. */
+.section-header .section-title {
+  margin-bottom: 0;
 }
 
 

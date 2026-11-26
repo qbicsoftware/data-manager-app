@@ -349,7 +349,7 @@ public class ConnectDatasetSidebar extends Div {
     // would push the button right of the footer's left alignment.
     selectionCountLabel.getStyle().set("display", "none");
 
-    connectButton = new Button("Connect Selected", VaadinIcon.PLUS_CIRCLE.create());
+    connectButton = new Button("Link selected", VaadinIcon.PLUS_CIRCLE.create());
     connectButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     connectButton.setEnabled(false);
     connectButton.addClickListener(e -> connectSelectedDatasets());
@@ -535,7 +535,7 @@ public class ConnectDatasetSidebar extends Div {
     header.addClassNames(
         "flex-horizontal", "items-center", "gap-s", "flex-shrink-0", "cds-header");
 
-    var sidebarTitle = new Span("Connect Datasets");
+    var sidebarTitle = new Span("Link datasets");
     sidebarTitle.addClassNames("heading-3", "flex-grow");
 
     var closeButton = new Button(VaadinIcon.CLOSE_SMALL.create());
@@ -896,7 +896,7 @@ public class ConnectDatasetSidebar extends Div {
     }
 
     // 2. UI: enter "connecting" state immediately
-    loadingMessage.setText("Connecting datasets...");
+    loadingMessage.setText("Linking datasets...");
     loadingIndicator.getStyle().set("display", "flex");
     setControlsEnabled(false);
     resultsGrid.getDataProvider().refreshAll();

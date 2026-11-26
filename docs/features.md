@@ -604,4 +604,95 @@ _approved, stories will be recorded here individually with their final stable ID
 
 ---
 
-*Last updated: 2026-09-21*
+### FEAT-AUTH-FLOWS
+
+| Field | Value |
+|---|---|
+| **Description** | Login, registration and account recovery as one coherent journey: single-use expiring verification links, one authentication identifier, uniform failure responses, and a password for every account |
+| **PRD Section** | §5 Security & Privacy — Authentication; §Technical Constraints (see conflict note below) |
+| **Requirements** | `AUTH-R-05`, `AUTH-R-06`, `AUTH-R-07`, `AUTH-NFR-03` |
+| **GitHub Feature** | [#1672](https://github.com/qbicsoftware/data-manager-app/issues/1672) |
+| **Status** | 🟡 In Progress (R1 code merged; **two `FEAT-AUTH-FLOWS-03` ACs unmet**) |
+| **Milestone** | [MILESTONE-MFA](https://github.com/qbicsoftware/data-manager-app/milestone/1) — phase M1 |
+
+**Why this Feature exists.** It is phase M1 of `MILESTONE-MFA` and ships **before** the second factor.
+The paths it closes are the ones an attacker uses to bypass a second factor, so hardening the factor
+first would have been theatre. Three defects drove it:
+
+1. `EmailConfirmationLinkSupplier` and `PasswordResetLinkSupplier` derive links from the user's
+   persistent identifier (`users.id`), with no expiry and no single-use. The identifier **is** the
+   credential, and it also appears in ACL records.
+2. `LoginLayout.handle()` confirms an email inside `beforeEnter` — a state change on an unauthenticated
+   GET, consumable by a mail scanner or link prefetcher.
+3. `ResetPasswordMain` reports "User not found" and "User not active", disclosing account existence.
+
+**Delivery is two releases** (decision B5):
+
+- **R1 — the security fix, ships first, revertable on its own:** tokenised links, confirmation off
+  `/login`, tokenised reset, uniform failures, server-side throttling, and the `AUTH-R-07` password
+  migration.
+- **R2 — the consolidation, follows:** one registration form, one password policy, display name no
+  longer a credential, dead state removed.
+
+**Known conflict (unresolved, PO-owned):** PRD §Technical Constraints states *"ORCID OAuth2 integration
+for researcher identity; local password-based authentication as fallback"*. `AUTH-R-07` inverts that
+priority. `docs/prd.md` has not been edited; tracked in
+[#1666](https://github.com/qbicsoftware/data-manager-app/issues/1666).
+
+### Stories
+
+| Story | Title | Requirements | Release | GitHub | Status |
+|---|---|---|---|---|---|
+| `FEAT-AUTH-FLOWS-01` | Confirm an Email Address with a Single-Use Link | `AUTH-R-05`, `AUTH-NFR-01` | R1 | [#1673](https://github.com/qbicsoftware/data-manager-app/issues/1673) | 🟢 Done |
+| `FEAT-AUTH-FLOWS-02` | Reset a Password with an Expiring Single-Use Link | `AUTH-R-05` | R1 | [#1674](https://github.com/qbicsoftware/data-manager-app/issues/1674) | 🟢 Done |
+| `FEAT-AUTH-FLOWS-03` | Sign In Without Revealing Whether an Account Exists | `AUTH-NFR-03` | R1 | [#1675](https://github.com/qbicsoftware/data-manager-app/issues/1675) | 🟡 In Progress — **two ACs unmet**, see below |
+| `FEAT-AUTH-FLOWS-04` | Register Once, with One Password Rule | `AUTH-R-06` | R2 | [#1676](https://github.com/qbicsoftware/data-manager-app/issues/1676) | 🔴 Open |
+| `FEAT-AUTH-FLOWS-05` | Sign In with a Password, Link ORCID Afterwards | `AUTH-R-07` | R1 | [#1677](https://github.com/qbicsoftware/data-manager-app/issues/1677) | 🔴 Open |
+
+#### Status notes (2026-11-12, after the R1 closeout)
+
+**`FEAT-AUTH-FLOWS-01`, `-02` — done.** Single-use tokens, expiry, supersede-on-reissue, explicit
+confirm action, and uniform responses are all implemented and covered by specs. The
+"a mail scanner must not consume the link" criterion is met by rendering a confirm **button** rather
+than acting on retrieval (`ConfirmEmailMain`).
+
+**`FEAT-AUTH-FLOWS-03` — stays open, two of five ACs unmet.** The story is *not* being closed with a
+deferral note; see the reasoning below.
+
+| AC | State |
+|---|---|
+| Unknown address and wrong password look identical | ✅ |
+| No observable timing difference | ✅ (Spring's `mitigateAgainstTimingAttack` already does the one derivation) |
+| **Registration does not disclose an already-registered address** | ⛔ **unmet** — two oracles, both live: `isEmailAvailable` in `UserRegistrationComponent:94` / `UserRegistrationOrcIdComponent:85`, and `UserExistsException` in `UserRegistrationMain:88` / `RegistrationOrcIdMain:105`. Both must change together or the disclosure moves from the field to the submit response |
+| **Throttling does not lock out a spammed victim** | ⛔ **unmet** — account scope only; per-origin needs trusted proxy headers (#1691, `MILESTONE-PROXY`). `getRemoteAddr()` returns the HAProxy address, so an origin bucket today would put every user in one row |
+| A throttled response is indistinguishable | ✅ between registered and unregistered addresses |
+
+**The registration fix is blocked on a decision, not on code.** Two of its three parts are
+implementable now (remove the oracle; add a `REGISTRATION` throttle scope, which does not exist today).
+The third — *"the owner is notified by email instead"* — has **no requirement**: `AUTH-NFR-03`
+constrains disclosure but does not mandate a notification, and the `COMM` domain in
+`docs/requirements.md` is empty. Shipping the oracle removal without it turns a duplicate registration
+into a silent dead end: "check your inbox", no mail, no explanation — the same
+"promises mail it never sends" defect just fixed on the reset form.
+
+Options: **(a)** reuse the existing reset notification (no new requirement, and it is what today's
+message already suggests), **(b)** a dedicated duplicate-registration mail (needs a `COMM-*`
+requirement first), **(c)** no notification (not shippable alone).
+
+**Why it is not closed with a deferral:** this AC was already deferred once, from R1 to R2, on the
+understanding that R2 would fix it. R1 shipped; the AC is still unmet. Closing it again would record a
+security requirement as satisfied when it is not.
+
+**`FEAT-AUTH-FLOWS-05` — not done.** `AUTH-R-07` (every account holds a password) is unimplemented.
+`NO_PASSWORD` stopped ORCID-only accounts from causing a 500, which is a crash fix, not the story:
+they can still neither log in nor set a password. Runbook drafted in `docs/migrations/NEXT.md`;
+open questions on [#1683](https://github.com/qbicsoftware/data-manager-app/issues/1683).
+
+Acceptance criteria live in `docs/requirements.md` (requirements) and in each GitHub story issue. The
+step-by-step plan, decisions A1–D1 and the two-release split are in
+[`docs/plans/MILESTONE-MFA-self-governed-2fa.md`](plans/MILESTONE-MFA-self-governed-2fa.md) §2.
+
+---
+
+*Last updated: 2026-11-12*
+

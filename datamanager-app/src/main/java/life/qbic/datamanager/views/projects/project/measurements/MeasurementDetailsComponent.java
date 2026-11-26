@@ -205,21 +205,21 @@ public class MeasurementDetailsComponent extends PageArea implements Serializabl
     // pager/selection bar of the tab container stay authoritative — so each PaginatedGrid only
     // owns page loading, clamping and the empty state for its tab.
     ngsPaginatedGrid = new PaginatedGrid<>(ngsGrid, this::loadNgsPage,
-        NgsMeasurementLookup.MeasurementInfo::measurementId, "measurement",
+        NgsMeasurementLookup.MeasurementInfo::measurementId, "measurements",
         MeasurementSort.DEFAULT, false, false, false);
     ngsPaginatedGrid.addPageLoadedListener(event -> {
       applySelectionToGrid(ngsGrid, ngsSelection, MeasurementDomain.NGS);
       tabPagination.onPageLoaded(MeasurementDomain.NGS, event.getPage(), event.getTotal());
     });
     pxpPaginatedGrid = new PaginatedGrid<>(pxpGrid, this::loadPxpPage,
-        MeasurementInfo::measurementId, "measurement", MeasurementSort.DEFAULT, false, false,
+        MeasurementInfo::measurementId, "measurements", MeasurementSort.DEFAULT, false, false,
         false);
     pxpPaginatedGrid.addPageLoadedListener(event -> {
       applySelectionToGrid(pxpGrid, pxpSelection, MeasurementDomain.PXP);
       tabPagination.onPageLoaded(MeasurementDomain.PXP, event.getPage(), event.getTotal());
     });
     ipPaginatedGrid = new PaginatedGrid<>(ipGrid, this::loadIpPage,
-        IpMeasurementLookup.MeasurementInfo::measurementId, "measurement",
+        IpMeasurementLookup.MeasurementInfo::measurementId, "measurements",
         MeasurementSort.DEFAULT, false, false, false);
     ipPaginatedGrid.addPageLoadedListener(event -> {
       applySelectionToGrid(ipGrid, ipSelection, MeasurementDomain.IP);

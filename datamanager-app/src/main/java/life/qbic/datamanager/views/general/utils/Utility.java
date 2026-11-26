@@ -1,7 +1,11 @@
 package life.qbic.datamanager.views.general.utils;
 
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 import life.qbic.datamanager.views.general.contact.Contact;
 import life.qbic.projectmanagement.application.authorization.QbicOidcUser;
@@ -27,6 +31,115 @@ public class Utility {
     int maxLength = textArea.getMaxLength();
     int consumedLength = textArea.getValue().length();
     textArea.setHelperText(consumedLength + "/" + maxLength);
+  }
+
+  /**
+   * Size in the unit that keeps the number readable. Decimal units, matching the rest of the app.
+   *
+   * <p>This is only the unit ladder. Whether {@code 0} means "nothing" or "not recorded" is a
+   * reader's question, not a formatter's, so the zero policy stays with the caller: a measurement
+   * carrying data whose size the sync never recorded is indistinguishable from empty data in the
+   * read model (migration trap 4d), and rendering that as "0 B" is the documented failure.</p>
+   */
+  public static String humanReadableSize(long bytes) {
+    if (bytes < 1_000) {
+      return bytes + " B";
+    }
+    if (bytes < 1_000_000) {
+      return "%.1f kB".formatted(bytes / 1_000.0);
+    }
+    if (bytes < 1_000_000_000) {
+      return "%.1f MB".formatted(bytes / 1_000_000.0);
+    }
+    return "%.1f GB".formatted(bytes / 1_000_000_000.0);
+  }
+
+  /**
+   * Makes a plain element operable by pointer and by Enter/Space, so every clickable surface in
+   * the app is keyboard-operable the same way. The caller owns the cursor and hover styling.
+   *
+   * @param element the element to make interactive
+   * @param role    the ARIA role to expose, e.g. {@code "button"} for an action and {@code "link"}
+   *                for a navigation target
+   * @param action  what activation does
+   */
+  public static void activateOnClickAndKeys(Component element, String role, Runnable action) {
+    element.getElement().setAttribute("role", role);
+    element.getElement().setAttribute("tabindex", "0");
+    element.getElement().addEventListener("click", event -> action.run());
+    element.getElement().addEventListener("keydown", event -> {
+      String key = event.getEventData().path("event.key").asText("");
+      if ("Enter".equals(key) || " ".equals(key)) {
+        action.run();
+      }
+    }).addEventData("event.key");
+  }
+
+  /**
+   * Renders the way into a surface as a real anchor.
+   *
+   * <p>A {@code Span} styled to look like a link is the thing this app kept doing: it is not
+   * focusable, cannot be opened in a new tab, is not announced as a link, and invites a click that a
+   * surrounding container handler may or may not honour. A navigation affordance must be an
+   * {@code <a>}.</p>
+   *
+   * <p><b>Why an href and not {@code RouterLink}.</b> A {@code RouterLink} built from
+   * {@code RouteParameters} resolves the target route's template at render time and silently renders
+   * an inert element when the parameters do not bind. Two cards on the project page ended up with
+   * links that looked right and did nothing. An {@code href} built from {@link AppRoutes} is a plain
+   * string that cannot fail to bind -- the same approach the project cards' footer links already
+   * use.</p>
+   *
+   * @param text      the visible label
+   * @param href      an application path, e.g. {@code AppRoutes.ProjectRoutes.SAMPLES.formatted(...)}
+   * @param className the styling class the label would otherwise have carried
+   */
+  public static Anchor textLink(String text, String href, String className) {
+    Anchor link = new Anchor(href, text);
+    if (className != null && !className.isBlank()) {
+      link.addClassName(className);
+    }
+    return link;
+  }
+
+  /**
+   * How much primary data a measurement carries, as one phrase: "1 file · 104.9 MB".
+   *
+   * <p>Shared because two panels render it, and they had already diverged once: both said
+   * "1 files". A measurement carrying a single file is the common case, so the plural was wrong on
+   * the most frequently rendered row.</p>
+   *
+   * @param files the number of files, {@code null} treated as zero
+   * @param bytes the size in bytes, {@code null} or zero when the sync never recorded it
+   */
+  public static String primaryDataLabel(Long files, Long bytes) {
+    long count = files == null ? 0L : files;
+    return (count == 1 ? "1 file" : count + " files") + " · " + humanReadableSize(
+        bytes == null ? 0L : bytes);
+  }
+
+  /**
+   * How long ago something happened, at the coarsest resolution that still says something useful:
+   * hours while it is under a day, days after that.
+   *
+   * <p>Shared rather than per view, because two surfaces on one page describing recency by
+   * different rules is exactly the kind of inconsistency a reader notices without being able to
+   * name it.</p>
+   */
+  public static String relativeTime(Instant instant) {
+    if (instant == null) {
+      return "unknown";
+    }
+    Duration since = Duration.between(instant, Instant.now());
+    if (since.toHours() < 1) {
+      return "just now";
+    }
+    if (since.toDays() < 1) {
+      long hours = since.toHours();
+      return hours + (hours == 1 ? " hour ago" : " hours ago");
+    }
+    long days = since.toDays();
+    return days + (days == 1 ? " day ago" : " days ago");
   }
 
   public static Optional<Contact> tryToLoadFromPrincipal() {

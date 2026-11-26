@@ -41,6 +41,17 @@ public enum DateTimeFormat {
   SIMPLE_DATE_SHORT,
 
   /**
+   * A compact date prefixed with the abbreviated weekday, e.g. {@code Wed, 11 Feb 2026}.
+   * <p>
+   * Format: {@code <weekday_abbreviation>, <day> <month_name> <year>}
+   * <p>
+   * Used where a bare calendar date leaves the reader counting: a weekday lets a person relate a
+   * record to the working week they remember ("that was the Wednesday we ran the samples") far more
+   * reliably than a day-of-month does.
+   */
+  WEEKDAY_DATE_SHORT,
+
+  /**
    * A simple to read, textual date-time representation. E.g.
    * {@code Wednesday, 11 February 2026 11:12:10}
    * <p>
@@ -92,6 +103,7 @@ public enum DateTimeFormat {
           "yyyy-MM-dd HH:mm").withZone(zoneId);
       case SIMPLE_DATE -> DateTimeFormatter.ofPattern("EEEE, dd LLLL yyyy").withZone(zoneId);
       case SIMPLE_DATE_SHORT -> DateTimeFormatter.ofPattern("d MMM yyyy").withZone(zoneId);
+      case WEEKDAY_DATE_SHORT -> DateTimeFormatter.ofPattern("EEE, d MMM yyyy").withZone(zoneId);
       case SIMPLE_DATE_TIME -> DateTimeFormatter.ofPattern("EEEE, dd LLLL yyyy HH:mm:ss").withZone(
           zoneId);
       case SIMPLE_DATE_TIME_SHORT -> DateTimeFormatter.ofPattern("d MMM yyyy HH:mm").withZone(
@@ -112,6 +124,9 @@ public enum DateTimeFormat {
     return switch (format) {
       case SIMPLE_DATE -> "%W, %d %M %Y";
       case SIMPLE_DATE_SHORT -> "%d %M %Y";
+      // %a is the abbreviated weekday name, so a database search for a displayed
+      // "Wed, 11 Feb 2026" matches the rendered value.
+      case WEEKDAY_DATE_SHORT -> "%a, %d %M %Y";
       case SIMPLE_DATE_TIME -> "%W, %d %M %Y %T";
       case SIMPLE_DATE_TIME_SHORT -> "%d %M %Y %H:%i";
       case ISO_LOCAL_DATE -> "%Y-%m-%d";

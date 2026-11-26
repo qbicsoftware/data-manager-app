@@ -130,28 +130,54 @@ public class MeasurementLookup implements NgsMeasurementLookup, PxpMeasurementLo
     return (int) pxpMeasurementJpaRepository.count(filter.asSpecification());
   }
 
-  private static NgsMeasurementJpaRepository.@NonNull NgsMeasurementFilter mapToDatabaseFilter(
+  static NgsMeasurementJpaRepository.@NonNull NgsMeasurementFilter mapToDatabaseFilter(
       NgsMeasurementLookup.@NonNull MeasurementFilter measurementFilter) {
-    return NgsMeasurementFilter.forExperiment(measurementFilter.experimentId())
+    var filter = NgsMeasurementFilter.forExperiment(measurementFilter.experimentId())
         .anyContaining(measurementFilter.searchTerm())
         .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis(),
             measurementFilter.dateTimeFormat());
+    // The sample constraint was previously dropped here, so every lookup fetched all measurements
+    // of the experiment and the caller had to filter afterwards (findMeasuredSampleIds only stayed
+    // correct because it re-applied retainAll). Forward it so the database does the work.
+    if (!measurementFilter.includedSamples().isEmpty()) {
+      filter.includingSamples(measurementFilter.includedSamples());
+    }
+    if (!measurementFilter.excludedSamples().isEmpty()) {
+      filter.excludingSamples(measurementFilter.excludedSamples());
+    }
+    return filter;
   }
 
-  private static @NonNull PxpMeasurementFilter mapToDatabaseFilter(
+  static @NonNull PxpMeasurementFilter mapToDatabaseFilter(
       PxpMeasurementLookup.@NonNull MeasurementFilter measurementFilter) {
-    return PxpMeasurementFilter.forExperiment(measurementFilter.experimentId())
+    var filter = PxpMeasurementFilter.forExperiment(measurementFilter.experimentId())
         .anyContaining(measurementFilter.searchTerm())
         .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis(),
             measurementFilter.dateTimeFormat());
+    // See the NGS variant: the sample constraint used to be dropped here.
+    if (!measurementFilter.includedSamples().isEmpty()) {
+      filter.includingSamples(measurementFilter.includedSamples());
+    }
+    if (!measurementFilter.excludedSamples().isEmpty()) {
+      filter.excludingSamples(measurementFilter.excludedSamples());
+    }
+    return filter;
   }
 
-  private static @NonNull IpMeasurementFilter mapToDatabaseFilter(
+  static @NonNull IpMeasurementFilter mapToDatabaseFilter(
       IpMeasurementLookup.@NonNull MeasurementFilter measurementFilter) {
-    return IpMeasurementFilter.forExperiment(measurementFilter.experimentId())
+    var filter = IpMeasurementFilter.forExperiment(measurementFilter.experimentId())
         .anyContaining(measurementFilter.searchTerm())
         .atClientTimeOffset(measurementFilter.timeZoneOffsetMillis(),
             measurementFilter.dateTimeFormat());
+    // See the NGS variant: the sample constraint used to be dropped here.
+    if (!measurementFilter.includedSamples().isEmpty()) {
+      filter.includingSamples(measurementFilter.includedSamples());
+    }
+    if (!measurementFilter.excludedSamples().isEmpty()) {
+      filter.excludingSamples(measurementFilter.excludedSamples());
+    }
+    return filter;
   }
 
   private NgsMeasurementLookup.MeasurementInfo toApiObject(String projectId,

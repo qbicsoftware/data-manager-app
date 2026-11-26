@@ -35,15 +35,16 @@ For the migration documentation structure, see [`README.md`](README.md).
 
 ## Summary of schema changes in this release
 
-> *Append a row here whenever a new incremental script is added. Numbering is
-> sequential within the release and determines apply order.*
-
 | # | Script | Description | Risk |
 |---|---|---|---|
 | — | *(no schema changes yet)* | v1.20.5 added no tables, columns, indexes or views; its guide is [`released/v1.20.5.md`](released/v1.20.5.md). | — |
 
-Each row links to its incremental script. The sections below expand each entry
-with apply / verify / rollback detail.
+**Already released, not pending.** `user_verification_token` (`auth-flow-hardening.sql`) and
+`auth_attempt` (`auth-attempt-throttling.sql`) shipped with v1.20.4, together with the JobRunr 9.0.x
+bundled migration. Their apply / verify / rollback detail lives in
+[`released/v1.20.4.md`](released/v1.20.4.md) and is **not** repeated here — a duplicate copy would
+drift. The scripts remain in `sql/migrations/` because they are still part of the schema a fresh
+install needs; see [`sql/migrations/README.md`](../sql/migrations/README.md) for the numbering.
 
 ---
 

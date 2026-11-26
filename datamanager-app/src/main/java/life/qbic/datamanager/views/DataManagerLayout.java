@@ -100,9 +100,8 @@ public class DataManagerLayout extends AppLayout implements RouterLayout {
   /**
    * While Vaadin drawer states are persistent within the views of an individual layout
    * but not between Layouts resetting to the default state independent if a drawer was opened previously or not.
-   * This method persists the drawer stages of all layouts which inherit from the {@link DataManagerLayout}
-   * {@link life.qbic.datamanager.views.projects.project.ProjectMainLayout},
-   * {@link life.qbic.datamanager.views.projects.project.experiments.ExperimentMainLayout}
+   * This method persists the drawer stages of all layouts which inherit from the {@link DataManagerLayout}.
+   * {@link life.qbic.datamanager.views.projects.project.ProjectMainLayout} no longer renders a drawer.
    */
   public void persistDrawerStateBetweenLayouts() {
     Boolean wasOpen = (Boolean) VaadinSession.getCurrent()

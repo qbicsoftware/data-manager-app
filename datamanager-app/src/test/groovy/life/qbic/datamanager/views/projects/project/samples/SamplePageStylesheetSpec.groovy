@@ -1,0 +1,234 @@
+package life.qbic.datamanager.views.projects.project.samples
+
+import spock.lang.Specification
+
+import java.util.regex.Pattern
+
+/**
+ * Guards the sample page's custom properties against the failure mode that shipped the first
+ * version of this rework: a {@code var()} that referenced a token nobody ever defined.
+ *
+ * <p>An undefined custom property is not a syntax error. When it is used where a value is required
+ * -- most sharply as a grid track -- the whole declaration becomes invalid at computed-value time
+ * and is dropped, so {@code grid-template-columns: minmax(0, 1fr) var(--missing)} silently collapses
+ * to a single column. The compiler is happy, the unit tests are happy, and the layout is wrong only
+ * on screen. That is precisely how the detail panel ended up stacked under the grid instead of
+ * beside it.</p>
+ *
+ * <p>This spec reads the stylesheets as text and cross-checks every custom property a sample-page
+ * rule consumes against the properties the theme defines, including the ones that come from Lumo
+ * rather than from this repository.</p>
+ */
+class SamplePageStylesheetSpec extends Specification {
+
+    private static final String THEME_PATH = "frontend/themes/datamanager/components"
+
+    private static final String SAMPLE_PAGE_CSS = "sample-page.css"
+
+    private static final Pattern VAR_USE = Pattern.compile(/var\(\s*(--[a-zA-Z0-9-]+)/)
+
+    /**
+     * Matches a {@code ::part()} pseudo-element that is trailed by a descendant selector, which is
+     * invalid CSS. After the closing parenthesis only a pseudo-class/pseudo-element ({@code :}), a
+     * comma or the declaration block ({@code \{}) may follow -- anything else after whitespace is a
+     * descendant (or child) combinator, and both browsers and lightningcss drop the rule.
+     */
+    private static final Pattern PART_TRAILED_BY_SELECTOR =
+            Pattern.compile(/::part\([^)]*\)\s+[^,{}\s]/)
+
+    private static final Pattern COMMENT = Pattern.compile(/(?s)\/\*.*?\*\//)
+
+    /** A whole CSS rule: selector list, then the declaration block. */
+    private static final Pattern CSS_RULE = Pattern.compile(/[^{}]+\{[^{}]*\}/)
+
+    /**
+     * Resolves the theme directory whether the spec runs from the repository root or from the
+     * module directory, mirroring how {@link life.qbic.datamanager.views.demo.PrototypeIsolationSpec}
+     * locates its sources.
+     */
+    private static File themeDir() {
+        def candidates = [new File(THEME_PATH), new File("datamanager-app/" + THEME_PATH)]
+        def found = candidates.find { it.isDirectory() }
+        assert found != null: "theme directory not found; tried ${candidates*.path}"
+        return found
+    }
+
+    def "every custom property the sample page uses is defined somewhere in the theme"() {
+        given: "the sample page stylesheet"
+        def samplePage = new File(themeDir(), SAMPLE_PAGE_CSS)
+        assert samplePage.exists()
+
+        and: "every property defined by the theme's own stylesheets"
+        def defined = new HashSet<String>()
+        themeDir().listFiles({ f -> f.name.endsWith(".css") } as FileFilter).each { f ->
+            def matcher = Pattern.compile(/(--[a-zA-Z0-9-]+)\s*:/).matcher(f.text)
+            while (matcher.find()) {
+                defined.add(matcher.group(1))
+            }
+        }
+
+        when: "the properties the sample page consumes are collected"
+        def used = new TreeSet<String>()
+        def matcher = VAR_USE.matcher(samplePage.text)
+        while (matcher.find()) {
+            used.add(matcher.group(1))
+        }
+
+        then: "the scan is not vacuous"
+        used.size() > 5
+
+        and: "each one is either defined in the theme or a Lumo built-in"
+        // Lumo defines its own custom properties in the framework, not in this repository, so a
+        // `--lumo-*` reference cannot be resolved from these files. Everything else must resolve
+        // here, because a theme-local token that is used but never defined is always a bug.
+        def unresolved = used.findAll { name ->
+            !defined.contains(name) && !name.startsWith("--lumo-")
+        }
+
+        unresolved.isEmpty()
+    }
+
+    def "the detail panel width is defined, since it is used as a grid track"() {
+        given: "the sample page stylesheet"
+        def css = new File(themeDir(), SAMPLE_PAGE_CSS).text
+
+        expect: "the token backing the master-detail column exists"
+        // This is the specific regression: the two-column layout depends entirely on this value
+        // resolving. If it is removed, the panel silently stacks under the grid.
+        css.contains("--sample-detail-panel-width:")
+
+        and: "and it is actually consumed by the two-column rule"
+        css.contains("var(--sample-detail-panel-width)")
+    }
+
+    def "the sample page stylesheet is imported so its rules are not dead code"() {        given: "the aggregate stylesheet that the theme actually loads"
+        def custom = new File(themeDir(), "custom.css").text
+
+        expect: "the sample page is imported exactly once"
+        def imports = custom.readLines().findAll { it.contains(SAMPLE_PAGE_CSS) }
+        imports.size() == 1
+    }
+
+    /**
+     * Guards a failure mode that reached a developer's machine as a broken build: a rule written as
+     * {@code vaadin-grid::part(body-cell) .sample-details-cell} is invalid CSS. The compiler and the
+     * unit tests are indifferent to it, but the production frontend build runs the stylesheet
+     * through lightningcss, which rejects it and fails the whole {@code mvn package} -- so the
+     * damage lands only on a full build, which is precisely the build that is easiest to skip while
+     * iterating.
+     *
+     * <p>The tell is structural, so it can be checked without a CSS parser: after a {@code ::part()}
+     * pseudo-element only a pseudo-class, pseudo-element, comma or block may follow. Cell content is
+     * styled by descendant selectors on the grid instead, because it is light DOM.</p>
+     */
+    def "no theme rule trails a ::part() pseudo-element with a descendant selector"() {
+        given: "every theme stylesheet, with comments removed"
+        // Comments are stripped first: several of them quote the offending shape while explaining
+        // it, and prose is not a selector.
+        def offenders = []
+        themeDir().listFiles({ f -> f.name.endsWith(".css") } as FileFilter).each { f ->
+            // Comments are blanked out rather than removed: a comment quotes the offending shape
+            // verbatim while explaining it, but deleting it outright would shift line numbers and
+            // send the reader to the wrong place. Replacing every non-newline character with a
+            // space keeps the text the same length and the line numbering intact.
+            def code = COMMENT.matcher(f.text).replaceAll { m ->
+                m.group().replaceAll(/[^\n]/, " ")
+            }
+            def lines = code.readLines()
+            def matcher = PART_TRAILED_BY_SELECTOR.matcher(code)
+            while (matcher.find()) {
+                def line = code.substring(0, matcher.start()).count("\n") + 1
+                offenders.add("${f.name}:${line}: ${lines[line - 1].trim()}")
+            }
+        }
+
+        expect: "no rule is invalid this way, since it would break the production frontend build"
+        offenders.isEmpty()
+    }
+
+    /**
+     * Guards the readability of the page's status lines.
+     *
+     * <p>Both were written with {@code --secondary-text-color}, which resolves to
+     * {@code --shade-color-50pct} ({@code #8d97a4}): 2.96:1 against the page background, below the
+     * 4.5:1 WCAG AA floor for normal text. The information was present and correct, but barely
+     * legible. {@code --body-text-color} is {@code #263446}, 12.64:1.</p>
+     *
+     * <p>This is deliberately not a claim that the token is wrong everywhere -- it is used in 149
+     * places across the theme, which is a design-system decision, not this spec's business. It only
+     * asserts that text the user has to read <em>on this page</em> does not rely on it.</p>
+     */
+    def "the sample page's status lines use readable ink, not the 50 percent shade"() {
+        given: "the sample page stylesheet, with comments blanked"
+        def code = COMMENT.matcher(new File(themeDir(), SAMPLE_PAGE_CSS).text).replaceAll { m ->
+            m.group().replaceAll(/[^\n]/, " ")
+        }
+
+        when: "the rules for the two status lines are collected"
+        def wanted = ["sample-result-summary", "sample-status-line"]
+        def rules = [:]
+        def matcher = CSS_RULE.matcher(code)
+        while (matcher.find()) {
+            def rule = matcher.group()
+            def selector = rule.substring(0, rule.indexOf('{')).replaceAll(/[{}\n]/, " ")
+            // Split the selector into class tokens so a match is an exact class name rather than a
+            // prefix of a longer one (a contains() check would also accept "...-line-extra").
+            def classNames = selector.split(/[\s,]+/).findAll { it.startsWith(".") }
+                .collect { it.substring(1) }
+            wanted.each { name ->
+                if (classNames.contains(name)) {
+                    rules[name] = rule
+                }
+            }
+        }
+
+        then: "both rules are found, so the check is not vacuous"
+        rules.keySet().containsAll(wanted)
+
+        and: "neither relies on the token that fails the contrast floor"
+        rules.each { name, rule ->
+            assert !rule.contains("var(--secondary-text-color)"):
+                "${name} uses --secondary-text-color (2.96:1, fails WCAG AA)"
+            assert rule.contains("var(--body-text-color)"):
+                "${name} should use --body-text-color (12.64:1)"
+        }
+    }
+
+    /**
+     * The grid rows are a navigation surface -- clicking anywhere on one opens its record -- so the
+     * browser sees a slightly imprecise click as a click-and-drag and selects the text underneath.
+     * That smears a blue highlight across several rows and looks like a rendering fault. The grid
+     * only suppresses text selection while reordering, resizing or range-selecting, so the resting
+     * state has to opt out itself.
+     *
+     * <p>The failure is invisible to every other check: the CSS is valid, the build passes and the
+     * layout is right. It only shows up when a human drags slightly while clicking, which is why it
+     * is pinned here rather than left to review.</p>
+     */
+    def "grid cell text cannot be selected, since row clicks are for opening records"() {
+        given: "the sample page stylesheet, with comments blanked"
+        def code = COMMENT.matcher(new File(themeDir(), SAMPLE_PAGE_CSS).text).replaceAll { m ->
+            m.group().replaceAll(/[^\n]/, " ")
+        }
+
+        expect: "the cell part turns text selection off"
+        // `user-select` inherits, so the cell part covers the slotted text; the extra
+        // `vaadin-grid-cell-content` selector is belt-and-braces for the slotted element itself.
+        def declarations = code.readLines().findAll { it.contains("user-select: none") }
+        declarations.size() == 1
+
+        and: "the rule doing it targets the grid's cells"
+        // Read the whole rule, not just the line with the declaration: the selector may sit on a
+        // separate line from the property.
+        def rules = []
+        def ruleMatcher = CSS_RULE.matcher(code)
+        while (ruleMatcher.find()) {
+            if (ruleMatcher.group().contains("user-select: none")) {
+                rules.add(ruleMatcher.group())
+            }
+        }
+        rules.size() == 1
+        rules.first().contains("vaadin-grid::part(body-cell)")
+        rules.first().contains("user-select: none")
+    }
+}
