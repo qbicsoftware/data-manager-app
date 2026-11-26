@@ -110,6 +110,17 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
 
   private MfaPendingLogin pending;
 
+  /**
+   * Whether the controls are currently disabled because of a block.
+   *
+   * <p>Tracked explicitly because this view is {@code @UIScope} — one instance per UI, reused across
+   * navigations — so the fields cannot simply be disabled and forgotten. The blocked state belongs to
+   * an account, and the account behind this view changes when the visitor chooses "Use a different
+   * account"; a one-way disable then left the next account staring at dead fields (see
+   * {@link #applyBlockState}).</p>
+   */
+  private boolean blocked;
+
   public SecondFactorView(SecondFactorVerificationService verificationService,
       RecoveryCodeService recoveryCodeService, MfaSessionCompletion sessionCompletion,
       MfaReenrolmentService reenrolmentService,
@@ -278,8 +289,8 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
    * @param recovery {@code true} for the recovery-code mode
    */
   private void showRecoveryMode(boolean recovery) {
-    if (!verifyRecovery.isEnabled() && !verify.isEnabled()) {
-      // Blocked. Switching mode would hide the notice and present a disabled field with no reason.
+    if (blocked) {
+      // Switching mode would hide the notice and present a disabled field with no reason.
       return;
     }
     recoverySection.setVisible(recovery);
@@ -382,13 +393,38 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
   private void showThrottledNotice(Duration remaining) {
     error.setText(throttledMessage(remaining));
     error.setVisible(true);
-    code.setEnabled(false);
-    verify.setEnabled(false);
-    recoveryCode.setEnabled(false);
-    verifyRecovery.setEnabled(false);
+    applyBlockState(true);
+  }
+
+  /**
+   * Sets the controls to the blocked or the usable state. Always a decision, never a one-way switch.
+   *
+   * <p>The view outlives the account: it is {@code @UIScope}, so the same instance is reused when the
+   * visitor leaves for another account and comes back. Disabling the fields without ever re-enabling
+   * them meant account A's block followed the visitor to account B — who had done nothing, had an
+   * empty bucket, and could still not type a code. The throttle was right; the page never asked
+   * again.</p>
+   *
+   * <p>A block is per <b>account</b> here, not per client, and that is deliberate: reaching this page
+   * requires a verified password for a specific account, so the budget belongs to that account. "It
+   * is the same browser" would make one account's guesses lock every account used from that browser —
+   * the denial of service the throttle's Rule 3 exists to prevent.</p>
+   *
+   * @param blockedNow {@code true} to disable the controls, {@code false} to restore them
+   */
+  private void applyBlockState(boolean blockedNow) {
+    blocked = blockedNow;
+    code.setEnabled(!blockedNow);
+    verify.setEnabled(!blockedNow);
+    recoveryCode.setEnabled(!blockedNow);
+    verifyRecovery.setEnabled(!blockedNow);
     // The mode toggle would swap the fields and clear the notice, leaving a disabled recovery field
-    // with no explanation. Switching inputs cannot help: the throttle is per account, not per input.
-    useRecovery.setEnabled(false);
+    // with no explanation. Switching inputs cannot help: the budget is per account, not per input.
+    useRecovery.setEnabled(!blockedNow);
+    if (!blockedNow) {
+      error.setVisible(false);
+      error.setText("");
+    }
   }
 
   /**
@@ -402,8 +438,14 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     if (pending == null || throttle == null) {
       return;
     }
-    throttle.remainingBlock(AuthAttemptThrottle.Scope.SECOND_FACTOR, pending.userId(), Instant.now())
-        .ifPresent(this::showThrottledNotice);
+    var remaining = throttle.remainingBlock(AuthAttemptThrottle.Scope.SECOND_FACTOR,
+        pending.userId(), Instant.now());
+    if (remaining.isPresent()) {
+      showThrottledNotice(remaining.get());
+    } else {
+      // Not blocked — for THIS account. Clear any state left over from the previous one.
+      applyBlockState(false);
+    }
   }
 
   /**
