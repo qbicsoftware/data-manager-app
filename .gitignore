@@ -78,5 +78,19 @@ error-screenshots/
 */src/main/bundles/
 types.d.ts
 
+# dependency vulnerability scan artifacts (local runs of
+# scripts/security/spring-advisories.py and the scan workflow)
+/grype.json
+/grype.sarif
+/grype.raw.sarif
+/spring-findings.json
+/spring.sarif
+/dependency-vulnerability-report.md
+/datamanager-sbom.json
+target/datamanager-sbom.json
+
+# python bytecode from scripts/security
+__pycache__/
+*.pyc
 # collation repair (sql/repair) writes a foreign-key backup next to where it is run
 collation-repair-*-fk-backup.sql
