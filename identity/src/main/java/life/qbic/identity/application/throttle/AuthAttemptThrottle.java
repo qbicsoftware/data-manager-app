@@ -644,6 +644,64 @@ public class AuthAttemptThrottle {
     return doIsThrottled(scope, identifier, origin, now);
   }
 
+  /**
+   * <b>How long until this identifier may try again, if it is currently blocked.</b>
+   *
+   * <p>For rendering a blocked state on page load. A refresh is not an attempt, and the page must be
+   * able to say so without becoming one: this method only {@code peek}s, so calling it on every render
+   * leaves the counter and the block exactly as it found them. An earlier version of the challenge
+   * only knew it was blocked <em>after</em> a submission, so a refresh rendered a clean form and the
+   * user immediately tried again — not a security problem (the block still held), but a page that
+   * lies about its own state.</p>
+   *
+   * <p>Account scope only, matching the second-factor flow: this is used where the caller is already
+   * identified by a verified password, and no origin bucket exists for the flow. Use the origin-aware
+   * overload where one does.</p>
+   *
+   * @param scope      the flow
+   * @param identifier the account
+   * @param now        the instant to evaluate against
+   * @return the time left in the block, or empty when the identifier is not blocked
+   */
+  @Transactional(readOnly = true)
+  public Optional<Duration> remainingBlock(Scope scope, String identifier, Instant now) {
+    return doRemainingBlock(scope, identifier, ClientOrigin.unknown(), now);
+  }
+
+  /** The read path for {@link #remainingBlock}; never writes. See {@link #doRecordAndReport}. */
+  private Optional<Duration> doRemainingBlock(Scope scope, String identifier, ClientOrigin origin,
+      Instant now) {
+    requireNonNull(scope, "scope must not be null");
+    requireNonNull(origin, "origin must not be null");
+    requireNonNull(now, "now must not be null");
+    if (identifier == null || identifier.isBlank()) {
+      return Optional.empty();
+    }
+    if (!doIsThrottled(scope, identifier, origin, now)) {
+      return Optional.empty();
+    }
+    // Blocked by the combined rule. Report the block that caused it, which is the account bucket's
+    // when this flow has no origin bucket (second factor), and the later of the two otherwise.
+    AuthAttemptCounter.Counter account = counter.peek(scope.name(), attemptKey(scope, identifier));
+    Instant accountUntil = isBlocked(account, now) ? account.blockedUntil() : null;
+    Instant originUntil = peekOrigin(scope, origin)
+        .filter(state -> isBlocked(state, now))
+        .map(AuthAttemptCounter.Counter::blockedUntil)
+        .orElse(null);
+    Instant until = latest(accountUntil, originUntil);
+    return until == null ? Optional.empty() : Optional.of(Duration.between(now, until));
+  }
+
+  private static Instant latest(Instant first, Instant second) {
+    if (first == null) {
+      return second;
+    }
+    if (second == null) {
+      return first;
+    }
+    return first.isAfter(second) ? first : second;
+  }
+
   /** The read path, without a transaction annotation. See {@link #doRecordAndReport} for why. */
   private boolean doIsThrottled(Scope scope, String identifier, ClientOrigin origin, Instant now) {
     requireNonNull(scope, "scope must not be null");

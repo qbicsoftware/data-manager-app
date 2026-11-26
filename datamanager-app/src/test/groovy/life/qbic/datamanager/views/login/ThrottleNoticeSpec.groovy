@@ -24,36 +24,51 @@ class ThrottleNoticeSpec extends Specification {
 
   // ---------------------------------------------------------------- the sentence
 
-  def "the notice says what happened and how long it lasts"() {
+  def "the notice is one short sentence in the shape a person would say it"() {
     given:
     def message = SecondFactorView.throttledMessage(Duration.ofMinutes(15))
 
-    expect: "a rate limit stated as a rate limit"
-    message.toLowerCase().contains("too many attempts")
+    expect: "the exact wording, kept short on purpose"
+    message == "Too many failed attempts. You can try again in 15 minutes."
 
-    and: "a duration a person can read, not an ISO-8601 token or a raw second count"
+    and: "it is short enough to read at a glance"
+    message.length() <= 70
+    message.count(".") <= 3
+  }
+
+  def "the notice states the wait in a unit a person reads, not ISO-8601 or raw seconds"() {
+    given:
+    def message = SecondFactorView.throttledMessage(Duration.ofMinutes(15))
+
+    expect:
     message.contains("15 minutes")
     !message.contains("PT")
     !message.contains("900")
   }
 
-  def "the notice says the account is not permanently locked out"() {
+  def "the notice does not blame the code or the authenticator"() {
     given:
     def message = SecondFactorView.throttledMessage(Duration.ofMinutes(15)).toLowerCase()
 
-    expect: "the two things a worried user needs to hear"
-    message.contains("still work")
-    message.contains("try again")
-  }
-
-  def "the notice does not imply the credentials were wrong"() {
-    given:
-    def message = SecondFactorView.throttledMessage(Duration.ofMinutes(15)).toLowerCase()
-
-    expect: "the authenticator is not blamed for a limit the account hit"
+    expect: "the limit was hit by the account, not by a bad code"
     !message.contains("invalid code")
     !message.contains("not accepted")
     !message.contains("wrong code")
+    !message.contains("authenticator app")
+  }
+
+  def "a short remaining block still reads as a wait, never as zero"() {
+    expect: "a user who waited 14 minutes sees 'in 1 minute', not 'in 0 minutes'"
+    SecondFactorView.throttledMessage(Duration.ofMinutes(1))
+        == "Too many failed attempts. You can try again in 1 minute."
+  }
+
+  // ---------------------------------------------------------------- refresh must not look like a reset
+
+  def "the remaining time is rendered against what is left, not the configured maximum"() {
+    expect: "a refresh shows the wait that is actually left"
+    SecondFactorView.throttledMessage(Duration.ofMinutes(3))
+        == "Too many failed attempts. You can try again in 3 minutes."
   }
 
   @Unroll

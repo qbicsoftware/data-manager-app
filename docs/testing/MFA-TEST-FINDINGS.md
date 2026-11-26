@@ -66,6 +66,17 @@ functionality · **S4** user-facing defect · **S5** decide, may not need code.
 >    password, so it protects nothing and leaves a real user typing valid codes into a page that keeps
 >    calling them wrong. The challenge now states the limit, the wait, and that the password and app
 >    still work — and disables the controls.
+>
+> **Two follow-ups from the same review (`S3` on the branch, reported live).**
+>
+> 3. **A refresh handed back a clean form to a blocked account.** The block was never in doubt — a
+>    retry cannot move it — but `beforeEnter` only checked the pending login, so the page rendered
+>    its normal state and the user tried again immediately. `AuthAttemptThrottle.remainingBlock` is a
+>    read-only peek; `beforeEnter` uses it to re-enter the blocked state, and it reports what is
+>    *left` rather than the configured maximum. Reading never records an attempt, so reloading cannot
+>    extend a block — pinned by `RemainingBlockSpec` and `SecondFactorRefreshWhileBlockedSpec`.
+> 4. **The message was too long to be read.** Cut to one sentence: "Too many failed attempts. You can
+>    try again in 15 minutes." The explanatory tail was true and buried the only fact the user wanted.
 
 - **Test:** MFA-68. Recorded FAILURE.
 - **Repro:** submit wrong codes repeatedly (~2 min of clicking) — nothing slows, blocks or locks.

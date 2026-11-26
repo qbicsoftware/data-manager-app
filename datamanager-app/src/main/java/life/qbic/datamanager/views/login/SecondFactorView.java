@@ -241,7 +241,10 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     pending = candidate.get();
     if (event.getLocation().getQueryParameters().getParameters().containsKey("graceExpired")) {
       showGraceExpired();
+      return;
     }
+    // A refresh must not hand back a clean form to an account that is still blocked.
+    showThrottledNoticeIfBlocked();
   }
 
   private void verifyCode() {
@@ -275,6 +278,10 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
    * @param recovery {@code true} for the recovery-code mode
    */
   private void showRecoveryMode(boolean recovery) {
+    if (!verifyRecovery.isEnabled() && !verify.isEnabled()) {
+      // Blocked. Switching mode would hide the notice and present a disabled field with no reason.
+      return;
+    }
     recoverySection.setVisible(recovery);
     codeSection.setVisible(!recovery);
     if (recovery) {
@@ -359,27 +366,60 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
    * attempt on a page that will refuse it, and burns nothing but the user's patience.</p>
    */
   private void showThrottledNotice() {
-    error.setText(throttledMessage(blockDuration()));
+    showThrottledNotice(blockDuration());
+  }
+
+  /**
+   * Puts the page into its blocked state for the given remaining wait.
+   *
+   * <p>Used both after a refused submission and on entry, so a refresh renders the same state the
+   * submission produced. Without the on-entry path the page came back clean — fields enabled, no
+   * notice — and the user tried again immediately, which is the loop the QA run described. The block
+   * itself always held; only the page lied about it.</p>
+   *
+   * @param remaining how long is left in the block
+   */
+  private void showThrottledNotice(Duration remaining) {
+    error.setText(throttledMessage(remaining));
     error.setVisible(true);
     code.setEnabled(false);
     verify.setEnabled(false);
     recoveryCode.setEnabled(false);
     verifyRecovery.setEnabled(false);
+    // The mode toggle would swap the fields and clear the notice, leaving a disabled recovery field
+    // with no explanation. Switching inputs cannot help: the throttle is per account, not per input.
+    useRecovery.setEnabled(false);
   }
 
   /**
-   * <b>"Too many attempts."</b>
+   * Re-enters the blocked state on page load, if this account is still blocked.
    *
-   * <p>States what happened, how long it lasts, and that nothing has been lost — the last part is what
-   * stops a worried user from assuming the account is now locked out for good and calling support.</p>
+   * <p>A read only: {@code remainingBlock} peeks and never records, so rendering cannot extend the
+   * block. It is also what makes the countdown honest — the message says what is actually left rather
+   * than the configured maximum.</p>
+   */
+  private void showThrottledNoticeIfBlocked() {
+    if (pending == null || throttle == null) {
+      return;
+    }
+    throttle.remainingBlock(AuthAttemptThrottle.Scope.SECOND_FACTOR, pending.userId(), Instant.now())
+        .ifPresent(this::showThrottledNotice);
+  }
+
+  /**
+   * <b>"Too many failed attempts. You can try again in 15 minutes."</b>
    *
-   * @param blockDuration how long the throttle lasts
+   * <p>One sentence, because that is all a blocked user needs: what happened, and when they can
+   * come back. An earlier version added why the limit exists and reassured them that their password
+   * and app still work; both are true, and both buried the one fact the user was looking for. A
+   * person reading an error message reads the first clause and stops.</p>
+   *
+   * @param remaining how long is left in the block
    * @return the sentence
    */
-  static String throttledMessage(Duration blockDuration) {
-    return "Too many attempts. For your account's security, further attempts are blocked for "
-        + describeDuration(blockDuration) + ". Your password and your authenticator app still work — "
-        + "try again when the wait is over.";
+  static String throttledMessage(Duration remaining) {
+    return "Too many failed attempts. You can try again in "
+        + describeDuration(remaining) + ".";
   }
 
   private Duration blockDuration() {
