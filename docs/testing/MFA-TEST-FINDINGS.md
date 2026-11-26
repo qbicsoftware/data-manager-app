@@ -11,7 +11,7 @@ functionality · **S4** user-facing defect · **S5** decide, may not need code.
 | Finding | Severity | State |
 |---|---|---|
 | "Choose different account" authenticates as the previous account (MFA-25) | S1 | **fixed** — `710d2001f` |
-| No throttling on repeated failed codes (MFA-68) | S2 | **fixed** — `2cfa52608` |
+| No throttling on repeated failed codes (MFA-68) | S2 | **fixed** — `2cfa52608`, completed by `f1d052997` |
 | Recovery codes lost by refreshing (MFA-91) | S4 | **fixed** — `713fb4649` |
 | Registration broken / confirmed account cannot log in (MFA-74, MFA-75) | S3 | open — see §3 |
 | Invalid samples reported as registered (MFA-83) | S3 | open |
@@ -53,6 +53,19 @@ functionality · **S4** user-facing defect · **S5** decide, may not need code.
 > own policy (5 per 15 min, `qbic.auth-throttle.second-factor.*`), enforced in
 > `SecondFactorVerificationService` rather than the view, because the view was the only place that
 > could have checked and did not. No schema change: the `auth_attempt` table takes a fourth scope.
+>
+> **That fix was incomplete, and reviewing it found two more defects (`f1d052997`).**
+>
+> 1. **The limit was on the wrong secret.** Only the authenticator code was guarded;
+>    `RecoveryCodeService.redeemFor` — the sole recovery-code path on the challenge — was not. So the
+>    six-digit code that rotates every thirty seconds was limited, and the twelve-character code that
+>    stays valid until redeemed was not. Both now share **one** bucket, because two would let an
+>    attacker spend five of each per window against the same login.
+> 2. **The user was never told.** The silent refusal reused the uniform "not accepted" sentence, on
+>    reasoning that belongs to the anonymous password login. Reaching this limit requires the account's
+>    password, so it protects nothing and leaves a real user typing valid codes into a page that keeps
+>    calling them wrong. The challenge now states the limit, the wait, and that the password and app
+>    still work — and disables the controls.
 
 - **Test:** MFA-68. Recorded FAILURE.
 - **Repro:** submit wrong codes repeatedly (~2 min of clicking) — nothing slows, blocks or locks.
