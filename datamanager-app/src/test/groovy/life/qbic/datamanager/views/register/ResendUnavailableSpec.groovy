@@ -141,7 +141,7 @@ class ResendUnavailableSpec extends Specification {
     return new EmailConfirmationMain(userInformationService, emailService,
         new EmailConfirmationLinkSupplier('https', 'example.org', 443, '',
             '/registration/confirm', 'token'),
-        Stub(VerificationLinkService), throttle)
+        Stub(VerificationLinkService), throttle, life.qbic.identity.application.throttle.ClientOriginResolver.none())
   }
 
   private void enter(EmailConfirmationMain view, String pendingId) {

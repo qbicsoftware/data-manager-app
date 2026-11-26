@@ -142,7 +142,7 @@ class SecondFactorThrottleSpec extends Specification {
 
   def "second-factor attempts are counted separately from password attempts"() {
     given: "the password bucket for the same identifier is exhausted"
-    (MAX_ATTEMPTS + 1).times { throttle.record(AuthAttemptThrottle.Scope.LOGIN, USER_ID, now) }
+    (MAX_ATTEMPTS + 1).times { throttle.recordAttempt(AuthAttemptThrottle.Scope.LOGIN, USER_ID, now) }
 
     expect: "second-factor submissions have their own budget"
     !submit(USER_ID, WRONG_CODE, now).throttled()

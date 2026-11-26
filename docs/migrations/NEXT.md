@@ -25,8 +25,14 @@ For the migration documentation structure, see [`README.md`](README.md).
 > - **`FEAT-AUTH-FLOWS-05` / #1683** — ~~ORCID-only accounts still have `encryptedPassword IS NULL`.~~
 >   **Now resolved, see "ORCID is no longer a login" below.** No schema change was needed: a plain
 >   password reset gives such an account a password, verified on a running build (2026-11-17).
-> - **#1691** — per-origin throttling. Needs HAProxy and a trusted-proxy configuration; not in this
->   repository.
+> - **#1691** — per-origin throttling. **The code and the schema impact are complete** (no schema change:
+>   origin buckets are rows in the existing `auth_attempt` with `scope = 'LOGIN_ORIGIN'`). What remains
+>   is the deployment half, which is not in this repository: HAProxy must *replace* `X-Forwarded-For`,
+>   and `server.forward-headers-strategy=native` plus
+>   `qbic.auth-throttle.login.origin.enabled=true` must be set. Both ship **off**, so merging this
+>   changes nothing in production until an operator acts. See
+>   [`docs/operations/installation-and-administration.md`](../operations/installation-and-administration.md)
+>   §1.7.
 > - **#1669** — retention/purge for `user_verification_token` and `auth_attempt`. Both tables grow
 >   without bound until it lands.
 
@@ -453,7 +459,77 @@ If there are none this release, delete this section.*
 Both are documented with provisioning commands under *Migration 1* above. Neither is validated at
 startup: a missing key fails the second-factor operation (closed), not the process.
 
+### New keys for second-factor throttling (MFA-68) — inert without a factor
+
+The login challenge now rate-limits code submissions, including recovery codes. Reuses the existing
+`auth_attempt` table (`scope = 'SECOND_FACTOR'`), so **no schema change**.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `qbic.auth-throttle.second-factor.max-attempts` | `5` | Code submissions per account before the block |
+| `qbic.auth-throttle.second-factor.window` | `PT15M` | Counting window |
+| `qbic.auth-throttle.second-factor.block-duration` | `PT15M` | How long the block lasts |
+
+Lower than the login limit on purpose: a password guess is one of an unbounded space, while a TOTP
+code is one of a million per thirty-second step and a recovery code one of about 2^60 that never
+rotates. The bucket is keyed on the account, not the origin — reaching it requires that account's
+password, so it is not an anonymous surface, and being told you hit it is not an enumeration oracle.
+
+
 ### Behaviour change for error notification mail
+
+### New keys for origin-scope throttling (#1691) — all inert by default
+
+`AUTH-NFR-03` asks for throttling per account **and** per request origin. Account scope shipped in
+v1.20.4; this release adds the origin half. **Nothing changes on deploy**, because origin scope ships
+disabled and the header strategy is unchanged.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `qbic.auth-throttle.login.origin.enabled` | `false` | **Single switch for every origin bucket** |
+| `qbic.auth-throttle.login.origin.max-attempts` | `60` | Failed logins per origin before the origin block |
+| `qbic.auth-throttle.login.origin.window` | `PT15M` | Counting window for the login origin bucket |
+| `qbic.auth-throttle.login.origin.block-duration` | `PT10M` | How long a login origin block lasts |
+| `qbic.auth-throttle.mail-origin.max-attempts` | `20` | Link resends per origin before the origin block |
+| `qbic.auth-throttle.mail-origin.window` | `PT15M` | Counting window for the mail origin bucket |
+| `qbic.auth-throttle.mail-origin.block-duration` | `PT15M` | How long a mail origin block lasts |
+| `qbic.auth-throttle.registration-origin.max-attempts` | `100` | Registrations per origin before the origin block |
+| `qbic.auth-throttle.registration-origin.window` | `PT15M` | Counting window for the registration origin bucket |
+| `qbic.auth-throttle.registration-origin.block-duration` | `PT10M` | How long a registration origin block lasts |
+
+> **Origin scope now covers the mail-sending flows, not just login.** Discovered in production: login
+> was throttled per origin, but a single source could still request password resets for arbitrary
+> addresses indefinitely. Account scope cannot bound that — one mail per address means no account
+> bucket is ever reused — so the reset, confirmation-resend and registration flows now each write an
+> origin bucket. The two resend flows share `MAIL_ORIGIN`; registration has its own, larger bucket
+> because it is legitimately bursty. **Still no schema change**: they are more rows in the existing
+> `auth_attempt` table with different `scope` values.
+
+Unchanged but now load-bearing: `server.forward-headers-strategy`. It stays **unset (`NONE`)** in this
+release. Setting `origin.enabled=true` without `server.forward-headers-strategy=native` is a **startup
+failure**, deliberately — see ops doc §1.2/§1.7.
+
+**To turn it on** (only after the HAProxy change below):
+
+```properties
+server.forward-headers-strategy=native
+qbic.auth-throttle.login.origin.enabled=true
+```
+
+**Proxy prerequisite, not a property:** HAProxy must **replace** `X-Forwarded-For`
+(`http-request set-header X-Forwarded-For %[src]`). `option forwardfor` alone appends, which leaves the
+client's own entry at the front of the list.
+
+**No schema change, so there is no migration script for this.** Origin buckets are additional rows in
+the existing `auth_attempt` table with `scope = 'LOGIN_ORIGIN'`; `scope` is an open `varchar` and
+`attemptKey` is already an opaque hash. Existing rows are untouched and no backfill is needed.
+
+> **Do not enable this during a release deploy.** It is a separate, independently revertable operator
+> step because `server.forward-headers-strategy=native` also changes how absolute links
+> (confirmation/reset mail) and the ORCID redirect URI are built. Canary one node first — ops doc §1.7.
+
+### One behaviour change for error notification mail
+
 
 `spring.mail.*` and `qbic.mail.verify-connection-on-startup` are unchanged. What changes is what the
 **logback error-notification appender** does when the SMTP server will not upgrade to TLS.
@@ -487,6 +563,31 @@ logback offers `starttls.enable` but no `required`.
 `logback-spring.xml` (host, port, username, password) reach it. Adding e.g. `mail.smtp.from` or a
 custom timeout to `application.properties` will **not** affect error mail. The TLS requirement is
 applied in the appender class, so changing it means editing the class, not the properties file.
+
+### Verifying origin scope once enabled
+
+There is no migration script, but there is a real way for the feature to be **present and inert**:
+the client address is still the proxy. Check the table after a few failed logins on the canary node.
+
+```sql
+-- Which origin buckets exist at all. All four scopes must appear once the corresponding flows are
+-- exercised; a flow whose bucket is missing is still account-scoped only, i.e. unbounded.
+SELECT scope, COUNT(*) AS rows_
+FROM auth_attempt WHERE scope LIKE '%ORIGIN' GROUP BY scope;
+
+-- How many distinct origins are being tracked. A handful is healthy; exactly 1 means the whole
+-- deployment is sharing an origin, i.e. getRemoteAddr() is still the proxy -- STOP and roll back.
+SELECT COUNT(DISTINCT attemptKey) AS distinct_origins
+FROM auth_attempt WHERE scope = 'LOGIN_ORIGIN'
+  AND lastAttemptAt > UTC_TIMESTAMP(6) - INTERVAL 15 MINUTE;
+
+-- What is currently blocked, in either bucket.
+SELECT scope, attemptCount, blockedUntil FROM auth_attempt
+WHERE blockedUntil > UTC_TIMESTAMP(6);
+```
+
+The application log must also contain no `no trusted client origin could be resolved` warning. If it
+does, the throttle has degraded to account scope and is telling you so.
 
 ---
 

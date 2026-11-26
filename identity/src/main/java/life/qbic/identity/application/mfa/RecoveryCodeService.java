@@ -133,7 +133,7 @@ public class RecoveryCodeService {
     // secret to guess at, and the first version of the MFA-68 fix left exactly this path unguarded.
     // One bucket, not two: separate buckets would let an attacker spend five of each per window
     // against the same login (MFA-68 follow-up).
-    if (throttle.record(AuthAttemptThrottle.Scope.SECOND_FACTOR, userId, now)
+    if (throttle.recordAttempt(AuthAttemptThrottle.Scope.SECOND_FACTOR, userId, now)
         == AuthAttemptThrottle.Decision.THROTTLED) {
       log.warn("Recovery-code redemption refused for user %s: attempt limit reached"
           .formatted(userId));

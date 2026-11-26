@@ -63,13 +63,23 @@ owner by mail. The second half is **not** mechanical — `registerUser` currentl
 `UserExistsException`, and `UserRegistrationMain` surfaces it. Both need changing together, or the
 disclosure just moves from the form to the submit response.
 
-### 2.2 Origin-scope throttling blocked
+### 2.2 Origin-scope throttling
 
-`AUTH-NFR-03` asks for **per account and per origin**. Only account scope ships. The app is behind
-HAProxy with `server.forward-headers-strategy` unset, nothing reads `getRemoteAddr()`, so the client
-address is the proxy — an origin bucket would be global and one attacker could block everyone.
+> **Update (#1691): the code side is done.** `AuthAttemptThrottle` now writes a `LOGIN_ORIGIN` bucket
+> alongside the account one, and combines them so that a victim spammed from another origin is **not**
+> locked out. The text below records why it was deferred; what is still outstanding is the deployment
+> half only: HAProxy must *replace* `X-Forwarded-For`, and
+> `server.forward-headers-strategy=native` plus `qbic.auth-throttle.login.origin.enabled=true` must be
+> set. Both ship off, so nothing changes in production until an operator acts. See
+> `docs/operations/installation-and-administration.md` §1.7, and
+> `docs/plans/plan-1691-origin-scope-throttling.md` for the design.
 
-Needs: trusted forwarded headers (trusted-proxy allowlist + HAProxy **overwriting** not appending
+`AUTH-NFR-03` asks for **per account and per origin**. At the time of writing only account scope
+shipped. The app is behind HAProxy with `server.forward-headers-strategy` unset, nothing read
+`getRemoteAddr()`, so the client address was the proxy — an origin bucket would have been global and
+one attacker could block everyone.
+
+Needed: trusted forwarded headers (trusted-proxy allowlist + HAProxy **overwriting** not appending
 `X-Forwarded-For`). That also unblocks passkeys and the ORCID `{baseUrl}` redirect — milestone plan
 §1a condition 1. **No schema change needed**; `scope` is an open varchar.
 

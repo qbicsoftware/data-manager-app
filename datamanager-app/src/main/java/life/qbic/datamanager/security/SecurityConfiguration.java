@@ -7,6 +7,9 @@ import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.application.security.QBiCPasswordEncoder;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
+
+import life.qbic.identity.application.throttle.ClientOriginResolver;
+
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,7 @@ import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorH
 import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationCodeGrantFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.client.RestClient;
@@ -39,10 +43,14 @@ public class SecurityConfiguration {
 
   final VaadinDefaultRequestCache defaultRequestCache;
   private final AuthAttemptThrottle authAttemptThrottle;
+
   private final life.qbic.identity.api.OidcLinkService oidcLinkService;
   private final org.springframework.security.oauth2.client.OAuth2AuthorizedClientService authorizedClientService;
   private final life.qbic.datamanager.security.mfa.MfaLoginSuccessHandler mfaLoginSuccessHandler;
   private final life.qbic.identity.application.mfa.MfaLoginGuard mfaLoginGuard;
+  private final ClientOriginResolver clientOriginResolver;
+
+
 
   /**
    * Held directly, not injected.
@@ -93,17 +101,22 @@ public class SecurityConfiguration {
       @Autowired life.qbic.identity.api.OidcLinkService oidcLinkService,
       @Autowired org.springframework.security.oauth2.client.OAuth2AuthorizedClientService authorizedClientService,
       @Autowired life.qbic.datamanager.security.mfa.MfaLoginSuccessHandler mfaLoginSuccessHandler,
-      @Autowired life.qbic.identity.application.mfa.MfaLoginGuard mfaLoginGuard) {
+      @Autowired life.qbic.identity.application.mfa.MfaLoginGuard mfaLoginGuard,
+      // #1691: the trusted client identity, used by the login throttle for origin buckets.
+      @Autowired ClientOriginResolver clientOriginResolver) {
     this.defaultRequestCache = requireNonNull(defaultRequestCache,
         "defaultRequestCache must not be null");
     this.authAttemptThrottle = requireNonNull(authAttemptThrottle,
         "authAttemptThrottle must not be null");
+
     this.oidcLinkService = requireNonNull(oidcLinkService, "oidcLinkService must not be null");
     this.authorizedClientService = requireNonNull(authorizedClientService,
         "authorizedClientService must not be null");
     this.mfaLoginSuccessHandler = requireNonNull(mfaLoginSuccessHandler,
         "mfaLoginSuccessHandler must not be null");
     this.mfaLoginGuard = requireNonNull(mfaLoginGuard, "mfaLoginGuard must not be null");
+    this.clientOriginResolver = requireNonNull(clientOriginResolver,
+        "clientOriginResolver must not be null");
   }
 
   /**
@@ -285,7 +298,7 @@ public class SecurityConfiguration {
   private LoginThrottleFilter loginThrottleFilter() {
     SimpleUrlAuthenticationFailureHandler failureHandler =
         new SimpleUrlAuthenticationFailureHandler("/login?error");
-    return new LoginThrottleFilter(authAttemptThrottle, failureHandler,
+    return new LoginThrottleFilter(authAttemptThrottle, clientOriginResolver, failureHandler,
         // One real derivation against the same well-formed stand-in the login path uses for an
         // account with no password. It must be well-formed PBKDF2 (iterations:salt:hash) — a bcrypt
         // string would throw here instead of deriving, making the rejection measurably faster.

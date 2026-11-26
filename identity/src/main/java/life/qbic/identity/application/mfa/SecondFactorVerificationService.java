@@ -85,7 +85,7 @@ public class SecondFactorVerificationService {
     // Recorded first, so the attempt is charged even if verification fails a step later, and so the
     // configured number of attempts is exactly what a visitor gets per window. A success clears the
     // bucket below.
-    if (throttle.record(AuthAttemptThrottle.Scope.SECOND_FACTOR, userId, now)
+    if (throttle.recordAttempt(AuthAttemptThrottle.Scope.SECOND_FACTOR, userId, now)
         == AuthAttemptThrottle.Decision.THROTTLED) {
       log.warn("Second-factor verification refused for user %s: attempt limit reached"
           .formatted(userId));

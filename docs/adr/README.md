@@ -61,11 +61,8 @@ Where `NNNN` is a zero-padded, four-digit sequential number assigned in creation
 | [0007](0007-paginated-lists-and-list-state.md) | Paginated lists with URL-restorable list state | accepted | 2026-09-14 |
 | [0008](0008-pinned-projects-as-user-preferences.md) | Pinned projects are user preferences, not project state | accepted | 2026-09-14 |
 | [0009](0009-paginated-measurement-lists-and-selection.md) | Paginated measurement lists with identifier-based cross-page selection | accepted | 2026-09-14 |
+| [0010](0010-trusted-client-identity-behind-reverse-proxy.md) | Trusted client identity behind the reverse proxy, and per-origin auth throttling | proposed | 2026-11-17 |
 | [0011](0011-mfa-authentication-authority.md) | MFA authentication authority: the application owns the second factor | accepted | 2026-11-17 |
-
-*Numbering note: 0010 (analysis-method attribution) was created on `development` after this branch
-(`epic/mfa`) diverged, so its row is missing here on purpose rather than renumbered. It appears in this
-table when the branches merge.*
 
 *Update this table whenever a new ADR is added.*
 

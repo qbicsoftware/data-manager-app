@@ -34,6 +34,7 @@ import life.qbic.identity.application.communication.Messages;
 import life.qbic.identity.application.communication.Recipient;
 import life.qbic.identity.application.communication.Subject;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
+import life.qbic.identity.application.throttle.ClientOriginResolver;
 import life.qbic.identity.application.user.policy.EmailConfirmationLinkSupplier;
 import life.qbic.logging.api.Logger;
 import life.qbic.projectmanagement.application.authorization.QbicUserDetails;
@@ -82,6 +83,7 @@ public class EmailConfirmationMain extends Main implements BeforeEnterObserver {
   private final transient life.qbic.identity.api.VerificationLinkService verificationLinkService;
 
   private final transient AuthAttemptThrottle authAttemptThrottle;
+  private final transient ClientOriginResolver clientOriginResolver;
 
   private UserInfo userInfo;
 
@@ -114,7 +116,10 @@ public class EmailConfirmationMain extends Main implements BeforeEnterObserver {
       EmailService emailService,
       EmailConfirmationLinkSupplier emailConfirmationLinkSupplier,
       life.qbic.identity.api.VerificationLinkService verificationLinkService,
-      AuthAttemptThrottle authAttemptThrottle) {
+      AuthAttemptThrottle authAttemptThrottle,
+      ClientOriginResolver clientOriginResolver) {
+    this.clientOriginResolver = requireNonNull(clientOriginResolver,
+        "clientOriginResolver must not be null");
     this.userInformationService = requireNonNull(userInformationService,
         "userInformationService must not be null");
     this.emailService = requireNonNull(emailService, "emailService must not be null");
@@ -162,7 +167,7 @@ public class EmailConfirmationMain extends Main implements BeforeEnterObserver {
       // many attempts remain, so they do not discover the limit by hitting it.
       var outcome = authAttemptThrottle.recordAndReport(
           AuthAttemptThrottle.Scope.EMAIL_CONFIRMATION_RESEND, userInfo.emailAddress(),
-          java.time.Instant.now());
+          clientOriginResolver.resolve(), java.time.Instant.now());
 
       if (outcome.isAllowed()) {
         sendConfirmationEmail(userInfo.id(), userInfo.emailAddress(), userInfo.fullName());

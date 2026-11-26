@@ -27,15 +27,21 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '21'
-          settings-path: ${{ github.workspace }}
 
       - name: Load local Maven repository cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          # Workflow-scoped key. actions/cache only writes on a key miss, so a key
+          # shared between workflows freezes whichever plugin set was fetched first
+          # and later runs of other workflows must re-fetch the rest from Central
+          # every time. This workflow needs `mvn clean verify`, so it gets its own
+          # cache. The run id keeps the entry refreshable instead of frozen for the
+          # life of a POM hash; restore-keys keeps it warm across runs.
+          key: ${{ runner.os }}-maven-tests-${{ hashFiles('**/pom.xml') }}-${{ github.run_id }}
           restore-keys: |
-            ${{ runner.os }}-maven-
+            ${{ runner.os }}-maven-tests-${{ hashFiles('**/pom.xml') }}
+            ${{ runner.os }}-maven-tests-
 
       - name: Run tests
         run: mvn clean verify
