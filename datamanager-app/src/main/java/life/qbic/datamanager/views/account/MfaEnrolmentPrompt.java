@@ -82,8 +82,9 @@ public class MfaEnrolmentPrompt extends Div implements Serializable {
   public static final String RECOVERY_CODES_LEFT_ATTRIBUTE =
       MfaEnrolmentPrompt.class.getName() + ".recovery-codes-left";
 
-  private static final DateTimeFormatter DEADLINE =
-      DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withZone(ZoneId.systemDefault());
+  // Deliberately gone: this used to hold its own date-only formatter, which is how the banner came to
+  // say "on 28 November 2026" while the settings page could say something slightly different. The
+  // format now lives in TwoFactorSettingsCopy with the other deadline copy.
 
   private final transient MfaPolicy mfaPolicy;
   private final transient SecondFactorService secondFactorService;
@@ -229,7 +230,7 @@ public class MfaEnrolmentPrompt extends Div implements Serializable {
     }
     return graceRepository.findByUserId(userId)
         .map(MfaGrace::graceUntil)
-        .map(DEADLINE::format)
+        .map(TwoFactorSettingsCopy::formattedDeadline)
         .orElse(null);
   }
 

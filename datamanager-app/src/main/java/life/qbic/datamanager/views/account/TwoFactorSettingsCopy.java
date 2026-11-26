@@ -1,5 +1,12 @@
 package life.qbic.datamanager.views.account;
 
+import static java.util.Objects.requireNonNull;
+
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.Locale;
 import life.qbic.identity.domain.model.mfa.MfaPolicyMode;
 
 /**
@@ -201,6 +208,52 @@ public final class TwoFactorSettingsCopy {
 
   /** Label of the code field. */
   static final String ENROL_CODE_LABEL = "Code from the app";
+
+  // ── Deadlines ──────────────────────────────────────────────────────────────
+
+  /**
+   * How a grace deadline is shown: full date <b>and time of day</b>, in the user's zone.
+   *
+   * <p>The time is the point. A deadline is an instant, but "28 November 2026" renders half of it and
+   * invites the reader to supply the rest — which they do generously, planning to enrol "that
+   * evening". The window often ends mid-afternoon, and the user is locked out having believed they
+   * had hours left. Reported from testing under {@code REQUIRED}.</p>
+   *
+   * <p>Local time, not UTC: the user is planning their day in the zone they are sitting in. Factor
+   * timestamps elsewhere on the settings page keep their own date formatter — those are history, not
+   * deadlines, and the distinction is deliberate.</p>
+   */
+  private static final DateTimeFormatter DEADLINE_FORMAT =
+      DateTimeFormatter.ofPattern("d MMMM yyyy, HH:mm", Locale.ROOT)
+          .withZone(ZoneId.systemDefault());
+
+  /**
+   * Formats a deadline for display, including the time of day.
+   *
+   * @param deadline the instant the grace window ends
+   * @return e.g. {@code "28 November 2026, 15:42"}
+   */
+  static String formattedDeadline(Instant deadline) {
+    requireNonNull(deadline, "deadline must not be null");
+    return DEADLINE_FORMAT.format(deadline);
+  }
+
+  /**
+   * Formats an instant as a date only.
+   *
+   * <p>For history — when a factor was added, when it was last used — where the time of day is noise
+   * rather than information. Deliberately separate from {@link #formattedDeadline}, so a deadline
+   * cannot be rendered with the date formatter by accident.</p>
+   *
+   * @param instant the instant to format
+   * @return e.g. {@code "28 Nov 2026"}
+   */
+  static String formattedDate(Instant instant) {
+    requireNonNull(instant, "instant must not be null");
+    return DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+        .withZone(ZoneId.systemDefault())
+        .format(instant);
+  }
 
   /**
    * The label a factor gets, given what the user typed in the optional name field.

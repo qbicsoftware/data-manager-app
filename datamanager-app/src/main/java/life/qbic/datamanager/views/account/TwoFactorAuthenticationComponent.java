@@ -362,7 +362,9 @@ public class TwoFactorAuthenticationComponent extends PageArea implements Serial
    */
   private String policySentence(boolean hasFactor) {
     if (mode == MfaPolicyMode.REQUIRED && !hasFactor && graceDeadline != null) {
-      return TwoFactorSettingsCopy.requiredDeadlineNote(DATE.format(graceDeadline));
+      // Deadline, not history: the time of day is part of the fact. See formattedDeadline.
+      return TwoFactorSettingsCopy.requiredDeadlineNote(
+          TwoFactorSettingsCopy.formattedDeadline(graceDeadline));
     }
     // No stored window (MfaGate reads that as "grant one", never "deny") or a factor is present:
     // the mode/factor sentence is the whole answer.
