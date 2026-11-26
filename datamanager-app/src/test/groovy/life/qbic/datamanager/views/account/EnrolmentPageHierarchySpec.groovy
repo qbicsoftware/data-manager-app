@@ -23,13 +23,13 @@ import spock.lang.Specification
  * demoted below the code as a quiet secondary row. Nothing here changes behaviour — the name is still
  * optional, still prefills the default, and clearing it still means "use the default".</p>
  */
-class EnrolmentDialogHierarchySpec extends Specification {
+class EnrolmentPageHierarchySpec extends Specification {
 
   // ---------------------------------------------------------------- the step order
 
   def "the verification code comes before the optional name"() {
     given:
-    def steps = TotpEnrolmentDialog.stepOrder()
+    def steps = TwoFactorEnrolmentMain.stepOrder()
 
     expect: "the two things the user must do lead; the optional one follows"
     steps.indexOf("code") < steps.indexOf("name")
@@ -37,7 +37,7 @@ class EnrolmentDialogHierarchySpec extends Specification {
 
   def "the QR code leads, then the setup key, then the code"() {
     given:
-    def steps = TotpEnrolmentDialog.stepOrder()
+    def steps = TwoFactorEnrolmentMain.stepOrder()
 
     expect: "the order a user actually performs the task in"
     steps == ["qr", "setup-key", "code", "name"]
@@ -45,32 +45,32 @@ class EnrolmentDialogHierarchySpec extends Specification {
 
   def "the optional step is last"() {
     expect:
-    TotpEnrolmentDialog.stepOrder().last() == "name"
+    TwoFactorEnrolmentMain.stepOrder().last() == "name"
   }
 
   // ---------------------------------------------------------------- the name is demoted
 
   def "the name label does not read as a required step"() {
     expect: "the word 'optional' stays, and the label no longer shouts"
-    TotpEnrolmentDialog.NAME_LABEL.toLowerCase().contains("optional")
+    TwoFactorEnrolmentMain.NAME_LABEL.toLowerCase().contains("optional")
   }
 
   def "the name is a quiet secondary control, not a full-width field"() {
     expect: "it is marked so the stylesheet can render it smaller and narrower"
-    TotpEnrolmentDialog.NAME_CSS_CLASS == "mfa-enrol-name"
+    TwoFactorEnrolmentMain.NAME_CSS_CLASS == "mfa-enrol-name"
   }
 
   def "the primary action is still the code, and the name never gates it"() {
     expect: "the submit button names the verification, not the naming"
-    TotpEnrolmentDialog.CONFIRM_LABEL == "Verify and enable"
+    TwoFactorEnrolmentMain.CONFIRM_LABEL == "Verify and enable"
   }
 
   // ---------------------------------------------------------------- what must not regress
 
   def "an empty name still means the default rather than an error"() {
     expect: "the domain refuses a blank label, so the dialog must never submit one"
-    TwoFactorSettingsCopy.factorName("") == TotpEnrolmentDialog.DEFAULT_DISPLAY_NAME
-    TwoFactorSettingsCopy.factorName("   ") == TotpEnrolmentDialog.DEFAULT_DISPLAY_NAME
+    TwoFactorSettingsCopy.factorName("") == TwoFactorEnrolmentMain.DEFAULT_DISPLAY_NAME
+    TwoFactorSettingsCopy.factorName("   ") == TwoFactorEnrolmentMain.DEFAULT_DISPLAY_NAME
   }
 
   def "a typed name is still honoured, trimmed"() {

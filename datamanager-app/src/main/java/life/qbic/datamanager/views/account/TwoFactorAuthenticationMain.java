@@ -2,6 +2,7 @@ package life.qbic.datamanager.views.account;
 
 import static java.util.Objects.requireNonNull;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -21,7 +22,6 @@ import life.qbic.datamanager.views.general.dialog.DialogAction;
 import life.qbic.datamanager.views.settings.SettingsMainLayout;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.application.mfa.MfaPolicy;
-import life.qbic.identity.application.mfa.PendingTotpEnrolment;
 import life.qbic.identity.application.mfa.RecoveryCodeService;
 import life.qbic.identity.application.mfa.SecondFactorService;
 import life.qbic.identity.application.mfa.TotpEnrolmentService;
@@ -67,11 +67,11 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
    * field on the page would be gone by the time the page is rendered again — the marker has to outlive
    * the render that follows (MFA-91).</p>
    */
-  static final String LOST_RECOVERY_CODES_ATTRIBUTE = "qbic.mfa.recovery-codes-unacknowledged";
+  static final String LOST_RECOVERY_CODES_ATTRIBUTE =
+      RecoveryCodeAcknowledgement.UNACKNOWLEDGED_ATTRIBUTE;
 
   private final transient TwoFactorAuthenticationComponent component;
   private final transient SecondFactorService secondFactorService;
-  private final transient TotpEnrolmentService totpEnrolmentService;
   private final transient RecoveryCodeService recoveryCodeService;
   private final transient MfaPolicy mfaPolicy;
   private final transient MfaGraceRepository graceRepository;
@@ -79,7 +79,6 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
   private final transient AuthenticationToUserIdTranslationService userIdTranslator;
 
   public TwoFactorAuthenticationMain(SecondFactorService secondFactorService,
-      TotpEnrolmentService totpEnrolmentService,
       RecoveryCodeService recoveryCodeService,
       MfaPolicy mfaPolicy,
       MfaGraceRepository graceRepository,
@@ -88,8 +87,6 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
       TwoFactorAuthenticationComponent component) {
     this.secondFactorService = requireNonNull(secondFactorService,
         "secondFactorService must not be null");
-    this.totpEnrolmentService = requireNonNull(totpEnrolmentService,
-        "totpEnrolmentService must not be null");
     this.recoveryCodeService = requireNonNull(recoveryCodeService,
         "recoveryCodeService must not be null");
     this.mfaPolicy = requireNonNull(mfaPolicy, "mfaPolicy must not be null");
@@ -168,84 +165,24 @@ public class TwoFactorAuthenticationMain extends Main implements BeforeEnterObse
   }
 
   private void markRecoverySheetUnacknowledged(boolean unacknowledged) {
-    var session = VaadinSession.getCurrent();
-    if (session == null) {
-      return;
-    }
-    if (unacknowledged) {
-      session.setAttribute(LOST_RECOVERY_CODES_ATTRIBUTE, Boolean.TRUE);
-    } else {
-      session.setAttribute(LOST_RECOVERY_CODES_ATTRIBUTE, null);
-    }
+    RecoveryCodeAcknowledgement.markUnacknowledged(currentUserId(), unacknowledged);
   }
 
   private boolean isRecoverySheetUnacknowledged() {
-    var session = VaadinSession.getCurrent();
-    return session != null && Boolean.TRUE.equals(session.getAttribute(LOST_RECOVERY_CODES_ATTRIBUTE));
+    return RecoveryCodeAcknowledgement.isUnacknowledged();
   }
 
+  /**
+   * Sends the user to the enrolment page.
+   *
+   * <p>Enrolment used to be a modal. It carried a QR code, a setup key and two inputs, and its footer
+   * fell below the fold at ordinary window sizes; that content is taller than a dialog should be, and
+   * multi-step creation lives on routes everywhere else in this application — including mandatory
+   * enrolment ({@code RequiredEnrolmentView}). The page also scrolls, which is the fix for MFA-93
+   * rather than re-tuning a modal until it fits one viewport.</p>
+   */
   private void onEnrolRequested() {
-    String userId = currentUserId();
-    var user = userInformationService.findById(userId).orElseThrow();
-    var pending = totpEnrolmentService.begin(userId, TotpEnrolmentDialog.DEFAULT_DISPLAY_NAME,
-        user.emailAddress(), Instant.now());
-    // The verification callback is passed in rather than the service, so the dialog cannot create a
-    // factor by itself; "no factor without a verified code" stays a property of the application layer.
-    var dialog = new TotpEnrolmentDialog(pending,
-        (code, chosenName) -> enrolWithName(userId, pending, code, chosenName));
-    dialog.addEnrolledListener(event -> onEnrolled(userId, user.emailAddress()));
-    dialog.open();
-  }
-
-  /**
-   * Confirms the enrolment and stores the chosen name in the same transaction.
-   *
-   * <p>Name first would be a factor that exists under a label nobody asked for if the code fails; code
-   * first and name after would leave a window in which the factor is enrolled under the default. So the
-   * factor is created and relabelled together, under the application service's transaction.</p>
-   *
-   * @param userId     the account enrolling
-   * @param pending    the enrolment started earlier
-   * @param code       the six-digit code from the app
-   * @param chosenName what the user called the app; may be blank, in which case the default stands
-   * @return the stored factor
-   */
-  private SecondFactor enrolWithName(String userId, PendingTotpEnrolment pending, String code,
-      String chosenName) {
-    SecondFactor created = totpEnrolmentService.confirm(pending, code, Instant.now());
-    String name = chosenName == null ? "" : chosenName.strip();
-    if (name.isEmpty() || name.equals(created.displayName())) {
-      return created;
-    }
-    // The factor exists and the code verified; a rename cannot fail in a way that should hide the
-    // enrolment, so an unexpected failure is logged and the default label stands.
-    return secondFactorService.rename(userId, created.id(), name).orElse(created);
-  }
-
-  /**
-   * What happens the moment the first factor is confirmed.
-   *
-   * <p>The recovery codes are issued <b>here</b>, in the same breath as the factor, because this is
-   * the only moment at which the user is guaranteed to be paying attention and to have just proved
-   * both password and a fresh device. Leaving it as a second, optional click on the page is how
-   * people end up enrolled with no recovery codes — and then a lost phone becomes an identity
-   * verification at the helpdesk, not a self-service recovery.</p>
-   *
-   * <p>A fresh set is only issued when the account has none left, so adding a second device does not
-   * silently invalidate a sheet the user has already printed.</p>
-   *
-   * @param userId       the account that just enrolled
-   * @param accountEmail the account, named on the sheet so it is identifiable later
-   */
-  private void onEnrolled(String userId, String accountEmail) {
-    refresh();
-    if (recoveryCodeService.remaining(userId) > 0) {
-      return;
-    }
-    var codeSet = recoveryCodeService.generate(userId, Instant.now());
-    refresh();
-    showRecoveryCodes(
-        new RecoveryCodesDialog(codeSet, accountEmail, RecoveryCodesDialog.Reason.FIRST_FACTOR));
+    UI.getCurrent().navigate(TwoFactorEnrolmentMain.class);
   }
 
   private void onRemoveRequested(long factorId) {

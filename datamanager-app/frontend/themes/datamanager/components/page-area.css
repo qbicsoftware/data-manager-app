@@ -2129,15 +2129,26 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   gap: var(--lumo-space-m);
 }
 
-/* The code step is the one that gates the submit button, so it gets a separator from the setup
-   material above it: scan (or type the key), then prove it worked. Without this the three inputs
-   stacked at equal spacing and the code read as one more optional field. */
+/* The code step is the one that gates the action, so it gets a separator from the setup material
+   above it: scan (or type the key), then prove it worked. Without this the three inputs stacked at
+   equal spacing and the code read as one more optional field.
+
+   Now that enrolment is a page rather than a fixed-height dialog, the separator can keep its padding:
+   the constraint that forced the dialog to trade hierarchy against height is gone. */
 .mfa-enrol-code-step {
   display: flex;
   flex-direction: column;
   gap: var(--lumo-space-s);
-  padding-top: var(--lumo-space-s);
+  padding-top: var(--lumo-space-m);
   border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+/* The page's own actions, kept in the content flow rather than pinned in a dialog footer. */
+.mfa-enrol-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--lumo-space-s);
+  padding-top: var(--lumo-space-s);
 }
 
 /* The optional name, demoted deliberately.
