@@ -10,16 +10,27 @@ functionality · **S4** user-facing defect · **S5** decide, may not need code.
 
 | Finding | Severity | State |
 |---|---|---|
-| "Choose different account" authenticates as the previous account (MFA-25) | S1 | **fixed** — `710d2001f` |
-| No throttling on repeated failed codes (MFA-68) | S2 | **fixed** — `2cfa52608`, completed by `f1d052997` |
-| Recovery codes lost by refreshing (MFA-91) | S4 | **fixed** — `713fb4649` |
-| Registration broken / confirmed account cannot log in (MFA-74, MFA-75) | S3 | **not a defect** — test-server configuration, out of scope |
-| Invalid samples reported as registered (MFA-83) | S3 | **not in scope** — pre-existing sample-registration bug, unrelated to MFA |
+| "Choose different account" authenticates as the previous account (MFA-25) | S1 | **fixed** — `710d2001f`, hardening `fba8d31cc` |
+| No throttling on repeated failed codes (MFA-68) | S2 | **fixed** — `2cfa52608`, `f1d052997`, `de75374c4` |
+| Recovery codes lost by refreshing, silently (MFA-91) | S4 | **fixed** — `713fb4649` |
 | No warning when the last recovery code is consumed (MFA-41b) | S4 | **fixed** — `775474246` |
-| Enrolment buttons unreachable at low resolution (MFA-93) | S4 | open |
-| Misleading login and MFA error messages (MFA-94) | S4 | open |
-| Deep-link return after login (MFA-80) | S5 | needs a decision |
-| TOTP replay accepted (MFA-20, recorded Success) | S5 | needs a decision |
+| Enrolment buttons unreachable at low resolution (MFA-93) | S4 | **fixed for the settings flow** — it is a page now (`9ae1deb75`). Still live for the login-time enrolment |
+| Misleading login and MFA error messages (MFA-94) | S4 | **fixed** — `da30b8ee8` |
+| TOTP replay accepted (MFA-20, recorded Success) | S5 | **fixed** — `cbb39bb4c` |
+| Grace deadline shown without the time of day | S4 | **fixed** — `d9f98d51c` (reported live, not in the QA sheet) |
+| Enrolment dialog hierarchy / cutoff | S4 | **fixed** — `da8664e5e`, `9ae1deb75` (reported live) |
+| Recovery codes re-issued on every enrolment | S3 | **fixed** — `60d0956ed` (reported live) |
+| Deep-link return after login (MFA-80) | S5 | **out of scope** — general feature request, not this epic |
+| Registration broken / confirmed account cannot log in (MFA-74, MFA-75) | S3 | **not a defect** — test-server configuration |
+| Invalid samples reported as registered (MFA-83) | S3 | **not in scope** — pre-existing, unrelated to MFA |
+
+Also reported live and fixed: the blocked challenge re-rendering a usable form after a refresh
+(`de75374c4`), and one account's block disabling the challenge for the next account
+(`fba8d31cc`).
+
+**Accepted, not fixed:** the recovery-code sheet does not survive a refresh. That is correct — the
+plaintext codes must not live in session state — and it is only safe *because* MFA-91 now says the
+sheet was not saved. If that notice is ever removed, this becomes the original bug again.
 
 ---
 
