@@ -381,6 +381,25 @@ public class TwoFactorEnrolmentMain extends Main implements BeforeEnterObserver 
     content.add(section);
   }
 
+  // ── Test seams ────────────────────────────────────────────────────────────
+  //
+  // Package-private so a spec can drive the verification path without standing up a Vaadin UI. The
+  // behaviour asserted is the sequence (create, then rename), which is where the reported bug lives.
+
+  void setDisplayNameForTest(String value) {
+    displayName.setValue(value);
+  }
+
+  /** Starts a pending enrolment as {@code beforeEnter} would, without needing a live UI. */
+  void beginForTest(PendingTotpEnrolment enrolment) {
+    this.pending = enrolment;
+  }
+
+  void verifyCodeForTest(String presentedCode, String accountEmail) {
+    this.code.setValue(presentedCode);
+    verifyCode(accountEmail);
+  }
+
   private void showError(String message) {
     error.setText(message);
     error.setVisible(true);
