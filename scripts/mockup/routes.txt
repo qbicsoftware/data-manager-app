@@ -1,0 +1,29 @@
+# Named routes for ./scripts/mockup/capture.sh
+#
+# Format:  <name>|<path>
+#
+# Paths must be routes the application actually serves. A route that does not
+# exist renders the not-found page, which looks like a screenshot but tells you
+# nothing -- so add a route here only after confirming it resolves.
+#
+projects-list|/projects/list
+project-creation|/projects/create
+groups|/groups
+settings|/settings
+login|/login
+registration|/registration
+test-view|/test-view
+test-view-associated-datasets|/test-view/associated-datasets
+test-view-project-page|/test-view/project-page
+
+# Project pages. The fixture grants the seeded dev account an ACE on each of the
+# three projects, so these resolve instead of rendering access-denied.
+project-detail|/projects/10000000-0000-0000-0000-000000000001/info
+project-access|/projects/10000000-0000-0000-0000-000000000001/access
+project-datasets|/projects/10000000-0000-0000-0000-000000000001/datasets
+project-settings|/projects/10000000-0000-0000-0000-000000000001/settings
+project-ontology|/projects/10000000-0000-0000-0000-000000000001/ontology
+
+# Not listed: projects/<id>/experiments. Every route under it requires an
+# experiment id and the fixture seeds no experiments, so the bare path reports
+# "Missing experiment id in route". Seed an experiment first.
