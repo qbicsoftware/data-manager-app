@@ -2154,6 +2154,14 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   padding-top: var(--lumo-space-s);
 }
 
+/* The way back from the enrolment confirmation. Breadcrumb-shaped, matching the back link at the top
+   of the page: the flow is finished, and a full-width primary button here read as the next required
+   step when there is none. */
+.mfa-enrol-done-link {
+  align-self: flex-start;
+  font-size: var(--lumo-font-size-s);
+}
+
 /* Says the setup timed out and what to do about it. */
 .mfa-enrol-session-notice {
   color: var(--lumo-secondary-text-color);

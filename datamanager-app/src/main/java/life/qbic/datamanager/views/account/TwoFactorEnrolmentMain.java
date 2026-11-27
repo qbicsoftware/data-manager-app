@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.util.List;
 import life.qbic.datamanager.views.general.CopyToClipboardButton;
 import life.qbic.datamanager.views.general.Main;
+import life.qbic.datamanager.views.notifications.SuccessMessage;
 import life.qbic.datamanager.views.settings.SettingsMainLayout;
 import life.qbic.datamanager.views.settings.SettingsSection;
 import life.qbic.identity.api.UserInformationService;
@@ -358,13 +359,25 @@ public class TwoFactorEnrolmentMain extends Main implements BeforeEnterObserver 
    */
   private void showEnrolledWithoutNewCodes(String accountEmail, boolean hasUnusedCodes) {
     content.removeAll();
-    SettingsSection section = new SettingsSection(TwoFactorSettingsCopy.ENROL_TITLE,
+
+    // Headed for what happened, not for what was being done: the page said "Set up an authenticator
+    // app" one second before the app existed, which reads as unfinished work.
+    SettingsSection section = new SettingsSection(TwoFactorSettingsCopy.ENROL_DONE_TITLE);
+
+    // The shared success component, so this state looks like every other confirmation in the
+    // application instead of like a paragraph that happened to land here.
+    SuccessMessage confirmation = new SuccessMessage(
+        "Two-factor authentication is on for this account",
         TwoFactorSettingsCopy.enrolmentDoneWithoutNewCodesBody(hasUnusedCodes));
-    Button done = new Button("Done",
-        event -> UI.getCurrent().navigate(TwoFactorAuthenticationMain.class));
-    done.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+    // A breadcrumb-shaped way back, not a full-width primary bar: the flow is finished, and there is
+    // no next step for a primary button to invite.
+    RouterLink done = new RouterLink(TwoFactorSettingsCopy.ENROL_DONE_ACTION,
+        TwoFactorAuthenticationMain.class);
+    done.addClassName("mfa-enrol-done-link");
     done.setId("enrolment-done");
-    section.addContent(done);
+
+    section.addContent(confirmation, done);
     content.add(section);
   }
 

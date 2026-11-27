@@ -231,6 +231,18 @@ public final class TwoFactorSettingsCopy {
   }
 
   /**
+   * Title of the confirmation shown after an enrolment that issued no new sheet.
+   *
+   * <p>Deliberately not {@link #ENROL_TITLE}: the page was still headed "Set up an authenticator app"
+   * after the app had been set up, which reads as work not yet done. A confirmation states what
+   * happened.</p>
+   */
+  static final String ENROL_DONE_TITLE = "Authenticator app is ready";
+
+  /** The way back from the confirmation. A named destination, not a bare "Done". */
+  static final String ENROL_DONE_ACTION = "Back to two-factor settings";
+
+  /**
    * What the user is told after enrolling when no new sheet was issued.
    *
    * <p>The absence of a sheet is itself a message, and it must not be read as "you have no codes". The

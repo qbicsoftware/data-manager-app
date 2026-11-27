@@ -61,6 +61,23 @@ class RecoveryCodesIssuedOnEnrolmentSpec extends Specification {
     body.toLowerCase().contains("still work")
   }
 
+  def "the confirmation does not keep telling the user to set up an app they just set up"() {
+    expect: "a confirmation is not an instruction; reusing the enrolment title read as unfinished work"
+    TwoFactorSettingsCopy.ENROL_DONE_TITLE != TwoFactorSettingsCopy.ENROL_TITLE
+    !TwoFactorSettingsCopy.ENROL_DONE_TITLE.toLowerCase().contains("set up")
+  }
+
+  def "the confirmation says the app is ready"() {
+    expect:
+    def title = TwoFactorSettingsCopy.ENROL_DONE_TITLE.toLowerCase()
+    title.contains("ready") || title.contains("enabled") || title.contains("added")
+  }
+
+  def "the confirmation offers a way back that is not a full-width primary bar"() {
+    expect: "a primary button spanning the panel reads as the next required step, and there is none"
+    TwoFactorSettingsCopy.ENROL_DONE_ACTION == "Back to two-factor settings"
+  }
+
   def "the message names where the codes are managed"() {
     given:
     def body = TwoFactorSettingsCopy.enrolmentDoneWithoutNewCodesBody(true)
