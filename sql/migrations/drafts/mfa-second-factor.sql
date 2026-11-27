@@ -152,6 +152,8 @@ CREATE TABLE IF NOT EXISTS `user_second_factor`
         COMMENT 'User-facing label, e.g. "iPhone (passkey)" or "YubiKey 5". Not unique: rows are soft-deleted, so a removed factor must be re-addable under the same name.',
     `createdAt`          datetime(6)  NOT NULL,
     `lastUsedAt`         datetime(6)  DEFAULT NULL,
+    `lastAcceptedStep`   bigint(20)   DEFAULT NULL
+        COMMENT 'Highest RFC 6238 time step this factor has accepted. Replay protection (MFA-20): a code is valid for 30s and tolerated +/-1 step, so an already-seen code stays usable for 90s unless the step it matched is refused once it is not newer than this. A step counter, not a timestamp — every datetime column here has no zone.',
     `disabledAt`         datetime(6)  DEFAULT NULL
         COMMENT 'Soft delete. A removed factor is never hard-deleted, so the audit trail (AUTH-R-04) keeps showing when it existed and when it stopped.',
 
@@ -162,6 +164,15 @@ CREATE TABLE IF NOT EXISTS `user_second_factor`
                 `secretCiphertext` IS NULL))
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
+
+-- Upgrading a database that already ran an earlier draft of this file (which lacked the
+-- replay-protection column) needs only this one statement:
+--
+--   ALTER TABLE `user_second_factor` ADD COLUMN `lastAcceptedStep` bigint(20) DEFAULT NULL
+--       COMMENT 'Highest RFC 6238 time step accepted by this factor; replay protection (MFA-20)';
+--
+-- Existing rows are NULL, which means "no code accepted yet" — correct, and it does not need a
+-- backfill: the mark only has to be right from the next verification onwards.
 
 -- -----------------------------------------------------------------------------
 -- 2. user_recovery_code: single-use break-glass codes (hashed, never plaintext)

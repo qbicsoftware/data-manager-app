@@ -44,6 +44,17 @@ public class MfaSchemaPreflight implements ApplicationRunner {
    * The columns this code maps on {@code user_mfa_grace}. Kept as one statement: a query that selects
    * them and returns nothing proves both the table and the columns in one round trip.
    */
+  /**
+   * Probes for {@code user_second_factor.lastAcceptedStep}, the replay-protection mark (MFA-20).
+   *
+   * <p>Separate from the grace-column probe because it answers a different question: a deployment that
+   * applied the first draft of this migration but not this column would fail every login with an
+   * {@code Unknown column} error, which is a support call rather than a security incident — but it is
+   * cheaper to say so at boot.</p>
+   */
+  static final String REPLAY_COLUMN_PROBE =
+      "SELECT `lastAcceptedStep` FROM `user_second_factor` WHERE 1 = 0";
+
   static final String COLUMN_PROBE =
       "SELECT reminderDueSentAt, reminderFinalSentAt FROM user_mfa_grace WHERE 1 = 0";
 
@@ -59,8 +70,14 @@ public class MfaSchemaPreflight implements ApplicationRunner {
     this.entityManager = requireNonNull(entityManager, "entityManager must not be null");
   }
 
+  static final String REPLAY_COLUMN_HINT =
+      "Apply the replay-protection column before this build takes traffic: "
+          + "ALTER TABLE user_second_factor ADD COLUMN lastAcceptedStep bigint(20) NULL. "
+          + "Until then every second-factor verification fails with an unknown-column error.";
+
   @Override
   public void run(ApplicationArguments args) {
+    probeReplayColumn();
     try {
       entityManager.createNativeQuery(COLUMN_PROBE).getResultList();
       log.info("Second-factor schema check passed: user_mfa_grace has the reminder columns");
@@ -74,6 +91,28 @@ public class MfaSchemaPreflight implements ApplicationRunner {
         log.warn("Second-factor schema could not be verified (%s); if logins fail, check the "
             .formatted(e.getClass().getSimpleName())
             + "user_mfa_grace migration in docs/migrations/NEXT.md");
+      }
+    }
+  }
+
+  /**
+   * Reports a missing replay-protection column (MFA-20) separately from the grace columns.
+   *
+   * <p>Two probes rather than one because the failures mean different things and point at different
+   * migrations: the grace columns gate <em>every</em> password login, while a missing
+   * {@code lastAcceptedStep} breaks only second-factor verification. Merging them would make the hint
+   * name the wrong script.</p>
+   */
+  private void probeReplayColumn() {
+    try {
+      entityManager.createNativeQuery(REPLAY_COLUMN_PROBE).getResultList();
+      log.info("Second-factor schema check passed: user_second_factor has lastAcceptedStep");
+    } catch (RuntimeException e) {
+      if (hintFor(e).isPresent()) {
+        log.error(REPLAY_COLUMN_HINT);
+      } else {
+        log.warn("Second-factor replay column could not be verified (%s)"
+            .formatted(e.getClass().getSimpleName()));
       }
     }
   }

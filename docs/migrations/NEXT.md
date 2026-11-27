@@ -475,6 +475,34 @@ code is one of a million per thirty-second step and a recovery code one of about
 rotates. The bucket is keyed on the account, not the origin — reaching it requires that account's
 password, so it is not an anonymous surface, and being told you hit it is not an enumeration oracle.
 
+### Replay protection: one new column on `user_second_factor` (MFA-20)
+
+A TOTP code is valid for its 30-second step, and verification tolerates one step either side for
+clock drift — so a code that has been seen once stays usable for **ninety seconds**, and any number of
+times within it. `user_second_factor.lastAcceptedStep` records the highest step a factor has ever
+accepted; a code whose step is not strictly newer is refused.
+
+| Column | Type | Meaning |
+|---|---|---|
+| `lastAcceptedStep` | `bigint(20)` NULL | Highest RFC 6238 step accepted; NULL = never used |
+
+**Schema, for a database that already ran an earlier draft of Migration 1:**
+
+```sql
+ALTER TABLE `user_second_factor` ADD COLUMN `lastAcceptedStep` bigint(20) DEFAULT NULL;
+```
+
+No backfill: NULL means "nothing accepted yet", which is correct for every existing row.
+
+**Behaviour change to expect.** Two logins inside the same 30-second step cannot both succeed — both
+carry the same code, and the second is a replay by definition. A user signing in twice in quick
+succession waits at most 30 seconds for the next code. This is the intended trade: the alternative
+(permitting a step for a few seconds after its first use) reopens a smaller but real replay window.
+
+**Not a replacement for throttling.** This stops *reuse* of a code. It does not stop someone using a
+fresh code they obtained — that is theft of a live credential, which the attempt limit and the
+30-second lifetime bound.
+
 
 ### New keys for origin-scope throttling (#1691) — all inert by default
 

@@ -121,14 +121,30 @@ public class SecondFactorVerificationService {
         continue;
       }
       try {
-        if (Totp.verify(new String(seed), code, now)) {
+        var matchedStep = Totp.acceptedStep(new String(seed), code, now);
+        if (matchedStep.isPresent() && factor.acceptsStep(matchedStep.getAsLong())) {
           factor.markUsed(now);
+          // Replay protection (MFA-20). The step, not the code, is what makes this a total order:
+          // with the ±1 tolerance the same code matches three consecutive steps, so "not used before"
+          // would still let an attacker replay an older step after a newer one was accepted.
+          factor.markAcceptedStep(matchedStep.getAsLong());
           secondFactorRepository.save(factor);
           // The account is in again: its allowance starts over, so a later typo is not still the
           // sixth attempt of a window that began before this login.
           throttle.onSuccess(AuthAttemptThrottle.Scope.SECOND_FACTOR, userId);
-          log.info("Second factor %s of user %s verified".formatted(factor.id(), userId));
+          log.info("Second factor %s of user %s verified at step %d"
+              .formatted(factor.id(), userId, matchedStep.getAsLong()));
           return new Result(Outcome.VERIFIED, factor.id());
+        }
+        if (matchedStep.isPresent()) {
+          // The code is right but was already used. Deliberately the same REJECTED outcome as a wrong
+          // code: telling the user "you already used that" would confirm a code to whoever presents
+          // it (AUTH-NFR-03), and it is only ever useful to an attacker.
+          log.warn(("Second factor %s of user %s presented a code from step %d, which is not newer "
+              + "than the last accepted step %s; refused as a replay")
+              .formatted(factor.id(), userId, matchedStep.getAsLong(),
+                  factor.lastAcceptedStep().isPresent()
+                      ? factor.lastAcceptedStep().getAsLong() : "none"));
         }
       } finally {
         Arrays.fill(seed, '\0');
