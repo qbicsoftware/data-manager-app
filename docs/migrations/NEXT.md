@@ -46,6 +46,7 @@ For the migration documentation structure, see [`README.md`](README.md).
 | # | Script | Description | Risk |
 |---|---|---|---|
 | 1 | [`mfa-second-factor.sql`](../../sql/migrations/drafts/mfa-second-factor.sql) | Create `user_second_factor`, `user_recovery_code` and `user_mfa_grace` for the self-governed second factor (MILESTONE-MFA M2-1). No existing table is altered | Medium — three additive tables; destructive to roll back once factors exist |
+| 2 | [`add-second-factor-accepted-step.sql`](../../sql/migrations/add-second-factor-accepted-step.sql) | Add `user_second_factor.lastAcceptedStep` for TOTP replay protection (MFA-20). **Required for any instance that already ran script 1** — that script is initial-install only and will not add the column to an existing table | Low — one nullable column, no row touched, idempotent, reversible |
 
 
 Each row links to its incremental script. The sections below expand each entry
@@ -487,26 +488,30 @@ accepted; a code whose step is not strictly newer is refused.
 |---|---|---|
 | `lastAcceptedStep` | `bigint(20)` NULL | Highest RFC 6238 step accepted; NULL = never used |
 
-**Nothing is released yet, so there is no upgrade path to write.**
+**Applying it to an existing instance.** The draft in section 1 is an initial-install script
+(`CREATE TABLE IF NOT EXISTS`), so re-running it will **not** add this column to tables that already
+exist. Use the incremental script:
 
-These tables and this column have never shipped. A staging or test instance that ran an earlier draft is
-brought to the current shape by **recreating the three tables**, not by patching them:
-
-```sql
-DROP TABLE IF EXISTS user_mfa_grace;
-DROP TABLE IF EXISTS user_recovery_code;
-DROP TABLE IF EXISTS user_second_factor;
-
-SOURCE sql/migrations/drafts/mfa-second-factor.sql;
+```bash
+mysql --defaults-extra-file=<credentials> <data_management_db> \
+  < sql/migrations/add-second-factor-accepted-step.sql
 ```
 
-The drop order is not the reverse of the create order and does not need to be — the three tables
-reference `users`, never each other. Destructive, and fine while nothing is enrolled: everyone with a
-factor from the previous draft re-enrols. That cost exists only until the release that ships
-Migration 1, after which every further change needs an incremental script.
+| Step | Effect on your data |
+|---|---|
+| Pre-flight `SELECT` | reads `information_schema` only |
+| Guarded `ALTER … ADD COLUMN` | adds one nullable `bigint`; **no row is read, rewritten or deleted** |
+| Verify `SELECT` | reads `information_schema`, then prints a count |
 
-**Once released**, adding this column becomes a normal incremental migration: one nullable `bigint`,
-no backfill (NULL is the correct initial state), reversible with a single `DROP COLUMN`.
+Idempotent: guarded on `information_schema`, so a second run prints "already present — nothing to do".
+Reversible with a single `DROP COLUMN`, which drops the protection and not a single account or factor.
+**No backfill, deliberately** — NULL is the correct initial state, and the mark only has to be right
+from the next verification onwards.
+
+Verified against a MariaDB 12.3 server on an instance shaped like an existing test database (one factor
+already enrolled, no such column): the row survives, `lastAcceptedStep` is added as `bigint(20) NULL`,
+its value is readable and writable by the application, the second run is a no-op, and the rollback
+drops the column with the row intact.
 
 **Behaviour change to expect.** Two logins inside the same 30-second step cannot both succeed — both
 carry the same code, and the second is a replay by definition. A user signing in twice in quick

@@ -282,10 +282,10 @@ DEALLOCATE PREPARE stmt;
 -- =============================================================================
 -- Rollback / re-applying this draft
 -- =============================================================================
--- Nothing in this file has been released, so a test instance that ran an earlier
--- draft is brought to the current shape by RECREATING the tables, not by patching
--- them. That is why there is no companion "add column" script for
--- `lastAcceptedStep`: an upgrade path would solve a problem that cannot exist yet.
+-- To add `lastAcceptedStep` to tables that already exist, use
+-- sql/migrations/add-second-factor-accepted-step.sql. This file is initial-install
+-- only: CREATE TABLE IF NOT EXISTS skips a table that is already there, so it will
+-- not alter one.
 --
 -- DROP TABLE IF EXISTS `user_mfa_grace`;
 -- DROP TABLE IF EXISTS `user_recovery_code`;
