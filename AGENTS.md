@@ -9,10 +9,6 @@ Read the source rather than a summary.
 
 | Topic | Source |
 |---|---|
-| Requirements (IDs, format, editing, retiring) | [`docs/requirements-guide.md`](docs/requirements-guide.md) |
-| Current requirements | [`docs/requirements.md`](docs/requirements.md) |
-| Features and stories, with status | [`docs/features.md`](docs/features.md) |
-| Architecture decisions | [`docs/adr/README.md`](docs/adr/README.md) |
 | Exception handling | [`ExceptionHandling.md`](ExceptionHandling.md) |
 | Service API patterns (Mono/Flux, request/response) | [`service_api.md`](service_api.md) |
 | UI dialog and component composition | [`datamanager-app/front-end-components.md`](datamanager-app/front-end-components.md) |
@@ -78,9 +74,6 @@ The full application:
 
 - Adding or removing a Maven module.
 - Changing the database schema in `sql/complete-schema.sql`.
-- Editing `docs/requirements.md` — needs its own PR, separate from implementation.
-- Renaming or retiring a Feature slug that Stories reference.
 - Spring Security config, the vault/keystore, or OAuth2 providers.
 - Artemis topic names or JMS consumer configuration.
 - The RO-Crate export format.
-- Creating an ADR or editing the index in `docs/adr/README.md`.
