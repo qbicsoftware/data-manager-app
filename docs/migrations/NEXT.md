@@ -46,6 +46,7 @@ For the migration documentation structure, see [`README.md`](README.md).
 | # | Script | Description | Risk |
 |---|---|---|---|
 | 1 | [`mfa-second-factor.sql`](../../sql/migrations/drafts/mfa-second-factor.sql) | Create `user_second_factor`, `user_recovery_code` and `user_mfa_grace` for the self-governed second factor (MILESTONE-MFA M2-1). No existing table is altered | Medium — three additive tables; destructive to roll back once factors exist |
+| 2 | [`add-second-factor-accepted-step.sql`](../../sql/migrations/add-second-factor-accepted-step.sql) | Add `user_second_factor.lastAcceptedStep` for TOTP replay protection (MFA-20). **Required for anyone who already ran script 1** — script 1 is an initial-install script and will not add the column to an existing table | Low — one nullable column, no row touched, idempotent, reversible |
 
 Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
@@ -486,13 +487,49 @@ accepted; a code whose step is not strictly newer is refused.
 |---|---|---|
 | `lastAcceptedStep` | `bigint(20)` NULL | Highest RFC 6238 step accepted; NULL = never used |
 
-**Schema, for a database that already ran an earlier draft of Migration 1:**
+**Update path for an instance that already has the second-factor tables — do not re-run the draft.**
 
-```sql
-ALTER TABLE `user_second_factor` ADD COLUMN `lastAcceptedStep` bigint(20) DEFAULT NULL;
+`sql/migrations/drafts/mfa-second-factor.sql` is the *initial install* script. It is written with
+`CREATE TABLE IF NOT EXISTS`, so re-running it on an existing database will not recreate the tables —
+but it also will not add this column, because the table already exists. Applying the whole draft again
+is therefore both useless and a needless operation on a live instance.
+
+Use the incremental script instead:
+
+```bash
+mysql --defaults-extra-file=<credentials> <data_management_db> \
+  < sql/migrations/add-second-factor-accepted-step.sql
 ```
 
-No backfill: NULL means "nothing accepted yet", which is correct for every existing row.
+**What it does, exactly:**
+
+| Step | Effect on your data |
+|---|---|
+| Pre-flight `SELECT` | reads `information_schema` only |
+| Guarded `ALTER … ADD COLUMN` | adds one nullable `bigint`; **no row is read, rewritten or deleted** |
+| Verify `SELECT` | reads `information_schema` and counts rows without printing any |
+| Final `SELECT` | `COUNT(*)` only — prints a number, never a factor id |
+
+It is **idempotent** (guarded on `information_schema`; a second run prints "already present — nothing
+to do"), so running it twice by accident is harmless.
+
+**Rollback**, if the build is reverted:
+
+```sql
+ALTER TABLE `user_second_factor` DROP COLUMN `lastAcceptedStep`;
+```
+
+That drops the protection, not any account or factor. Existing factors keep working; codes simply
+become replayable again.
+
+**No backfill, deliberately.** Every existing row gets `NULL`, which the application reads as "no code
+accepted yet". The mark only has to be right from the next verification onwards, so there is nothing to
+derive and nothing that could be derived wrongly.
+
+**Zero downtime, no restart ordering.** The column is nullable and the old build never selects it, so
+the migration can be applied before or after the new build is deployed. If applied *after*, the first
+logins with the new build will fail with an unknown-column error — that is exactly what
+`MfaSchemaPreflight` now reports at boot, by name, before traffic arrives.
 
 **Behaviour change to expect.** Two logins inside the same 30-second step cannot both succeed — both
 carry the same code, and the second is a replay by definition. A user signing in twice in quick
