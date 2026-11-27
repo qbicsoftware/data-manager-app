@@ -110,14 +110,30 @@ The real prerequisites are:
 
 | # | Requirement | Status |
 |---|---|---|
-| 1 | **Exactly one public origin per environment**, matching `rpId` + `allowedOrigins` | **Blocking.** Canonical origin: `https://rdm.qbic.uni-tuebingen.de`. A staging instance on another host needs its own values |
+| 1 | **Exactly one public origin per environment**, matching `rpId` + `allowedOrigins` | ✅ **Confirmed 2026-11-27** — one domain, `rdm.qbic.uni-tuebingen.de`, one HA cluster behind one proxy. No longer a blocker |
 | 2 | **`rpId` = `rdm.qbic.uni-tuebingen.de`** (narrowest valid value, not a parent domain) | Config |
-| 3 | **Sticky sessions on HAProxy** — the challenge lives in the HTTP session, so the assertion POST must land on the issuing node | ✅ **Confirmed present (2026-11-27).** No longer a blocker |
+| 3 | **Sticky sessions on HAProxy** — the challenge lives in the HTTP session, so the assertion POST must land on the issuing node | ✅ **Confirmed present (2026-11-27)**, on concurrent HA nodes behind the proxy |
+| 3b | **The session cookie is actually accepted for this host** — see §7.1a. The challenge rides on the session, so a cookie the browser drops breaks the ceremony exactly as a missing node affinity would | ⚠️ **Check before phase 5.** The shipped default looks wrong for this hostname |
 | 4 | Valid TLS certificate on the public origin | Ops — browsers refuse `navigator.credentials` outside a secure context |
 | ~~5~~ | ~~`server.forward-headers-strategy`~~ | **Not required for WebAuthn.** Still needed for #1691 and for building absolute mail/OAuth links — a separate concern |
 
 **Action:** correct ADR 0011 W1 and milestone §1a row 1 to say this, so nobody schedules passkeys
 behind the #1691 operator step.
+
+**What the confirmed deployment settles.** One domain on one proxy across concurrent HA nodes means
+`rpId` is stable, `allowedOrigins` is a one-element list, and staging is the only environment that
+needs different values. The remaining prerequisite is TLS on that origin, which is an ops fact rather
+than an engineering one.
+
+Two things that do *not* need changing, which is worth stating because both look like they should:
+
+- **`server.forward-headers-strategy` can stay `NONE`.** WebAuthn never reads the request to decide
+  its origin. Leaving it unset is the safer default and keeps the #1691 decision independent of
+  passkeys.
+- **`HttpClientOriginResolver` / `ClientOrigin` is a different concept.** `ClientOrigin` is a
+  grouped *network* used to bucket rate limits; WebAuthn wants the *web origin*, scheme + host. The
+  same domain making both correct is a coincidence, not a shared dependency — do not wire one to the
+  other.
 
 Note also that `HttpClientOriginResolver` / `ClientOrigin` do **not** help here,
 despite the shared word. `ClientOrigin` is a *grouped network* for rate limiting; WebAuthn
@@ -277,8 +293,10 @@ common WebAuthn integration bug. Pin it with a unit test over fixed vectors.
 **Rough band: 15–22 engineer-days.** ~18–25 files touched, of which 10–12 are new. Two people can run
 phases 4 and 5 in parallel once 2–3 are settled, giving ~2 calendar weeks.
 
-**Updated 2026-11-27:** sticky sessions confirmed present, so the largest deployment unknown is gone.
-One blocker remains — exactly one public origin per environment, §7.2.
+**Updated 2026-11-27:** sticky sessions confirmed present, and the deployment is a single domain
+(`rdm.qbic.uni-tuebingen.de`) on one proxy across concurrent HA nodes. **Both deployment blockers
+are gone.** The remaining pre-phase-5 check is the session cookie's domain (§7.1a), which is a
+configuration question rather than an unknown.
 
 | Phase | Work | Size | Depends on |
 |---|---|---|---|
@@ -300,6 +318,31 @@ committing to 4–5.
 
 ## 7. Risks
 
+### 7.1a The session cookie default does not match this hostname
+
+Surfaced while confirming the origin. `application.properties:389`:
+
+```properties
+server.servlet.session.cookie.domain=${SESSION_COOKIE_DOMAIN:de.uni-tuebingen.qbic}
+```
+
+That default is **not a suffix of `rdm.qbic.uni-tuebingen.de`**. Per RFC 6265 a user agent must
+*reject* a cookie whose `Domain` attribute does not domain-match the request host — it is not a
+harmless mismatch, the cookie is discarded.
+
+The application plainly works today, so production must set `SESSION_COOKIE_DOMAIN`. That is the
+point worth confirming rather than assuming: **if the override is missing or wrong, no session
+exists at all**, and a WebAuthn ceremony has nowhere to keep its challenge. The failure would look
+like a passkey bug.
+
+Two things to do:
+
+1. Confirm the deployed `SESSION_COOKIE_DOMAIN` value (or that the cookie is host-only because
+   the property is empty).
+2. Consider changing the in-repo default. A default that cannot match the documented production
+   hostname is a trap for the next deployment, and this is the second place in the repo that has
+   noticed it — `MILESTONE-MFA` §1a and `HANDOVER-auth-flow-hardening.md` both flag the same value.
+
 ### 7.1 Sticky sessions — resolved
 
 **Was the #1 passkey-behind-load-balancer failure.** Confirmed present on 2026-11-27, so the
@@ -309,6 +352,17 @@ Worth keeping in the runbook anyway: this is a property of the *deployment*, not
 affinity is ever removed — a new backend, a rebalanced cluster, an autoscaling group — passkey login
 breaks while password+TOTP keeps working, which makes it look like a passkey bug rather than a proxy
 change. Note it in the ops doc next to the `rpId` settings.
+
+**On concurrent HA specifically**, two consequences that do not apply to TOTP:
+
+- **A failover mid-ceremony loses the challenge.** If the node holding the session dies between
+  `begin` and `finish`, the assertion arrives at a node that never issued it and fails. The user
+  retries; it is not a lockout. TOTP has no equivalent window because there is no server-side
+  challenge. Worth one line in the helpdesk runbook (`M6-2`).
+- **Do not move the challenge to a shared store to "fix" this.** It would remove the affinity
+  dependency, but it also puts a credential challenge in whatever store you pick, and the session
+  is the right place for a value that must be single-use and short-lived. Affinity is already
+  required by Vaadin push; adding a second mechanism buys nothing.
 
 ### 7.2 Exactly one public origin per environment
 
@@ -393,11 +447,15 @@ re-enrolment campaign for the entire population.
 
 1. ~~**Is the `mfa-second-factor.sql` release cut imminent?**~~ ✅ **Answered 2026-11-27** — the
    columns went into the draft before the cut. No migration will be needed.
-2. ~~**Is sticky sessions actually configured on HAProxy?**~~ ✅ **Answered 2026-11-27** — yes.
+2. ~~**Is sticky sessions actually configured on HAProxy?**~~ ✅ **Answered 2026-11-27** — yes, on
+   concurrent HA nodes behind the proxy.
 3. **Are staging credentials expected to work on production?** They will not, by design (§7.2). If
    someone believes otherwise, that belief needs correcting in the ops doc before rollout.
 4. **Does any cohort need `DEVICE_BOUND` on day one?** If yes, phase 6 ships with the feature;
    if no, it is configuration waiting for a decision.
+5. **What is the deployed `SESSION_COOKIE_DOMAIN`?** Matters more for passkeys than for anything
+   else, because the challenge lives in the session (§7.1a). The in-repo default does not match the
+   production hostname.
 
 ## 10. Documentation to update as part of this work
 
