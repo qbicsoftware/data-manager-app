@@ -121,20 +121,43 @@ public class MfaReminderService {
         continue;
       }
       if (send(user.get(), grace, stage)) {
-        switch (stage) {
-          case SOON -> graceRepository.markDueReminderSent(grace.userId(), now);
-          case FINAL -> graceRepository.markFinalReminderSent(grace.userId(), now);
-          default -> {
-            // unreachable: Stage.NONE was filtered above
-          }
-        }
         sent++;
+        recordStamp(grace, stage, now);
       }
     }
     if (sent > 0) {
       log.info("Sent %d second-factor enrolment reminder(s)".formatted(sent));
     }
     return sent;
+  }
+
+  /**
+   * Records that the mail went out, and never lets a failure here abort the pass.
+   *
+   * <p>A {@code RuntimeException} from the stamp used to escape and end the whole pass, so one
+   * account's write failure silenced every account behind it in the loop — the opposite of what this
+   * class promises for a send failure. It also made the reported flood invisible: the mail had already
+   * left, the stamp was lost, and the only trace was one error line per pass.</p>
+   *
+   * <p>Swallowing is not free, and the trade is made explicit: the account <em>will</em> be mailed again
+   * on the next pass, which is why the log line says so rather than merely reporting the exception. The
+   * alternative — stopping the pass — trades one noisy account for a silent one, and silence is how this
+   * defect survived a deployment.</p>
+   */
+  private void recordStamp(MfaGrace grace, MfaReminder.Stage stage, Instant now) {
+    try {
+      switch (stage) {
+        case SOON -> graceRepository.markDueReminderSent(grace.userId(), now);
+        case FINAL -> graceRepository.markFinalReminderSent(grace.userId(), now);
+        default -> {
+          // unreachable: Stage.NONE was filtered above
+        }
+      }
+    } catch (RuntimeException e) {
+      log.error("Second-factor %s reminder was sent to user %s but could not be recorded (%s): the "
+              .formatted(stage, grace.userId(), e.getClass().getSimpleName())
+          + "account will be reminded again on the next pass. The rest of this pass continues.");
+    }
   }
 
   private Optional<User> userById(String userId) {

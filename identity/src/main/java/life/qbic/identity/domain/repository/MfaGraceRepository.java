@@ -54,6 +54,14 @@ public interface MfaGraceRepository {
    * sent but not recorded is one duplicate mail, while a recorded reminder that was not sent is a user
    * who never hears about the deadline. The failure mode is chosen deliberately.</p>
    *
+   * <p><b>An implementation must commit this on its own.</b> The stamp is a write, so it needs a
+   * transaction, while the query that decided to send it does not — and the scheduled pass that calls
+   * both declares no transaction, by design, because it spans many accounts. An adapter that simply
+   * writes here throws, the pass swallows the error, and the same account is mailed on every pass.
+   * That was a reported defect: testers in {@code REQUIRED} mode were swamped with reminders. Share
+   * the caller's transaction and you get the opposite failure — every stamp in the pass rolls back
+   * together — so the stamp needs {@code REQUIRES_NEW}.</p>
+   *
    * @param userId the account
    * @param now    when it was sent
    */

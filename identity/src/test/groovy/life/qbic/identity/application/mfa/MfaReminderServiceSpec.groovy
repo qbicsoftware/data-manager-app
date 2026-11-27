@@ -180,6 +180,36 @@ class MfaReminderServiceSpec extends Specification {
         graces.due[account] != null
     }
 
+    def "a stamp that cannot be written does not silence the rest of the pass"() {
+        // The reported flood, from the other side. The stamp used to throw, the job swallows per pass,
+        // so one broken write ended the loop: the accounts behind it never got their mail, and the one
+        // that failed got it again five minutes later. A send failure was already treated as "continue
+        // with the next account"; a stamp failure is the same kind of failure and must behave the same.
+        given: "two accounts are due, and the first one's stamp cannot be written"
+        def other = users.register("grace@example.org")
+        graces.open(account, DEADLINE)
+        graces.open(other, DEADLINE)
+        graces.stampFailing = true
+
+        when:
+        def sent = service().sendDueReminders(DEADLINE.minus(Duration.ofHours(12)))
+
+        then: "both mails go out — the failure is recorded, not propagated"
+        sent == 2
+        mail.sent.size() == 2
+
+        and: "and neither stamp landed, so both are retried rather than one being wrongly marked"
+        graces.due.isEmpty()
+
+        when: "the stamp recovers"
+        graces.stampFailing = false
+        def second = service().sendDueReminders(DEADLINE.minus(Duration.ofHours(12)))
+
+        then: "the reminders are re-sent on the next pass, which is the cost that was chosen"
+        second == 2
+        graces.due.size() == 2
+    }
+
     def "the mail names the deadline and the way to the settings page"() {
         given:
         graces.open(account, DEADLINE)
@@ -201,6 +231,8 @@ class MfaReminderServiceSpec extends Specification {
         final Map<String, Instant> due = [:]
         final Map<String, Instant> finalSent = [:]
         final Set<String> expired = []
+        /** Simulates a stamp write that fails, as it did when the write had no transaction. */
+        boolean stampFailing = false
 
         void open(String userId, Instant deadline) {
             stored[userId] = MfaGrace.start(userId, deadline.minus(Duration.ofHours(48)),
@@ -225,6 +257,9 @@ class MfaReminderServiceSpec extends Specification {
 
         @Override
         void markDueReminderSent(String userId, Instant now) {
+            if (stampFailing) {
+                throw new IllegalStateException("no transaction, as in production before the fix")
+            }
             due[userId] = now
             // The stamp must land on the entity, not only in this map: MfaReminder reads it back from
             // the window, and a fake that answered from a side map would let the spec pass while the
@@ -234,6 +269,9 @@ class MfaReminderServiceSpec extends Specification {
 
         @Override
         void markFinalReminderSent(String userId, Instant now) {
+            if (stampFailing) {
+                throw new IllegalStateException("no transaction, as in production before the fix")
+            }
             finalSent[userId] = now
             set(userId, "reminderFinalSentAt", now)
         }
