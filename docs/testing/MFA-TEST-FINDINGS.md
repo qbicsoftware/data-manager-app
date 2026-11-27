@@ -13,8 +13,8 @@ functionality · **S4** user-facing defect · **S5** decide, may not need code.
 | "Choose different account" authenticates as the previous account (MFA-25) | S1 | **fixed** — `710d2001f` |
 | No throttling on repeated failed codes (MFA-68) | S2 | **fixed** — `2cfa52608`, completed by `f1d052997` |
 | Recovery codes lost by refreshing (MFA-91) | S4 | **fixed** — `713fb4649` |
-| Registration broken / confirmed account cannot log in (MFA-74, MFA-75) | S3 | open — see §3 |
-| Invalid samples reported as registered (MFA-83) | S3 | open |
+| Registration broken / confirmed account cannot log in (MFA-74, MFA-75) | S3 | **not a defect** — test-server configuration, out of scope |
+| Invalid samples reported as registered (MFA-83) | S3 | **not in scope** — pre-existing sample-registration bug, unrelated to MFA |
 | No warning when the last recovery code is consumed (MFA-41b) | S4 | **fixed** — `775474246` |
 | Enrolment buttons unreachable at low resolution (MFA-93) | S4 | open |
 | Misleading login and MFA error messages (MFA-94) | S4 | open |
@@ -83,19 +83,23 @@ functionality · **S4** user-facing defect · **S5** decide, may not need code.
 - **Open question:** the implementer is unsure whether throttling exists at all; grep for a
   rate limiter on the second-factor verification path before assuming it needs building.
 
-## 3. Regressions blocking other tests
+## 3. Regressions blocking other tests — resolved as out of scope
 
-> **To confirm before coding.** Neither of these is reproducible from the repository: both descriptions
-> (`MFA-74`, `MFA-75`) are what the QA runner saw on `qpylon/dev`, and the branch `epic/mfa` is not
-> running there any more. Registration, confirmation and login-after-confirmation all read correctly in
-> the source — confirmation goes through a single-use token and an explicit click (`ConfirmEmailMain`),
-> and `UserDetailsServiceImpl` explicitly handles the no-password and inactive-account cases. So the
-> first question is not "where is the bug" but "was this the instance or the code": a deployment whose
-> mail slot or token parameter differs from the defaults would produce exactly these two symptoms.
+> **Confirmed by the operator: not defects in this change.** Both were symptoms of the QA
+> environment, not of the code.
 >
-> **Ask:** the instance URL (or its `application.properties` diff), and whether `routing.email-confirmation.token-parameter`
-> was customised. With that, a reproduction is a five-minute test; without it, any "fix" here would be
-> guessing at a defect nobody has seen since.
+> - **`MFA-74` / `MFA-75` (registration, then login as the confirmed account)** — the test server was
+>   misconfigured. The source was never wrong: confirmation goes through a single-use token and an
+>   explicit click (`ConfirmEmailMain`), and `UserDetailsServiceImpl` handles the no-password and
+>   inactive-account cases explicitly. **No code change made, and none needed.** Worth noting this as
+>   the reason not to "fix" a report that cannot be reproduced against the repository — two earlier
+>   QA reports in this document (the dialog height, the recovery-sheet prompt) turned out to be
+>   consequences of changes of mine, but these two genuinely were not.
+> - **`MFA-83` (invalid samples reported as registered)** — pre-existing sample-registration behaviour,
+>   unrelated to MFA. It surfaced in this run because MFA-83 is part of the regression block, not
+>   because the second factor touches it. Tracked separately; it is **not** part of this PR's scope.
+>   (It remains the most damaging open finding in the document, and closing it as "out of scope" is a
+>   scope decision, not a severity one.)
 
 ### S3 — Registration is broken on the test instance
 
