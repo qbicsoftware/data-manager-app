@@ -314,6 +314,10 @@ DEALLOCATE PREPARE stmt;
 -- only: CREATE TABLE IF NOT EXISTS skips a table that is already there, so it will
 -- not alter one.
 --
+-- Likewise, to add `credentialId` and `signatureCount` to a table created before
+-- those columns existed, use sql/migrations/add-second-factor-webauthn-columns.sql.
+-- It is idempotent and also widens chk_user_second_factor_shape to cover them.
+--
 -- DROP TABLE IF EXISTS `user_mfa_grace`;
 -- DROP TABLE IF EXISTS `user_recovery_code`;
 -- DROP TABLE IF EXISTS `user_second_factor`;
