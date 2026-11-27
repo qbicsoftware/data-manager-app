@@ -112,7 +112,7 @@ The real prerequisites are:
 |---|---|---|
 | 1 | **Exactly one public origin per environment**, matching `rpId` + `allowedOrigins` | **Blocking.** Canonical origin: `https://rdm.qbic.uni-tuebingen.de`. A staging instance on another host needs its own values |
 | 2 | **`rpId` = `rdm.qbic.uni-tuebingen.de`** (narrowest valid value, not a parent domain) | Config |
-| 3 | **Sticky sessions on HAProxy** — the challenge lives in the HTTP session, so the assertion POST must land on the issuing node | **Unconfirmed.** Vaadin almost certainly needs affinity already, but if it is not configured the failure is a login outage, not a UI glitch |
+| 3 | **Sticky sessions on HAProxy** — the challenge lives in the HTTP session, so the assertion POST must land on the issuing node | ✅ **Confirmed present (2026-11-27).** No longer a blocker |
 | 4 | Valid TLS certificate on the public origin | Ops — browsers refuse `navigator.credentials` outside a secure context |
 | ~~5~~ | ~~`server.forward-headers-strategy`~~ | **Not required for WebAuthn.** Still needed for #1691 and for building absolute mail/OAuth links — a separate concern |
 
@@ -142,12 +142,25 @@ Optional but cheap now, deferrable: `aaguid` `char(36)`, `transports`
 `varchar(255)`, `backupEligible` / `backupState`
 `tinyint(1)` — the last two also need to be readable for the policy tier in §5.4.
 
-> **Do this while `mfa-second-factor.sql` is still in `drafts/`.** Once the release
-> cut happens this becomes a real migration against a populated table, with an operator guide and a
-> backfill of the blob. It is two `ALTER`s today.
+> ✅ **Done 2026-11-27** — both columns are now in `sql/migrations/drafts/mfa-second-factor.sql`,
+> before the release cut, while the table is empty everywhere. The `CHECK` was widened at the same
+> time so the shape invariant covers them (below). No `ALTER` will be needed.
 
-The `chk_user_second_factor_shape` CHECK does **not** need to change: it was written as an OR
-over both shapes from the start.
+The `chk_user_second_factor_shape` CHECK needed widening, not rewriting. It was already an OR over
+both shapes, but it said nothing about the new columns, so a TOTP row could have carried a
+`credentialId` and a WEBAUTHN row could have had none. It now reads:
+
+```sql
+CHECK ((type = 'TOTP'     AND secretCiphertext IS NOT NULL AND webauthnCredential IS NULL
+                          AND credentialId IS NULL AND signatureCount IS NULL)
+    OR (type = 'WEBAUTHN' AND webauthnCredential IS NOT NULL AND secretCiphertext IS NULL
+                          AND credentialId IS NOT NULL))
+```
+
+`signatureCount` is deliberately unconstrained for WEBAUTHN: `NULL` means "this authenticator
+reports no counter" and `0` means "it reports one, currently zero". Those are different facts, and a
+constraint that collapsed them would silently disable clone detection for every authenticator that
+starts at zero.
 
 ### 5.2 A sibling verifier, not a rewrite of the TOTP one
 
@@ -264,6 +277,9 @@ common WebAuthn integration bug. Pin it with a unit test over fixed vectors.
 **Rough band: 15–22 engineer-days.** ~18–25 files touched, of which 10–12 are new. Two people can run
 phases 4 and 5 in parallel once 2–3 are settled, giving ~2 calendar weeks.
 
+**Updated 2026-11-27:** sticky sessions confirmed present, so the largest deployment unknown is gone.
+One blocker remains — exactly one public origin per environment, §7.2.
+
 | Phase | Work | Size | Depends on |
 |---|---|---|---|
 | **1. Dependency + config plumbing** | `spring-security-webauthn` into `datamanager-app/pom.xml` (version from the Spring Security BOM, no explicit version); `com.webauthn4j:*` entry in `pgp-keys-override.list` (the `sigcheck` gate will otherwise fail the build); `qbic.webauthn.*` properties | **0.5–1 d** | — |
@@ -284,11 +300,15 @@ committing to 4–5.
 
 ## 7. Risks
 
-### 7.1 Sticky sessions unconfirmed
+### 7.1 Sticky sessions — resolved
 
-**The #1 passkey-behind-load-balancer failure.** The challenge is session-held; without affinity the
-assertion POST lands on another node and fails opaquely. Vaadin almost certainly already needs
-affinity, but "almost certainly" is not confirmed. **Verify before phase 5**, not during.
+**Was the #1 passkey-behind-load-balancer failure.** Confirmed present on 2026-11-27, so the
+session-held challenge will find its own node.
+
+Worth keeping in the runbook anyway: this is a property of the *deployment*, not of the code. If
+affinity is ever removed — a new backend, a rebalanced cluster, an autoscaling group — passkey login
+breaks while password+TOTP keeps working, which makes it look like a passkey bug rather than a proxy
+change. Note it in the ops doc next to the `rpId` settings.
 
 ### 7.2 Exactly one public origin per environment
 
@@ -371,10 +391,9 @@ re-enrolment campaign for the entire population.
 
 ## 9. Open questions for the deciders
 
-1. **Is the `mfa-second-factor.sql` release cut imminent?** If not, take `credentialId`
-   + `signatureCount` into the draft now (§5.1) — two `ALTER`s become a real
-   migration later.
-2. **Is sticky sessions actually configured on HAProxy?** Blocking for phase 5, and cheap to answer.
+1. ~~**Is the `mfa-second-factor.sql` release cut imminent?**~~ ✅ **Answered 2026-11-27** — the
+   columns went into the draft before the cut. No migration will be needed.
+2. ~~**Is sticky sessions actually configured on HAProxy?**~~ ✅ **Answered 2026-11-27** — yes.
 3. **Are staging credentials expected to work on production?** They will not, by design (§7.2). If
    someone believes otherwise, that belief needs correcting in the ops doc before rollout.
 4. **Does any cohort need `DEVICE_BOUND` on day one?** If yes, phase 6 ships with the feature;

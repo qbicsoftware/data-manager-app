@@ -146,7 +146,32 @@ CREATE TABLE IF NOT EXISTS `user_second_factor`
     `secretCiphertext`   text
         COMMENT 'TOTP only. Base64(nonce||ciphertext||GCM tag), AES-256-GCM under the second-factor master key in the PKCS12 vault. Never a raw seed and never a PAT-style hash — the seed must be recoverable to verify a code.',
     `webauthnCredential` text
-        COMMENT 'WEBAUTHN only. Serialised credential (credentialId, public key, signature counter, transports, AAGUID, backup flags). Public key material only — there is no server-side secret to leak.',
+        COMMENT 'WEBAUTHN only. Serialised credential (public key, transports, AAGUID, backup flags). The credential id and the signature counter are NOT in here — they are their own columns below, because both are queried or updated on their own. Public key material only: there is no server-side secret to leak.',
+
+    -- The next two columns exist ONLY for WEBAUTHN and exist as columns, not as fields inside the
+    -- blob above, because each is used on its own in a way a blob cannot serve:
+    --
+    --   credentialId   is the LOOKUP KEY. The assertion arrives carrying the credential id and
+    --                  nothing that names the account, so the login path must resolve the factor
+    --                  from the id alone — the same reasoning that makes user_recovery_code.code-
+    --                  Hash globally unique. It also carries the handshake's norms: 16-1023 bytes of
+    --                  opaque binary, so Base64url needs 22-1364 chars. varchar(1024) covers the
+    --                  entire legal range with room to spare.
+    --
+    --   signatureCount is COMPARE-AND-SET state. WebAuthn authenticators keep a monotonic counter;
+    --                  a value that does not advance is the one signal we get that a credential was
+    --                  cloned. Checking that requires (a) reading the stored count, (b) verifying the
+    --                  assertion, (c) writing the new count ONLY IF it has not moved meanwhile —
+    --                  i.e. an UPDATE ... WHERE signatureCount = :expected. A read-modify-write of
+    --                  opaque text has no atomicity, and clone detection without atomicity is
+    --                  theatre: two concurrent assertions would both read the old value and both
+    --                  write their own. NULL means "this authenticator does not implement a
+    --                  counter", which WebAuthn explicitly permits; 0 is not a substitute for NULL
+    --                  (see the CHECK below).
+    `credentialId`     varchar(1024) DEFAULT NULL
+        COMMENT 'WEBAUTHN only. Base64url credential id. Globally unique: the assertion path looks a credential up by this value WITHOUT knowing the account. Never a secret — it is public, signed material, transmitted to the browser on every challenge.',
+    `signatureCount`   bigint(20)    DEFAULT NULL
+        COMMENT 'WEBAUTHN only. The signature counter of the last accepted assertion, compared-and-set on every use so a frozen or rewound counter is detectable as a possible clone. NULL = the authenticator reports no counter (permitted by WebAuthn); 0 = it reports a counter and the value is currently zero. The two are NOT interchangeable.',
 
     `displayName`        varchar(255) NOT NULL
         COMMENT 'User-facing label, e.g. "iPhone (passkey)" or "YubiKey 5". Not unique: rows are soft-deleted, so a removed factor must be re-addable under the same name.',
@@ -158,10 +183,12 @@ CREATE TABLE IF NOT EXISTS `user_second_factor`
         COMMENT 'Soft delete. A removed factor is never hard-deleted, so the audit trail (AUTH-R-04) keeps showing when it existed and when it stopped.',
 
     KEY `idx_user_second_factor_user` (`userId`, `disabledAt`),
+    UNIQUE KEY `uk_user_second_factor_credential` (`credentialId`),
     CONSTRAINT `chk_user_second_factor_shape`
-        CHECK ((`type` = 'TOTP' AND `secretCiphertext` IS NOT NULL AND `webauthnCredential` IS NULL)
+        CHECK ((`type` = 'TOTP' AND `secretCiphertext` IS NOT NULL AND `webauthnCredential` IS NULL
+                AND `credentialId` IS NULL AND `signatureCount` IS NULL)
             OR (`type` = 'WEBAUTHN' AND `webauthnCredential` IS NOT NULL AND
-                `secretCiphertext` IS NULL))
+                `secretCiphertext` IS NULL AND `credentialId` IS NOT NULL))
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
