@@ -280,15 +280,26 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- =============================================================================
--- Rollback
+-- Rollback / re-applying this draft
 -- =============================================================================
+-- Nothing in this file has been released, so a test instance that ran an earlier
+-- draft is brought to the current shape by RECREATING the tables, not by patching
+-- them. That is why there is no companion "add column" script for
+-- `lastAcceptedStep`: an upgrade path would solve a problem that cannot exist yet.
+--
 -- DROP TABLE IF EXISTS `user_mfa_grace`;
 -- DROP TABLE IF EXISTS `user_recovery_code`;
 -- DROP TABLE IF EXISTS `user_second_factor`;
 --
+-- Drop order does not need to mirror the create order: all three reference `users`,
+-- never each other.
+--
 -- Safe while nothing is enrolled: the tables are empty and no other table references them.
 -- Destructive once factors exist — every enrolled user must re-enrol, and a user with no
 -- recovery code and no factor cannot log in until an administrator re-enrols them (M6-1).
+--
+-- ONCE THIS SHIPS, the rules change: a future column becomes a normal incremental
+-- script in sql/migrations/, because by then a dropped table is someone's lost factor.
 -- Rolling back is therefore a decision about the population, not just about code:
 -- announce it, and keep a copy of `user_second_factor` before dropping it if re-enrolment
 -- has to be avoided.
