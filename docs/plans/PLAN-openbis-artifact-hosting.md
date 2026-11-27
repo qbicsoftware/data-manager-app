@@ -30,14 +30,22 @@ Facts established by inspection, to be re-verified in §5 Task 3:
 | jar SHA-1 | `5c7350674e178b6c19a0c4946cc7d97470693001` |
 | POM SHA-1 | `26d3f5a64c9830733afdbb326612ec10bb517cef` |
 | POM content | **empty** — no parent, no dependencies, no plugins |
-| Transitive dependencies | **none** |
+| Maven-resolved transitive dependencies | **none** — because the POM declares none |
+| Contents of the jar | **shaded uber-jar**: openBIS API classes plus 13 bundled libraries (Jackson ×3, Jetty ×4, HttpClient/HttpCore, commons-lang3, commons-io, commons-logging, slf4j-api) |
 | Signature | none published (`*.jar.asc` returns 404) |
 | Signature policy | already waived — `pgp-keys-override.list` line 6 is `life.qbic:*:* = noSig` |
 | Public alternative | **none** — `repo1.maven.org/maven2/life/qbic/zzzz-openbis-api/` → 404, upstream `ch/ethz/sis/` → 404 |
-| Licence | openBIS is Apache 2.0, so mirroring the binary publicly is acceptable |
+| Licence | openBIS is Apache 2.0 ([openbis.ch](https://openbis.ch/index.php/downloads/)) and all 13 bundled libraries are Apache 2.0, so mirroring the binary publicly is acceptable. Record the bundled inventory in the hosting repo — see §5 Task 2. |
 
-Because the POM is empty and nothing is transitive, hosting this is **two files and two
-checksums**. There is no dependency graph to reproduce.
+Because the POM is empty, nothing is transitive and hosting this is **two files and two
+checksums**. There is no dependency graph for *Maven* to reproduce.
+
+> **Correction (2026-11-25, during execution).** An earlier version of this table said
+> "Transitive dependencies: none" without qualification, which reads as "the jar depends on
+> nothing". That is wrong: the jar is a shaded uber-jar whose bundled libraries outnumber the
+> openBIS classes by entry count (`org/*` 6,537; `ch/*` 1,544; `com/*` 851), and it is not
+> a plain build of the openBIS API. This matters for the licence row below, not for the
+> hosting decision — the decision and the SHA-1s are unchanged.
 
 ### 1.1 Failure modes observed
 
@@ -141,6 +149,10 @@ starts from an empty repo.
   simplest sequence is: create the branch orphan (`git checkout --orphan gh-pages`), add
   the files, commit, push, then set it as the Pages source.
 - Enable Pages: source = `gh-pages` branch, root.
+- Record the **bundled third-party inventory** of the jar (`THIRD-PARTY.md` in the hosting
+  repo, with the commands used to derive it). Necessary because the artifact's POM is empty:
+  nothing in the Maven metadata discloses that the jar bundles 13 libraries, and a reader
+  cannot tell a plain build from a shaded uber-jar by looking at the coordinate.
 - Add a `README.md` stating what is hosted and why, the Apache 2.0 licence of openBIS, the
   pinned version and classifier, and the short `<repository>` snippet for consumers.
 - Confirm serving before touching any POM:
