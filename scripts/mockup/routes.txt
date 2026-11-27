@@ -6,10 +6,6 @@
 # exist renders the not-found page, which looks like a screenshot but tells you
 # nothing -- so add a route here only after confirming it resolves.
 #
-# Commented entries are routes that exist but currently render empty for
-# fixture users, because the seeded account holds no ACL entries on the
-# projects. They become useful once fixtures write access-control rows.
-#
 projects-list|/projects/list
 project-creation|/projects/create
 groups|/groups
@@ -20,5 +16,14 @@ test-view|/test-view
 test-view-associated-datasets|/test-view/associated-datasets
 test-view-project-page|/test-view/project-page
 
-# project-detail|/projects/10000000-0000-0000-0000-000000000001/info
-# project-experiments|/projects/10000000-0000-0000-0000-000000000001/experiments
+# Project pages. The fixture grants the seeded dev account an ACE on each of the
+# three projects, so these resolve instead of rendering access-denied.
+project-detail|/projects/10000000-0000-0000-0000-000000000001/info
+project-access|/projects/10000000-0000-0000-0000-000000000001/access
+project-datasets|/projects/10000000-0000-0000-0000-000000000001/datasets
+project-settings|/projects/10000000-0000-0000-0000-000000000001/settings
+project-ontology|/projects/10000000-0000-0000-0000-000000000001/ontology
+
+# Not listed: projects/<id>/experiments. Every route under it requires an
+# experiment id and the fixture seeds no experiments, so the bare path reports
+# "Missing experiment id in route". Seed an experiment first.

@@ -176,41 +176,70 @@ public class Fixtures {
   }
 
   /**
-   * Projects are written straight into the table the read model queries.
+   * Projects are written straight into the table both the read model and the
+   * project pages query.
    *
-   * <p>The application normally creates projects through a wizard that also writes
-   * ACL entries; for screenshotting, the overview only needs the row. Access
-   * control is deliberately not faked -- a seeded user sees the project list page
-   * itself, which is what most screenshots need.</p>
+   * <p>The application normally creates projects through a wizard; here the rows
+   * are inserted directly. Every column the domain objects reject a NULL for must
+   * be filled, or the failure appears only later and far away: opening the project
+   * runs the column through {@code ProjectObjectiveConverter}, which throws, and
+   * the user sees the generic 500 page rather than anything pointing at the seed
+   * data.</p>
    */
   static void seedProjects(Connection c) throws Exception {
     c.createStatement().execute("DELETE FROM data_management.projects_datamanager");
     String[][] projects = {
-        // id, code, title, PI, manager, responsible
-        {"10000000-0000-0000-0000-000000000001", "QTEST001", "Single cell atlas of the murine liver",
-            "Prof. Dr. Ada Klein", "Dr. Ben Osei", "Carla Mendes"},
-        {"10000000-0000-0000-0000-000000000002", "QTEST002", "Immunopeptidomics of colorectal tumours",
-            "Prof. Dr. Doris Falk", "Dr. Emil Hartmann", "Fatima Nasser"},
-        {"10000000-0000-0000-0000-000000000003", "QTEST003", "Spatial transcriptomics pilot",
-            "Prof. Dr. Greta Lindqvist", "Dr. Hugo Petrov", "Ines Rocha"},
+        // id, code, title, objective, PI name+email, manager name+email,
+        // responsible name+email
+        {"10000000-0000-0000-0000-000000000001", "QTEST001",
+            "Single cell atlas of the murine liver",
+            "Map the cell composition of healthy and fibrotic murine liver tissue by scRNA-seq.",
+            "Prof. Dr. Ada Klein", "ada.klein@example.org",
+            "Dr. Ben Osei", "ben.osei@example.org",
+            "Carla Mendes", "carla.mendes@example.org"},
+        {"10000000-0000-0000-0000-000000000002", "QTEST002",
+            "Immunopeptidomics of colorectal tumours",
+            "Identify tumour-associated HLA ligands in colorectal carcinoma for vaccine design.",
+            "Prof. Dr. Doris Falk", "doris.falk@example.org",
+            "Dr. Emil Hartmann", "emil.hartmann@example.org",
+            "Fatima Nasser", "fatima.nasser@example.org"},
+        {"10000000-0000-0000-0000-000000000003", "QTEST003",
+            "Spatial transcriptomics pilot",
+            "Evaluate a spatial transcriptomics workflow on archived FFPE blocks.",
+            "Prof. Dr. Greta Lindqvist", "greta.lindqvist@example.org",
+            "Dr. Hugo Petrov", "hugo.petrov@example.org",
+            "Ines Rocha", "ines.rocha@example.org"},
     };
+    // Columns the domain model insists on, though the DDL marks them nullable.
+    // Every one of these fails late and looks like a bug in the view:
+    //   * objective -- ProjectObjective.requireNonNull. The converter throws inside
+    //                  ProjectRepositoryImpl.find, so the project page shows the
+    //                  generic 500 before it renders anything.
+    //   * *EmailAddress -- Contact's no-arg JPA constructor skips its own validation,
+    //                  so a NULL address only surfaces in the UI, as
+    //                  "Value cannot be null" from the mailto: Anchor.
     // "version" is the JPA optimistic-lock column and is NOT NULL, so every
     // inserted project needs one even though nothing here reads it.
     PreparedStatement ps = c.prepareStatement(
         "INSERT INTO data_management.projects_datamanager"
-            + " (projectId, projectCode, projectTitle, lastModified,"
-            + "  principalInvestigatorFullName, projectManagerFullName,"
-            + "  responsibePersonFullName, version)"
-            + " VALUES (?,?,?,?,?,?,?,?)");
+            + " (projectId, projectCode, projectTitle, objective, lastModified,"
+            + "  principalInvestigatorFullName, principalInvestigatorEmailAddress,"
+            + "  projectManagerFullName, projectManagerEmailAddress,"
+            + "  responsibePersonFullName, responsibePersonEmailAddress, version)"
+            + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
     for (String[] p : projects) {
       ps.setString(1, p[0]);
       ps.setString(2, p[1]);
       ps.setString(3, p[2]);
-      ps.setTimestamp(4, new java.sql.Timestamp(System.currentTimeMillis()));
-      ps.setString(5, p[3]);
+      ps.setString(4, p[3]);
+      ps.setTimestamp(5, new java.sql.Timestamp(System.currentTimeMillis()));
       ps.setString(6, p[4]);
       ps.setString(7, p[5]);
-      ps.setInt(8, 0);
+      ps.setString(8, p[6]);
+      ps.setString(9, p[7]);
+      ps.setString(10, p[8]);
+      ps.setString(11, p[9]);
+      ps.setInt(12, 0);
       ps.executeUpdate();
     }
     System.out.println("projects: " + projects.length);
@@ -264,6 +293,9 @@ public class Fixtures {
         "DELETE FROM data_management.acl_object_identity WHERE object_id_class = " + classId);
 
     for (String[] p : projects) {
+      // ace_order is unique per object identity, so it keeps counting across the ACEs of both
+      // principals rather than restarting at 0 for the second one.
+      int order = 0;
       PreparedStatement identity = c.prepareStatement(
           "INSERT INTO data_management.acl_object_identity"
               + " (object_id_class, object_id_identity, parent_object, owner_sid, entries_inheriting)"
@@ -280,26 +312,48 @@ public class Fixtures {
 
       // The owner gets full access; the second account gets read-only, so
       // screenshots can show a project the reviewer does not own.
-      insertEntry(c, objectIdentity, dev, READ | WRITE | CREATE | DELETE | ADMINISTRATION, 0);
-      insertEntry(c, objectIdentity, admin, READ, 1);
+      order = insertEntries(c, objectIdentity, dev, order,
+          READ, WRITE, CREATE, DELETE, ADMINISTRATION);
+      order = insertEntries(c, objectIdentity, admin, order, READ);
     }
     System.out.println("access control: " + projects.length + " projects granted");
   }
 
-  static void insertEntry(Connection c, long objectIdentity, long sid, int mask, int order)
-      throws Exception {
-    PreparedStatement ps = c.prepareStatement(
-        "INSERT INTO data_management.acl_entry"
-            + " (acl_object_identity, ace_order, sid, mask, granting, audit_success, audit_failure)"
-            + " VALUES (?,?,?,?,?,?,?)");
-    ps.setLong(1, objectIdentity);
-    ps.setInt(2, order);
-    ps.setLong(3, sid);
-    ps.setInt(4, mask);
-    ps.setBoolean(5, true);
-    ps.setBoolean(6, true);
-    ps.setBoolean(7, true);
-    ps.executeUpdate();
+  /**
+   * Writes one ACE per permission -- never one ACE holding a combined mask.
+   *
+   * <p>Spring's {@code DefaultPermissionGrantingStrategy.isGranted} looks for an ACE whose mask
+   * <em>equals</em> the requested permission's mask (it only switches to a bitwise test when a
+   * subclass overrides {@code hasPermission}). A single ACE with mask {@code READ|WRITE|CREATE|
+   * DELETE|ADMINISTRATION} = 31 therefore matches no permission at all: every check falls through
+   * to {@code NotFoundException}, and the {@code AclPermissionEvaluator} turns that into a plain
+   * {@code false}. The page then renders the generic "Access Denied" 500 even though the ACE rows
+   * look perfectly correct in the database.</p>
+   *
+   * <p>{@code ProjectAccessServiceImpl} writes ACEs exactly this way -- one
+   * {@code insertAce(permission)} call per permission -- so this seeder has to match it. Writing a
+   * single combined ACE here is invisible until someone opens a project, at which point every view
+   * answers with the generic access-denied 500.</p>
+   *
+   * @return the next free {@code ace_order} for this object identity
+   */
+  static int insertEntries(Connection c, long objectIdentity, long sid, int order,
+      int... permissionBits) throws Exception {
+    for (int mask : permissionBits) {
+      PreparedStatement ps = c.prepareStatement(
+          "INSERT INTO data_management.acl_entry"
+              + " (acl_object_identity, ace_order, sid, mask, granting, audit_success,"
+              + " audit_failure) VALUES (?,?,?,?,?,?,?)");
+      ps.setLong(1, objectIdentity);
+      ps.setInt(2, order++);
+      ps.setLong(3, sid);
+      ps.setInt(4, mask);
+      ps.setBoolean(5, true);
+      ps.setBoolean(6, true);
+      ps.setBoolean(7, true);
+      ps.executeUpdate();
+    }
+    return order;
   }
 
   static void report(Connection c) throws Exception {

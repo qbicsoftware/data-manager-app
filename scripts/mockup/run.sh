@@ -49,7 +49,16 @@ APP_PORT=${DM_MOCKUP_APP_PORT:-48014}
 DEFAULT_PORT=$PORT
 DEFAULT_APP_PORT=$APP_PORT
 VAULT_PASS='Zx9!vQ2#mK7$wR4^pL8&nB3*tY6'   # fixed: the vault needs >100 bits of entropy
-JAR="$REPO/datamanager-app/target/datamanager-app-1.19.2.jar"
+# Read the version from the POM rather than pinning it here. A hardcoded name
+# survives exactly one release: the next version bump leaves the script pointing
+# at a jar that is no longer built, and the failure reads as "the mock-up is
+# broken" rather than "this line is stale".
+APP_VERSION=$(sed -n 's:^  <version>\(.*\)</version>.*:\1:p' "$REPO/pom.xml" | head -1)
+if [ -z "$APP_VERSION" ]; then
+  echo "could not read the project version from $REPO/pom.xml" >&2
+  exit 1
+fi
+JAR="$REPO/datamanager-app/target/datamanager-app-$APP_VERSION.jar"
 
 REBUILD=0
 RESET_DB=0
