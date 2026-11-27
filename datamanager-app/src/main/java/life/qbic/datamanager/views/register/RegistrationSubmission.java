@@ -6,6 +6,8 @@ import java.util.Optional;
 import life.qbic.application.commons.ApplicationResponse;
 import life.qbic.identity.api.UserInformationService;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
+import life.qbic.identity.application.throttle.ClientOrigin;
+import life.qbic.identity.application.throttle.ClientOriginResolver;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle.Scope;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -54,13 +56,16 @@ public class RegistrationSubmission {
   private final RegistrationIdentity identity;
   private final UserInformationService userInformationService;
   private final AuthAttemptThrottle throttle;
+  private final ClientOriginResolver originResolver;
 
   public RegistrationSubmission(RegistrationIdentity identity,
       UserInformationService userInformationService,
-      AuthAttemptThrottle throttle) {
+      AuthAttemptThrottle throttle,
+      ClientOriginResolver originResolver) {
     this.identity = identity;
     this.userInformationService = userInformationService;
     this.throttle = throttle;
+    this.originResolver = originResolver;
   }
 
   /**
@@ -152,12 +157,34 @@ public class RegistrationSubmission {
    * to the mail-sending budget rather than the login budget.</p>
    */
   private boolean isThrottled(String email) {
-    var outcome = throttle.recordAndReport(Scope.REGISTRATION, email, Instant.now());
+    // The origin is passed because the abuse here is volume, not repetition: an attacker submitting a
+    // thousand different addresses never reuses an account bucket, so account scope alone cannot see
+    // them while the application sends a confirmation mail on their behalf (AUTH-NFR-03, #1691).
+    var outcome = throttle.recordAndReport(Scope.REGISTRATION, email, originOrUnknown(),
+        Instant.now());
     if (outcome.isAllowed()) {
       return false;
     }
     log.debug("Registration submission throttled");
     return true;
+  }
+
+  /**
+   * The request origin, or {@link ClientOrigin#unknown()} when this thread has no request bound.
+   *
+   * <p>Never substituted with a placeholder: a made-up value would key every request on the same
+   * bucket, which is the global-bucket failure {@link ClientOrigin} exists to prevent. Unknown simply
+   * degrades the decision to account scope.</p>
+   */
+  private ClientOrigin originOrUnknown() {
+    try {
+      ClientOrigin origin = originResolver.resolve();
+      return origin == null ? ClientOrigin.unknown() : origin;
+    } catch (RuntimeException e) {
+      log.warn("Could not resolve the request origin for registration throttling: "
+          + e.getMessage());
+      return ClientOrigin.unknown();
+    }
   }
 
   private Optional<String> userIdOf(String email) {
@@ -172,5 +199,20 @@ public class RegistrationSubmission {
    */
   public record RegistrationForm(String fullName, String email, String userName, String password) {
 
+    /**
+     * Adapts what the one registration form collected.
+     *
+     * <p>Both registration flows collect the same value type now that the forms are merged; this
+     * adapter keeps this class free of a dependency on the view package and makes the empty password of
+     * the ORCID flow explicit at the call site rather than implied.</p>
+     *
+     * @param information what the visitor entered
+     * @return the same values in this class's own vocabulary
+     */
+    public static RegistrationForm of(
+        life.qbic.datamanager.views.register.UserRegistrationComponent.UserRegistrationInformation information) {
+      return new RegistrationForm(information.fullName(), information.email(),
+          information.userName(), information.password());
+    }
   }
 }

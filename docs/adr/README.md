@@ -62,6 +62,7 @@ Where `NNNN` is a zero-padded, four-digit sequential number assigned in creation
 | [0008](0008-pinned-projects-as-user-preferences.md) | Pinned projects are user preferences, not project state | accepted | 2026-09-14 |
 | [0009](0009-paginated-measurement-lists-and-selection.md) | Paginated measurement lists with identifier-based cross-page selection | accepted | 2026-09-14 |
 | [0010](0010-analysis-method-attribution.md) | Analysis-method attribution: sample-level grandfather and single resolution point | accepted | 2026-11-02 |
+| [0011](0011-trusted-client-identity-behind-reverse-proxy.md) | Trusted client identity behind the reverse proxy, and per-origin auth throttling | proposed | 2026-11-17 |
 
 *Update this table whenever a new ADR is added.*
 

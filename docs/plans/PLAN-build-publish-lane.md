@@ -1,0 +1,333 @@
+# Task Plan: Build and Publish Lane — Make the GitHub Release Self-Contained
+
+> **Scope:** Nothing in this plan requires Nexus, an external registry, or any network
+> location outside GitHub.
+> **Companion plan:** `docs/plans/PLAN-openbis-artifact-hosting.md` (inbound dependency lane).
+> **Status:** Proposed — not started.
+> **Written:** 2026-11-25, agent session, following an audit of the failing workflows.
+
+---
+
+## 1. Problem
+
+The Data Manager build is self-contained: all 18 modules build in-reactor, and
+`datamanager-bom` is imported at `${project.version}`, so it resolves from the reactor.
+Nevertheless both publish workflows deploy to QBiC Nexus, which is no longer reachable
+from GitHub Actions egress.
+
+`create-release.yml` deploys **before** it creates the GitHub release:
+
+| Step | Action | Effect when Nexus is unreachable |
+|---|---|---|
+| 6 | `mvn -B package -Pproduction` (line 51) | succeeds |
+| 7 | `actions/attest-build-provenance` (line 55) | succeeds |
+| 8 | `mvn ... deploy` to Nexus (lines 60–64) | **fails after ~18 × 10 s connect timeouts** |
+| 9 | `Collect release assets` | never reached |
+| 11 | `Create or update GitHub Release` | never reached |
+| 12 | version-bump branch / commit / PR | never reached |
+
+Evidence: run [45400605244](https://github.com/qbicsoftware/data-manager-app/actions/runs/45400605244)
+(Deploy Snapshot, 2026-11-24) fails with 172 transfer errors of the form
+`Connect to qbic-repo.qbic.uni-tuebingen.de:443 [134.2.24.115] failed: Connect timed out`.
+
+**Consequence:** the release workflow cannot produce a release at all — not a degraded
+one, none. Release `1.20.4` (2026-11-13) predates the outage and has not been
+reproducible since.
+
+### 1.1 Why the deploy is dead weight
+
+- `life.qbic.datamanager:*` has **no consumers outside this repository**. An org-wide
+  code search of `qbicsoftware` returns only this project's own sources plus
+  `THIRD-PARTY.txt`, which is a generated report rather than a dependency.
+- The release already IS the distribution channel: `1.20.4` carries 36 assets,
+  151 MB in total, including `datamanager-app-1.20.4.jar` at **149 MB** — the Spring
+  Boot fat jar, i.e. the runnable artifact.
+- Signing and provenance are unaffected by removing the deploy:
+  `attest-build-provenance` and the `.sigstore.json` bundles stay exactly as they are.
+
+---
+
+## 2. Goals
+
+1. `create-release.yml` completes end-to-end with no network destination outside GitHub,
+   and creates the GitHub release **before** any optional step can fail.
+2. No workflow spends runner minutes attempting a connection to a host known to be
+   unreachable.
+3. The released artifact set documents its own dependency graph (SBOM attached).
+4. Removing the publish lane is **reversible** with `git revert` — a future reachable
+   registry becomes a small re-add, not an archaeology exercise.
+
+## 3. Non-Goals
+
+- Hosting `life.qbic:zzzz-openbis-api` — see the companion inbound plan.
+- Replacing Nexus with GitHub Packages, CodeArtifact, Cloudsmith, or a tunnel. This plan
+  deliberately chooses **no registry** on the outbound side.
+- Changing application runtime behaviour, versioning scheme, or release cadence.
+
+---
+
+## 4. Decisions (settled 2026-11-25 by the project owner)
+
+- [x] **No external consumer of published artifacts.** Nothing outside `qbicsoftware`
+      resolves `life.qbic.datamanager:*`. The outbound lane is therefore *deleted*, not
+      replaced.
+- [x] **Snapshot publishing is retired.** Builds are introduced later, and releases are
+      tagged on a chosen commit of `main`. `nexus-publish-snapshots.yml` is deleted
+      outright, not parked.
+- [x] **GitHub Packages is the fallback if publishing is ever needed again.** It is a
+      per-repository Maven registry, so no external host is involved. It is *not* adopted
+      now because reads require a token even for a public repository.
+- [ ] Note for the implementing agent: `main` is public. Do not put registry credentials
+      in commit messages, PR bodies, or logs.
+
+---
+
+## 5. Task Breakdown
+
+Work in order. Tasks 1–6 can land as one PR; Task 7 lands separately because it changes
+release semantics.
+
+### Task 1 — Remove the deploy destination from the root POM
+
+**File:** `pom.xml`
+
+- Delete the whole `<distributionManagement>` block, **lines 141–154**, which pins
+  `nexus-releases` / `nexus-snapshots` to
+  `https://qbic-repo.qbic.uni-tuebingen.de/repository/...`.
+- Leave `<repositories>` (lines 73–123) and `<pluginRepositories>` (lines 125–140)
+  **alone in this plan** — the companion plan owns that block. See §9, inventory conflict.
+- Leave `central`, `vaadin-prereleases`, and `Vaadin Directory` untouched.
+
+### Task 2 — Remove the deploy destination from the BOM
+
+**File:** `datamanager-bom/pom.xml`
+
+- Delete the trailing `<distributionManagement>` block, **lines 267–280**, together with
+  the comment on line 266 that explains why it exists.
+- No other change: the BOM declares no `<repositories>`.
+
+### Task 3 — ~~Park the Nexus coordinates behind an env-var profile~~ SKIPPED
+
+**Decision (2026-11-25): deliberately not done.** Do not implement this.
+
+An earlier revision of this plan recommended keeping the Nexus coordinates in `pom.xml`
+inside a profile activated by `env.NEXUS_BASE_URL`, so a future reachable mirror would be
+a configuration change rather than a code change. It was dropped on purpose, to avoid
+carrying configuration for a host that does not work:
+
+- The companion inbound plan **deletes** the Nexus entries from `<repositories>` rather
+  than parking them. Landing a profile here would give the two branches contradictory
+  intentions about the same lines, which is the conflict the §9 single-owner table exists
+  to prevent.
+- A dormant profile would preserve a setting that is currently *wrong* — an unreachable
+  host carrying `<updatePolicy>always</updatePolicy>`. Keeping a known-bad configuration
+  alive behind a switch is not a safety net.
+- The way back is already cheap: `git revert` of the commit that removed the entries, and
+  the URLs recorded in the inbound plan.
+
+**If a reachable mirror ever returns**, add the repository entry at that point. Do not add
+`<updatePolicy>always</updatePolicy>` when you do — that setting is what turned an
+unreachable host into a per-build stall instead of a single failed lookup, and it is the
+one mistake worth remembering from this change.
+
+The original profile sketch is preserved here only so this decision has context:
+
+```xml
+<profile>
+  <id>qbic-nexus</id>
+  <activation><property><name>env.NEXUS_BASE_URL</name></property></activation>
+  <repositories>
+    <repository>
+      <id>nexus-releases</id>
+      <url>${env.NEXUS_BASE_URL}/repository/maven-releases</url>
+    </repository>
+  </repositories>
+</profile>
+```
+
+### Task 4 — Remove the deploy step from the release workflow
+
+**File:** `.github/workflows/create-release.yml`
+
+- Delete the step `Publish artefact to QBiC Nexus Repository`, **lines 60–64**, including
+  its `MAVEN_REPO_USERNAME` / `MAVEN_REPO_PASSWORD` env block.
+- Delete `settings-path: ${{ github.workspace }}` from the `Set up JDK 21` step
+  (**line 38**). It exists only to place `.github.settings.xml`; with the deploy gone it
+  is a no-op that writes a stray `settings.xml` into the checkout.
+- **Blast-radius note (corrected during implementation).** An earlier revision of this
+  plan said to move `Create or update GitHub Release` above `Collect release assets`.
+  That is impossible: the release step consumes `release-assets.txt`, which the
+  collection step produces, so the order must stay collection → release. The real win is
+  simply that the deploy step no longer sits between the build and the release — after
+  this change only a failed build or a failed attestation can block a release.
+  - Keep the upload idempotent — `--clobber` is already present, so a re-run after a
+    partial failure still works.
+- Leave the version-bump branch / commit / PR steps at the end; they are cheap and local.
+
+### Task 5 — Retire the snapshot publish workflow
+
+**File:** `.github/workflows/nexus-publish-snapshots.yml`
+
+- `git rm` the file. Once Tasks 1, 2 and 4 land it has no purpose, and its `on:` triggers
+  (every push to `development`, every PR to `main`) make it the largest single source of
+  wasted runner minutes in the repository.
+- If the team wants to keep a snapshot channel for a future registry, **park it disabled**
+  with `if: ${{ vars.ENABLE_SNAPSHOT_PUBLISH == 'true' }}` on the job rather than
+  leaving it pointing at an unreachable host.
+
+### Task 6 — Delete the committed settings file and retire the secrets
+
+**File:** `.github.settings.xml` (delete)
+
+- The file contains only `<servers>` credentials for the two Nexus IDs. After Task 4 it is
+  referenced by nothing — verify with
+  `grep -rn 'github.settings.xml' . --exclude-dir=.git` (expected: no hits).
+- Drop `settings-path` from the remaining workflows that carry it:
+  `.github/workflows/codeql-analysis.yml` (line ~53) and
+  `.github/workflows/run_tests.yml` (line ~30). `sonarcloud.yml` and
+  `build_package.yml` never set it — use them as the reference shape.
+- **Manual follow-up, for a human with credentials:** delete the repository secrets
+  `NEXUS_USERNAME` and `NEXUS_PASSWORD` under Settings → Secrets and variables → Actions.
+  An agent must not attempt this.
+
+### Task 7a — Build to `verify`, not `package` (signing regression)
+
+**File:** `.github/workflows/create-release.yml`
+
+Found after the deploy step was removed. `mvn ... deploy` reaches the `verify` phase
+incidentally, because `deploy` implies every earlier phase — and
+`sigstore-maven-plugin`'s `sigstore-sign` execution is bound to `verify`. The workflow's
+actual build step ran `mvn -B package`, which never reaches `verify`.
+
+So the `.sigstore.json` bundles that `1.20.4` shipped were produced by the **deploy** step,
+not the build step. Removing the deploy therefore also removed the signatures with no
+error, leaving `Collect release assets` to silently pick up only the JARs.
+
+Evidence:
+
+- `run_tests` (`mvn clean verify`) logs `--- sigstore:2.3.0:sign (sigstore-sign) @ logging ---`
+  per module; the release workflow's `package` build logs no such line.
+- The Deploy Snapshot run printed a `https://search.sigstore.dev?logIndex=…` entry.
+
+**Fix:** the build step runs `mvn -B verify` instead of `mvn -B package`. Verified locally
+that `verify -DskipTests` succeeds in a module and produces the same jar.
+
+**Guard implemented.** `Collect release assets` now counts JARs, signature bundles and
+SBOMs and fails the job when signature bundles are fewer than JARs, or when the asset list
+is empty. SBOMs only warn, since a missing SBOM should not block a release while an unsigned
+one must. Three cases were exercised in a shell against the extracted `run:` script:
+healthy (2 jars/2 sigs → exit 0), unsigned (2 jars/0 sigs → exit 1), empty list (exit 1).
+
+Two bugs surfaced only by running it, both worth remembering when editing this step:
+
+- `\`exit 1\`\` inside a backtick pair in the echo message was executed as command
+  substitution, printing `verify: command not found` and eating the exit status. GitHub
+  Actions' `\${{ }}\` and shell quoting interact badly with backticks in one-liners; the
+  message now uses single quotes.
+- An empty `release-assets.txt` left `jars` unset, and `[ "" -eq 0 ]` errors instead of
+  failing cleanly. Guarded with `\`! -s\`\` plus `\${x:-0}\` defaults.
+
+### Task 7 — Attach the SBOM to the release
+
+**File:** `.github/workflows/create-release.yml`
+
+`Collect release assets` currently globs only `**/target/*.jar` and
+`**/target/*.jar.sigstore.json`, so the CycloneDX SBOM produced by the `sigcheck` profile
+(`${project.artifactId}-${project.version}-sbom.json`) is **never attached**.
+Verified: release `1.20.4` has no `*bom*` asset.
+
+**Correction to an earlier revision of this plan: there is no aggregate SBOM to attach.**
+The `sigcheck` profile activates on `<file><exists>src/main</exists></file>`, and the root
+aggregator has no `src/`, so the top-level `aggregate-bom`/`module-bom` executions never run
+there. Each of the 18 modules emits its own `<artifactId>-<version>-sbom.json` (schema 1.5)
+plus a `bom.json`. The CI log also shows a real hazard:
+`[WARNING] artifact ... already attached, replace previous instance` — `bom.json` and
+CycloneDX's default `application.cdx.json` contend for the same classifier.
+
+- Collect only `*-sbom.json`, whose names are unique per module, and exclude `bom.json`
+  explicitly: `find . -path '*/target/*-sbom.json' -not -name 'bom.json'`.
+- Do **not** collect `bom.json.sigstore.json` either — same colliding basename.
+- Reference `docs/security/vulnerability-management.md` and `.github/grype.yaml` in the PR
+  body, since a shipped SBOM is what those processes assume.
+
+---
+
+## 6. Acceptance Criteria
+
+| # | Criterion | How to verify |
+|---|---|---|
+| 1 | No file references `qbic-repo.qbic.uni-tuebingen.de` | `grep -rn 'qbic-repo' . --exclude-dir=.git` returns only historical docs, if any |
+| 2 | No file references `.github.settings.xml` | `grep -rn 'github.settings.xml' . --exclude-dir=.git` returns nothing |
+| 3 | Neither POM declares `<distributionManagement>` | `grep -n distributionManagement pom.xml datamanager-bom/pom.xml` returns nothing |
+| 4 | `mvn deploy` is invoked by no workflow | `grep -rn 'deploy' .github/workflows/` shows no `mvn ... deploy` |
+| 5 | The release is created before any optional step | Structural review of step order, or a `workflow_dispatch` dry run in a fork |
+| 6 | Release assets include one SBOM per module | Next release: `gh release view <tag> --json assets` lists 18 `*-sbom.json` entries and no plain `bom.json` |
+| 7 | Offline reactor build still succeeds with a warm cache | `./mvnw -B -o clean verify -DskipTests` |
+
+## 7. Verification Sequence (run before opening the PR)
+
+```bash
+# 1. structural checks
+grep -rn 'qbic-repo\|distributionManagement\|github.settings.xml' \
+  pom.xml datamanager-bom/pom.xml .github/ || echo "clean"
+
+# 2. offline build proves no external registry is needed (warm cache required)
+./mvnw -B -o clean verify -DskipTests
+
+# 3. workflow YAML still parses
+for f in .github/workflows/*.yml; do
+  python3 -c "import yaml,sys; yaml.safe_load(open('$f'))" || echo "BAD: $f"
+done
+```
+
+Note on check 2: `-o` fails on a cold cache because of the openbis artifact. That is
+expected and is the companion plan's responsibility, not this one's.
+
+## 8. Rollback
+
+One `git revert` of the PR restores both POM blocks, the deploy step, the snapshot
+workflow and the settings file. No state to unwind. The only irreversible act is deleting
+the two repository secrets, and those are trivially recreated from credentials the Nexus
+administrator holds.
+
+## 9. Inventory Conflict With the Companion Plan
+
+Both plans touch the repository inventory in `pom.xml`. **Exactly one PR must own any
+given block**, or the two branches will conflict on every rebase:
+
+| Block | `pom.xml` lines | Owner |
+|---|---|---|
+| `<repositories>` (nexus entries) | 97–122 | Companion inbound plan |
+| `<distributionManagement>` | 141–154 | **This plan** |
+| `.github/**` (all workflows, settings file) | — | **This plan** |
+| `datamanager-bom/pom.xml` `<distributionManagement>` | 267–280 | **This plan** |
+
+Land this plan first: it unblocks releases immediately and touches the fewer
+load-bearing files. The inbound plan then re-points `<repositories>` in a clean tree.
+
+## 10. Risks
+
+| Risk | Likelihood | Mitigation |
+|---|---|---|
+| An out-of-org consumer of `life.qbic.datamanager:*` appears later | Low | Settled as non-existent; if one ever appears, adopt GitHub Packages (per-repo Maven registry, no external host) rather than reviving Nexus |
+| A contributor needs snapshots before a tagged release | Low–Medium | Retired deliberately; the workflow is one `git revert` away, and GitHub Packages is the intended target if it returns |
+| Both plans edit `pom.xml` inventory in parallel | **Medium** | §9 single-owner table |
+| Removing Nexus as a mirror exposes a Central outage | Very low | `central` was already declared with highest priority; Nexus was never a true mirror |
+| A future agent reintroduces `updatePolicy=always` | Medium | Explicit warning in Task 3 and in the follow-ups below |
+
+## 11. Out of Scope / Follow-ups
+
+- Inbound dependency hosting → `docs/plans/PLAN-openbis-artifact-hosting.md`.
+- Deciding whether to re-establish a registry if university access returns. The Nexus
+  profile that would have made this a config change was skipped on purpose (Task 3); the
+  route back is `git revert` of the commit that removed the entries.
+- ~~Whether the 17 internal module jars belong in the release at all.~~ **Resolved
+  2026-11-25:** they do not. A real release (`0.0.0-rc.1`) shipped 54 assets / 164 MB;
+  `datamanager-app-*.jar` is a Spring Boot fat jar with 289 nested jars under
+  `BOOT-INF/lib`, including every internal module and `zzzz-openbis-api`, so the per-module
+  jars are redundant by construction. The release now ships the app jar, its signature
+  bundle and its SBOM only. `Collect release assets` was rewritten to select those three by
+  path (so a version bump cannot silently match nothing) and asserts exactly one jar.
+- Re-evaluating signing/provenance coverage once the published-to-Nexus path is gone:
+  confirm Scorecard's Signed-Releases check still passes, since it looks for the
+  `.sigstore.json` bundles among release assets.

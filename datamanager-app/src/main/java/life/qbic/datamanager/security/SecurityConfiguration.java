@@ -7,6 +7,7 @@ import com.vaadin.flow.spring.security.VaadinDefaultRequestCache;
 import life.qbic.datamanager.views.login.LoginLayout;
 import life.qbic.identity.application.security.QBiCPasswordEncoder;
 import life.qbic.identity.application.throttle.AuthAttemptThrottle;
+import life.qbic.identity.application.throttle.ClientOriginResolver;
 import life.qbic.identity.application.user.IdentityService;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
@@ -40,6 +41,7 @@ public class SecurityConfiguration {
   final VaadinDefaultRequestCache defaultRequestCache;
   private final IdentityService identityService;
   private final AuthAttemptThrottle authAttemptThrottle;
+  private final ClientOriginResolver clientOriginResolver;
 
   /**
    * Held directly, not injected.
@@ -67,12 +69,15 @@ public class SecurityConfiguration {
   public SecurityConfiguration(
       @Autowired VaadinDefaultRequestCache defaultRequestCache,
       @Autowired IdentityService identityService,
-      @Autowired AuthAttemptThrottle authAttemptThrottle) {
+      @Autowired AuthAttemptThrottle authAttemptThrottle,
+      @Autowired ClientOriginResolver clientOriginResolver) {
     this.defaultRequestCache = requireNonNull(defaultRequestCache,
         "defaultRequestCache must not be null");
     this.identityService = requireNonNull(identityService);
     this.authAttemptThrottle = requireNonNull(authAttemptThrottle,
         "authAttemptThrottle must not be null");
+    this.clientOriginResolver = requireNonNull(clientOriginResolver,
+        "clientOriginResolver must not be null");
   }
 
   @Bean
@@ -165,7 +170,7 @@ public class SecurityConfiguration {
   private LoginThrottleFilter loginThrottleFilter() {
     SimpleUrlAuthenticationFailureHandler failureHandler =
         new SimpleUrlAuthenticationFailureHandler("/login?error");
-    return new LoginThrottleFilter(authAttemptThrottle, failureHandler,
+    return new LoginThrottleFilter(authAttemptThrottle, clientOriginResolver, failureHandler,
         // One real derivation against the same well-formed stand-in the login path uses for an
         // account with no password. It must be well-formed PBKDF2 (iterations:salt:hash) — a bcrypt
         // string would throw here instead of deriving, making the rejection measurably faster.

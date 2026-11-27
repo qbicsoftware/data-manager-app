@@ -2,6 +2,7 @@ package life.qbic.projectmanagement.infrastructure.template.provider.openxml.col
 
 import java.util.Arrays;
 import java.util.Optional;
+import life.qbic.projectmanagement.application.sample.SampleFieldLength;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.Column;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider;
 import life.qbic.projectmanagement.infrastructure.template.provider.openxml.ExampleProvider.Helper;
@@ -48,7 +49,9 @@ public enum InformationColumn implements Column {
         case BATCH -> new Helper("Free text, e.g. Batch1, CohortA, Collection_1", """
             A defined group of samples that are intended to be processed together
             or were collected under the same experimental conditions.""");
-        case COMMENT -> new Helper("Free text", "Notes about the sample. (Max 500 characters)");
+        case COMMENT -> new Helper("Free text",
+            "Notes about the sample. (Max " + SampleFieldLength.COMMENT
+                + " characters)");
       };
     }
     throw new IllegalArgumentException(

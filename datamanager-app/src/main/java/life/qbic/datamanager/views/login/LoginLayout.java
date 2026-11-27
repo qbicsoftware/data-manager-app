@@ -34,7 +34,6 @@ import life.qbic.datamanager.views.general.oidc.OidcLogo;
 import life.qbic.datamanager.views.general.oidc.OidcType;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.datamanager.views.notifications.ErrorMessage;
-import life.qbic.datamanager.views.notifications.InformationMessage;
 import life.qbic.datamanager.views.projects.overview.ProjectOverviewMain;
 import life.qbic.datamanager.views.register.UserRegistrationMain;
 import life.qbic.logging.api.Logger;
@@ -190,15 +189,6 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
         "Something went wrong during authentication. Please try again or use your email and password to log in.");
   }
 
-  private void showEmailConfirmationInformation() {
-    showInformation("Email address confirmed", "You can now login with your credentials.");
-  }
-
-  private void showEmailConfirmationReminder() {
-    showInformation("Registration mail sent",
-        "Please check your mail inbox to confirm your registration");
-  }
-
   public void clearNotifications() {
     notificationLayout.removeAll();
   }
@@ -207,12 +197,6 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     clearNotifications();
     ErrorMessage errorMessage = new ErrorMessage(title, description);
     notificationLayout.add(errorMessage);
-  }
-
-  public void showInformation(String title, String description) {
-    clearNotifications();
-    InformationMessage informationMessage = new InformationMessage(title, description);
-    notificationLayout.add(informationMessage);
   }
 
   private void addListener() {
@@ -249,18 +233,18 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     // Confirmation now lives at /registration/confirm and requires a single-use token plus an
     // explicit click (AUTH-R-05). Old links are not redirected: decision B1 ships no compatibility
     // window, so they simply cannot be used, and the user requests a new one.
-    if (queryParams.containsKey("userRegistered")) {
-      showEmailConfirmationReminder();
-    }
+    //
+    // There is deliberately no ?userRegistered notice either. It rendered "Registration mail sent"
+    // from a query parameter that NOTHING produced: registration navigates to
+    // /register/pending-email-confirmation, which says the same thing on its own page. A dead state
+    // is worse than a missing one — it looks like a feature, gets maintained, and teaches the next
+    // reader that /login?userRegistered=… is a supported entry point.
   }
 
-  public void onEmailConfirmationSuccess() {
-    showEmailConfirmationInformation();
-  }
-
-  public void onEmailConfirmationFailure(String reason) {
-    showError("Email confirmation failed", reason);
-  }
+  // There is no onEmailConfirmationSuccess/Failure here any more. Both were public methods with no
+  // caller: confirmation no longer happens on /login at all (AUTH-R-05), and with it went the only
+  // thing that produced the "Email address confirmed" notice. Keeping them would leave a second dead
+  // state beside the ?userRegistered one removed above.
 
   private static class LoginCard extends Span {
 

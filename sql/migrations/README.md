@@ -27,6 +27,8 @@ For the three-tier migration documentation structure, see
 | 11 | [`create-experiment-recent-activity-views.sql`](create-experiment-recent-activity-views.sql) | Create `experiment_recent_sample` and `experiment_recent_measurement` views (newest three per experiment) for the snapshot panels | TBD (`FEAT-PROJECT-*`) | `data_management` |
 | 12 | [`create-assay-standing-view.sql`](create-assay-standing-view.sql) | Create `v_project_assay_standing` view: one row per primary dataset, i.e. per (experiment, analysis method), with measurement counts, primary-data coverage and volume. Single derivation shared by the summary and Datasets pages (ADR 0010) | TBD (`FEAT-PROJECT-*`) | `data_management` |
 | 13 | [`auth-flow-hardening.sql`](auth-flow-hardening.sql) | Create `user_verification_token`: single-use, hashed, time-limited tokens behind email confirmation, password reset and the set-password invitation (AUTH-R-05) | [`FEAT-AUTH-FLOWS-01/-02/-05`](https://github.com/qbicsoftware/data-manager-app/issues/1673) ([#1678](https://github.com/qbicsoftware/data-manager-app/issues/1678), [#1680](https://github.com/qbicsoftware/data-manager-app/issues/1680), [#1683](https://github.com/qbicsoftware/data-manager-app/issues/1683)) | `data_management` |
+| 14 | [`auth-attempt-throttling.sql`](auth-attempt-throttling.sql) | Create `auth_attempt`: server-side throttling for login, confirmation-resend and reset-resend, keyed on a hash of the address (AUTH-NFR-03) | [`FEAT-AUTH-FLOWS-03`](https://github.com/qbicsoftware/data-manager-app/issues/1675) ([#1682](https://github.com/qbicsoftware/data-manager-app/issues/1682)) | `data_management` |
+
 
 *Add a row here and drop in the script when a new migration lands.*
 

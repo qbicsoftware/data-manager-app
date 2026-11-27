@@ -1,12 +1,11 @@
 package life.qbic.infrastructure.email.project;
 
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.Objects;
 import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.EmailSubmissionException;
 import life.qbic.logging.api.Logger;
+import life.qbic.logging.service.LoggerFactory;
 import life.qbic.projectmanagement.application.communication.Attachment;
 import life.qbic.projectmanagement.application.communication.CommunicationException;
 import life.qbic.projectmanagement.application.communication.Content;
@@ -19,11 +18,20 @@ import life.qbic.projectmanagement.application.communication.Subject;
  * <p>
  * Implementation of the {@link EmailService} interface for the project management application.
  *
+ * <p>Translates the shared infrastructure's {@link EmailSubmissionException} into this context's
+ * {@link CommunicationException}, which is what the port declares. The catches are not decoration:
+ * each context defines its own {@code CommunicationException}, so without this mapping a caller
+ * catching the type its port promises would never see the failure.</p>
+ *
+ * <p>These blocks were unreachable for a long time, because the provider threw the <em>identity</em>
+ * context's {@code CommunicationException} and never {@code EmailSubmissionException} — a different
+ * class that merely shares a name.</p>
+ *
  * @since 1.0.0
  */
 public class ProjectManagementEmailServiceProvider implements EmailService {
 
-  private static final Logger log = logger(ProjectManagementEmailServiceProvider.class);
+  private static final Logger log = LoggerFactory.logger(ProjectManagementEmailServiceProvider.class);
   public static final String EMAIL_SUBMISSION_FAILED = "Email submission failed";
 
   private final EmailServiceProvider emailServiceProvider;
@@ -36,11 +44,11 @@ public class ProjectManagementEmailServiceProvider implements EmailService {
   public void send(Subject subject, Recipient recipient, Content content)
       throws CommunicationException {
     try {
-      emailServiceProvider.send(MessageTranslator.translate(subject), MessageTranslator.translate(recipient),
-          MessageTranslator.translate(content));
+      emailServiceProvider.send(MessageTranslator.translate(subject),
+          MessageTranslator.translate(recipient), MessageTranslator.translate(content));
     } catch (EmailSubmissionException e) {
-      log.error("Email submission failed!", e);
-      throw new CommunicationException(EMAIL_SUBMISSION_FAILED);
+      log.error(EMAIL_SUBMISSION_FAILED, e);
+      throw new CommunicationException(EMAIL_SUBMISSION_FAILED, e);
     }
   }
 
@@ -48,11 +56,12 @@ public class ProjectManagementEmailServiceProvider implements EmailService {
   public void send(Subject subject, Recipient recipient, Content content, Attachment attachment)
       throws CommunicationException {
     try {
-      emailServiceProvider.send(MessageTranslator.translate(subject), MessageTranslator.translate(recipient),
-          MessageTranslator.translate(content), MessageTranslator.translate(attachment));
+      emailServiceProvider.send(MessageTranslator.translate(subject),
+          MessageTranslator.translate(recipient), MessageTranslator.translate(content),
+          MessageTranslator.translate(attachment));
     } catch (EmailSubmissionException e) {
       log.error(EMAIL_SUBMISSION_FAILED, e);
-      throw new CommunicationException(EMAIL_SUBMISSION_FAILED);
+      throw new CommunicationException(EMAIL_SUBMISSION_FAILED, e);
     }
   }
 

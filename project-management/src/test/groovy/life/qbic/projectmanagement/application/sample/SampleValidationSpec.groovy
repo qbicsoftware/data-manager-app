@@ -12,6 +12,8 @@ import life.qbic.projectmanagement.domain.model.experiment.ExperimentalValue
 import life.qbic.projectmanagement.domain.model.experiment.VariableLevel
 import life.qbic.projectmanagement.domain.model.experiment.VariableName
 import life.qbic.projectmanagement.domain.model.project.ProjectId
+import life.qbic.projectmanagement.domain.model.sample.SampleCode
+import life.qbic.projectmanagement.domain.model.sample.SampleId
 import spock.lang.Specification
 
 class SampleValidationSpec extends Specification {
@@ -76,6 +78,60 @@ class SampleValidationSpec extends Specification {
 
         then: "the validation does not report a missing batch"
         !result.validationResult().failures().contains("Missing batch")
+    }
+
+    def "A comment of exactly 255 characters is accepted"() {
+        when: "a new sample is validated with a 255 character comment"
+        def result = sampleValidation.validateNewSample(
+                "sampleName", "1", "Color: red", "Homo sapiens [NCBITaxon:9606]",
+                "specimen [UBERON:000006]", "analyte [CHEBI:1234]", "WGS",
+                "c" * 255, [:], "batch-1", projectId.value(), experiment.experimentId().value())
+
+        then: "the column width is not exceeded"
+        !result.validationResult().containsFailures()
+    }
+
+    def "A comment longer than 255 characters is rejected before persistence"() {
+        when: "a new sample is validated with a 256 character comment"
+        def result = sampleValidation.validateNewSample(
+                "sampleName", "1", "Color: red", "Homo sapiens [NCBITaxon:9606]",
+                "specimen [UBERON:000006]", "analyte [CHEBI:1234]", "WGS",
+                "c" * 256, [:], "batch-1", projectId.value(), experiment.experimentId().value())
+
+        then: "the validation fails and names the field, the row and the limit"
+        result.validationResult().failures().contains(
+                "Comment: exceeds the maximum length of 255 characters for 'sampleName' (got 256)")
+
+        and: "no metadata is handed on for persistence"
+        result.payload() == null
+    }
+
+    def "A batch longer than 255 characters is rejected before persistence"() {
+        when: "a new sample is validated with a 256 character batch"
+        def result = sampleValidation.validateNewSample(
+                "sampleName", "1", "Color: red", "Homo sapiens [NCBITaxon:9606]",
+                "specimen [UBERON:000006]", "analyte [CHEBI:1234]", "WGS",
+                "comment", [:], "b" * 256, projectId.value(), experiment.experimentId().value())
+
+        then: "the validation fails and names the field and the row"
+        result.validationResult().failures().contains(
+                "Batch: exceeds the maximum length of 255 characters for 'sampleName' (got 256)")
+    }
+
+    def "A comment longer than 255 characters is rejected on the update path"() {
+        given: "an existing sample"
+        sampleInformationService.findSampleId(_ as SampleCode) >> Optional.of(
+                new SampleIdCodeEntry(SampleId.create(), SampleCode.create("QTEST001AE")))
+
+        when: "the sample is validated for an update with a 256 character comment"
+        def result = sampleValidation.validateExistingSample(
+                "QTEST001AE", "sampleName", "1", "Color: red", "Homo sapiens [NCBITaxon:9606]",
+                "specimen [UBERON:000006]", "analyte [CHEBI:1234]", "WGS",
+                "c" * 256, [:], "batch-1", experiment.experimentId().value(), projectId.value())
+
+        then: "the validation fails and names the field and the sample"
+        result.validationResult().failures().contains(
+                "Comment: exceeds the maximum length of 255 characters for 'QTEST001AE' (got 256)")
     }
 
     private static Experiment setupExperiment() {

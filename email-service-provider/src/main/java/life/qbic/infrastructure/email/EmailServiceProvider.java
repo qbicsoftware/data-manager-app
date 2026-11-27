@@ -11,12 +11,11 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMessage.RecipientType;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.util.ByteArrayDataSource;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import life.qbic.identity.application.communication.CommunicationException;
 import life.qbic.logging.api.Logger;
 import life.qbic.logging.service.LoggerFactory;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 
 
@@ -24,6 +23,47 @@ import org.springframework.mail.javamail.JavaMailSender;
  * <b>Email provider</b>
  *
  * <p>Provides email infrastructure to send emails.</p>
+ *
+ * <h3>Two exception families, and why both are caught</h3>
+ *
+ * <p>Message <em>assembly</em> and message <em>submission</em> fail with unrelated exception types,
+ * and catching only one of them is how a failed send became invisible:</p>
+ *
+ * <ul>
+ *   <li>{@link MessagingException} — thrown while building the message, e.g.
+ *       {@code AddressException} for a malformed recipient.</li>
+ *   <li>{@link MailException} — thrown by {@code JavaMailSenderImpl} on every transport failure,
+ *       as {@code MailSendException} (connection refused, TLS refused, timeout) or
+ *       {@code MailAuthenticationException} (rejected credentials).</li>
+ * </ul>
+ *
+ * <p>{@code MailException} does <b>not</b> extend {@code MessagingException} — the two hierarchies
+ * are independent. This class used to call {@code Transport.send(message)} and therefore declared
+ * {@code catch (MessagingException)}, which was correct then. When the submission moved to Spring's
+ * {@code JavaMailSender} the call changed but the handler did not, so from that point on every
+ * genuine submission failure propagated out of here <b>unlogged</b> and untranslated.</p>
+ *
+ * <p>That is not a cosmetic gap. A transient SMTP fault then surfaced only as a background job that
+ * silently retried, with no error log, no operator notification, and nothing distinguishing it from
+ * a broken release. The specs did not catch it because they exercise a malformed address — which is
+ * an {@code AddressException}, i.e. the one failure mode that <em>was</em> still handled.</p>
+ *
+ * <h3>What this class throws, and why it is not a context type</h3>
+ *
+ * <h3>Why the attachment overload does not log</h3>
+ *
+ * <p>Only the plain-text overload logs the cause. The attachment overload throws the same type with
+ * the same cause chain and leaves logging to its caller, because it runs inside a JobRunr job whose
+ * failure handler prints the whole chain (see {@code EmailFailureIsVisibleSpec}). Logging in both
+ * places would put the same stack trace in the log twice: once attributed to the sending thread and
+ * once to the job's failure.</p>
+ *
+ * <p>Both handlers throw {@link EmailSubmissionException}. This provider is shared infrastructure
+ * used by the identity, project-management and user-groups contexts, and each of those defines its
+ * <em>own</em> {@code CommunicationException} — three distinct classes sharing a name. Throwing one
+ * context's type from here would break the other two, because their callers catch their own. Each
+ * adapter under {@code infrastructure.email.<context>} therefore maps this type onto the exception
+ * its port declares.</p>
  *
  * @since 1.0.0
  */
@@ -57,8 +97,15 @@ public class EmailServiceProvider {
       log.debug(
           "Sending email with subject %s to %s".formatted(subject.value(), recipient.address()));
     } catch (MessagingException e) {
-      log.error("Could not send email to " + recipient.address(), e);
-      throw new CommunicationException(NOTIFICATION_FAILED);
+      // Assembly failed - a malformed recipient address reaches here.
+      log.error("Could not prepare email to " + recipient.address(), e);
+      throw new EmailSubmissionException(NOTIFICATION_FAILED, e);
+    } catch (MailException e) {
+      // Submission failed. This is the clause that keeps a broken or unreachable mail server
+      // visible: without it the exception escaped unlogged and the only symptom was a background
+      // job quietly retrying (see the class comment).
+      log.error("Could not submit email to " + recipient.address(), e);
+      throw new EmailSubmissionException(NOTIFICATION_FAILED, e);
     }
   }
 
@@ -70,11 +117,13 @@ public class EmailServiceProvider {
       log.debug(
           "Sending email with subject %s to %s".formatted(subject.value(), recipient.address()));
     } catch (MessagingException e) {
-      log.error("Could not send email to " + recipient.address(), e);
-      throw new CommunicationException(NOTIFICATION_FAILED);
-    } catch (UnsupportedEncodingException e) {
-      log.error("Unsupported encoding: " + attachment.content(), e);
-      throw new CommunicationException(NOTIFICATION_FAILED);
+      // Assembly failed - a malformed recipient address reaches here.
+      log.error("Could not prepare email to " + recipient.address(), e);
+      throw new EmailSubmissionException(NOTIFICATION_FAILED, e);
+    } catch (MailException e) {
+      // Submission failed. Not logged here on purpose - see the class comment; the cause is attached
+      // and the job failure handler prints it, so the stack trace is not duplicated in the log.
+      throw new EmailSubmissionException(NOTIFICATION_FAILED, e);
     }
   }
 
@@ -102,7 +151,7 @@ public class EmailServiceProvider {
 
   private MimeMessage setupMessageWithAttachment(Subject subject, Recipient recipient,
       Content content, Attachment attachment)
-      throws MessagingException, UnsupportedEncodingException {
+      throws MessagingException {
 
     var message = setupMessageWithoutContent(subject, recipient);
 

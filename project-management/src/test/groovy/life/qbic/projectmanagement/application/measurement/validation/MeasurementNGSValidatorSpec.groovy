@@ -1,9 +1,17 @@
 package life.qbic.projectmanagement.application.measurement.validation
 
 
+import life.qbic.projectmanagement.application.ProjectInformationService
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementRegistrationInformationNGS
+import life.qbic.projectmanagement.application.api.AsyncProjectService.MeasurementSpecificNGS
+import life.qbic.projectmanagement.application.measurement.MeasurementService
 import life.qbic.projectmanagement.application.measurement.NGSMeasurementMetadata
 import life.qbic.projectmanagement.application.ontology.OntologyClass
 import life.qbic.projectmanagement.application.ontology.TerminologyService
+import life.qbic.projectmanagement.application.sample.SampleInformationService
+import life.qbic.projectmanagement.domain.model.experiment.ExperimentId
+import life.qbic.projectmanagement.domain.model.project.Project
+import life.qbic.projectmanagement.domain.model.project.ProjectId
 import life.qbic.projectmanagement.domain.model.sample.SampleCode
 import spock.lang.Specification
 
@@ -88,6 +96,72 @@ class MeasurementNGSValidatorSpec extends Specification {
 
         then:
         !isNGSMetadata
+    }
+
+    def "A comment longer than 255 characters fails registration validation"() {
+        given: "a validator whose other checks cannot pass for this sample"
+        def experimentId = ExperimentId.create()
+        def projectId = ProjectId.create()
+        def sampleInformation = Mock(SampleInformationService) {
+            findSampleId(_ as SampleCode) >> Optional.empty()
+            retrieveSamplesForExperiment(_ as ProjectId, _ as String) >> []
+        }
+        def terminology = Mock(TerminologyService) {
+            findByCurie(_) >> Optional.empty()
+        }
+        def projectInformation = Mock(ProjectInformationService) {
+            find(_ as ProjectId) >> Optional.of(Mock(Project) {
+                experiments() >> [experimentId]
+            })
+        }
+        def validator = new MeasurementNGSValidator(sampleInformation, terminology,
+                projectInformation, Mock(MeasurementService))
+
+        and: "a registration with a 256 character comment"
+        def registration = new MeasurementRegistrationInformationNGS(
+                "https://ror.org/03a1kwz48", "EFO:0004205", "facility",
+                "read type", "library kit", "flow cell", "run protocol", "pool group",
+                Map.of("QTEST001AE",
+                        new MeasurementSpecificNGS("i7", "i5", "c" * 256)),
+                "measurement name")
+
+        when:
+        def result = validator.validateRegistration(registration, experimentId.value(), projectId)
+
+        then: "the length failure is reported and names the field and the sample"
+        result.failures().contains(
+                "Comment: exceeds the maximum length of 255 characters for 'QTEST001AE' (got 256)")
+    }
+
+    def "A comment of exactly 255 characters does not fail the length validation"() {
+        given: "a registration with a 255 character comment"
+        def experimentId = ExperimentId.create()
+        def projectId = ProjectId.create()
+        def validator = new MeasurementNGSValidator(
+                Mock(SampleInformationService) {
+                    findSampleId(_ as SampleCode) >> Optional.empty()
+                    retrieveSamplesForExperiment(_ as ProjectId, _ as String) >> []
+                },
+                Mock(TerminologyService) { findByCurie(_) >> Optional.empty() },
+                Mock(ProjectInformationService) {
+                    find(_ as ProjectId) >> Optional.of(Mock(Project) {
+                        experiments() >> [experimentId]
+                    })
+                },
+                Mock(MeasurementService))
+
+        def registration = new MeasurementRegistrationInformationNGS(
+                "https://ror.org/03a1kwz48", "EFO:0004205", "facility",
+                "read type", "library kit", "flow cell", "run protocol", "pool group",
+                Map.of("QTEST001AE",
+                        new MeasurementSpecificNGS("i7", "i5", "c" * 255)),
+                "measurement name")
+
+        when:
+        def result = validator.validateRegistration(registration, experimentId.value(), projectId)
+
+        then: "no length failure is reported"
+        !result.failures().any { it.startsWith("Comment:") }
     }
 
 }

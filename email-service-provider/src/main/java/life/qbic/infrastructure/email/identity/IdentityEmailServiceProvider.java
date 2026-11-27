@@ -1,7 +1,5 @@
 package life.qbic.infrastructure.email.identity;
 
-import static life.qbic.logging.service.LoggerFactory.logger;
-
 import java.util.Objects;
 import java.util.Optional;
 import life.qbic.identity.application.communication.CommunicationException;
@@ -11,18 +9,20 @@ import life.qbic.identity.application.communication.Recipient;
 import life.qbic.identity.application.communication.Subject;
 import life.qbic.infrastructure.email.EmailServiceProvider;
 import life.qbic.infrastructure.email.EmailSubmissionException;
-import life.qbic.logging.api.Logger;
 
 /**
  * <b>Identity Email Provider</b>
  *
  * <p>Implementation of the {@link EmailService} interface to support the identity application.</p>
  *
+ * <p>Translates the shared infrastructure's {@link EmailSubmissionException} into this context's
+ * {@link CommunicationException}, which is what the port declares. Each context has its own
+ * {@code CommunicationException} type, so this mapping is what makes the port's contract true rather
+ * than nominal — a caller catching this context's type must actually receive it.</p>
+ *
  * @since 1.0.0
  */
 public class IdentityEmailServiceProvider implements EmailService {
-
-  private static final Logger log = logger(IdentityEmailServiceProvider.class);
 
   private final EmailServiceProvider emailServiceProvider;
 
@@ -41,11 +41,12 @@ public class IdentityEmailServiceProvider implements EmailService {
         .orElseThrow(() -> new CommunicationException("No content provided."));
 
     try {
-      emailServiceProvider.send(MessageTranslator.translate(subject), MessageTranslator.translate(recipient),
-          MessageTranslator.translate(content));
+      emailServiceProvider.send(MessageTranslator.translate(subject),
+          MessageTranslator.translate(recipient), MessageTranslator.translate(content));
     } catch (EmailSubmissionException e) {
-      log.error("Email submission failed!", e);
-      throw new CommunicationException("Email submission failed");
+      // The provider has already logged the underlying cause with full detail; this keeps the
+      // chain so nothing is lost, and hands the caller the type its port promises.
+      throw new CommunicationException(e.getMessage(), e);
     }
   }
 
