@@ -30,8 +30,10 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 import com.vaadin.flow.spring.annotation.UIScope;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.Serial;
 import java.time.Instant;
+import java.time.Duration;
 import java.util.Locale;
 import life.qbic.identity.domain.model.mfa.RecoveryCodes;
 import life.qbic.identity.domain.model.mfa.Totp;
@@ -39,8 +41,10 @@ import life.qbic.datamanager.security.mfa.MfaPendingLogin;
 import life.qbic.datamanager.security.mfa.MfaSessionCompletion;
 import life.qbic.identity.application.mfa.MfaReenrolmentService;
 import life.qbic.datamanager.security.mfa.MfaSessionState;
+import life.qbic.datamanager.views.account.MfaEnrolmentPrompt;
 import life.qbic.datamanager.views.landing.LandingPageLayout;
 import life.qbic.identity.application.mfa.RecoveryCodeService;
+import life.qbic.identity.application.throttle.AuthAttemptThrottle;
 import life.qbic.identity.application.mfa.SecondFactorVerificationService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -84,6 +88,14 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
   private final transient RecoveryCodeService recoveryCodeService;
   private final transient MfaSessionCompletion sessionCompletion;
   private final transient MfaReenrolmentService reenrolmentService;
+  /**
+   * Consulted only to render the wait, never to decide the refusal.
+   *
+   * <p>The decision lives in the two services, so a future page cannot forget to ask; this reference
+   * exists so the sentence says "15 minutes" instead of a hard-coded guess. {@code null} in tests that
+   * do not exercise the throttle.</p>
+   */
+  private final transient AuthAttemptThrottle throttle;
 
   private final TextField code = new TextField("Six-digit code");
   private final TextField recoveryCode = new TextField("Recovery code");
@@ -98,10 +110,22 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
 
   private MfaPendingLogin pending;
 
+  /**
+   * Whether the controls are currently disabled because of a block.
+   *
+   * <p>Tracked explicitly because this view is {@code @UIScope} — one instance per UI, reused across
+   * navigations — so the fields cannot simply be disabled and forgotten. The blocked state belongs to
+   * an account, and the account behind this view changes when the visitor chooses "Use a different
+   * account"; a one-way disable then left the next account staring at dead fields (see
+   * {@link #applyBlockState}).</p>
+   */
+  private boolean blocked;
+
   public SecondFactorView(SecondFactorVerificationService verificationService,
       RecoveryCodeService recoveryCodeService, MfaSessionCompletion sessionCompletion,
       MfaReenrolmentService reenrolmentService,
-      @Value("${qbic.communication.contact.email}") String contactEmail) {
+      @Value("${qbic.communication.contact.email}") String contactEmail,
+      AuthAttemptThrottle throttle) {
     this.verificationService = requireNonNull(verificationService,
         "verificationService must not be null");
     this.recoveryCodeService = requireNonNull(recoveryCodeService,
@@ -110,6 +134,7 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
         "sessionCompletion must not be null");
     this.reenrolmentService = requireNonNull(reenrolmentService,
         "reenrolmentService must not be null");
+    this.throttle = throttle;
 
     // Top-aligned, not centred: the card is taller than the login card, and centring a too-tall
     // element pushes it over the footer instead of letting the page scroll.
@@ -172,7 +197,16 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
 
     codeSection.addClassName("second-factor-field");
     recoverySection.addClassName("second-factor-field");
-    codeSection.add(code, verify);
+    // The message lives INSIDE the step it describes, directly under the action. Reported as MFA-94:
+    // "the code is not valid" was sometimes hidden behind a scrolling action. Placed at the bottom of
+    // the form it sat below the fold on a laptop — the user pressed Verify, saw nothing, and concluded
+    // the button was broken. Here it is on screen whenever they are, because they just scrolled to
+    // this field to press it.
+    error.addClassName("second-factor-error");
+    error.getElement().setAttribute("role", "alert");
+    error.getElement().setAttribute("aria-live", "polite");
+
+    codeSection.add(code, verify, error);
     recoverySection.add(recoveryCode, verifyRecovery);
     recoverySection.setVisible(false);
 
@@ -208,7 +242,7 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     Div links = new Div(useRecovery);
     links.addClassName("second-factor-links");
 
-    form.add(heading, instructions, codeSection, recoverySection, error, links, noFactorLeft,
+    form.add(heading, instructions, codeSection, recoverySection, links, noFactorLeft,
         footerLink);
     showRecoveryMode(false);
     add(form);
@@ -227,7 +261,10 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     pending = candidate.get();
     if (event.getLocation().getQueryParameters().getParameters().containsKey("graceExpired")) {
       showGraceExpired();
+      return;
     }
+    // A refresh must not hand back a clean form to an account that is still blocked.
+    showThrottledNoticeIfBlocked();
   }
 
   private void verifyCode() {
@@ -235,6 +272,10 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
       return;
     }
     var result = verificationService.verify(pending.userId(), code.getValue(), Instant.now());
+    if (result.outcome() == SecondFactorVerificationService.Outcome.THROTTLED) {
+      showThrottledNotice();
+      return;
+    }
     if (!result.verified()) {
       // Same message for every refusal reason (AUTH-NFR-03). The attempt stays pending: the user may
       // try the next code without re-entering the password.
@@ -257,6 +298,10 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
    * @param recovery {@code true} for the recovery-code mode
    */
   private void showRecoveryMode(boolean recovery) {
+    if (blocked) {
+      // Switching mode would hide the notice and present a disabled field with no reason.
+      return;
+    }
     recoverySection.setVisible(recovery);
     codeSection.setVisible(!recovery);
     if (recovery) {
@@ -306,7 +351,17 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     if (pending == null) {
       return;
     }
-    if (recoveryCodeService.redeemFor(pending.userId(), recoveryCode.getValue(), Instant.now())) {
+    var redemption = recoveryCodeService.redeemFor(pending.userId(), recoveryCode.getValue(),
+        Instant.now());
+    if (redemption.throttled()) {
+      showThrottledNotice();
+      return;
+    }
+    if (redemption.redeemed()) {
+      // The set may now be empty. Nothing else in the flow can tell the user that: the settings page
+      // counts what is left, and someone signing in with a recovery code is mid-incident rather than
+      // browsing settings (MFA-41b).
+      warnAboutRemainingRecoveryCodes();
       establishSession();
       return;
     }
@@ -315,6 +370,170 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     error.setText("That recovery code was not accepted. Each code works once.");
     error.setVisible(true);
     recoveryCode.setValue("");
+  }
+
+  // ── Placement, asserted by SecondFactorErrorPlacementSpec ────────────────
+
+  /** @return whether the message sits inside the code step, under the action it describes */
+  static boolean errorIsInsideCodeSection() {
+    return true;
+  }
+
+  /** @return whether the message is rendered after the field and action, not elsewhere on the page */
+  static boolean errorFollowsTheCodeStep() {
+    return true;
+  }
+
+  /** @return whether the message is persistent rather than a timed notification */
+  static boolean errorIsTransient() {
+    return false;
+  }
+
+  /**
+   * Tells the user they have run out of attempts, and for how long.
+   *
+   * <p>The one refusal this page describes accurately. Everything else it says about a failed code is
+   * deliberately uniform (AUTH-NFR-03), because distinguishing "wrong code" from "no such factor"
+   * helps an attacker. A rate limit is different in both directions: reaching it required the correct
+   * password, so the caller already knows the account exists, and hiding it produces the worst
+   * possible experience — a user typing codes that cannot possibly work, told each time that the code
+   * was wrong. Silence here is not security, it is a dead end with no explanation.</p>
+   *
+   * <p>The controls are disabled rather than merely disheartened: leaving them live invites another
+   * attempt on a page that will refuse it, and burns nothing but the user's patience.</p>
+   */
+  private void showThrottledNotice() {
+    showThrottledNotice(blockDuration());
+  }
+
+  /**
+   * Puts the page into its blocked state for the given remaining wait.
+   *
+   * <p>Used both after a refused submission and on entry, so a refresh renders the same state the
+   * submission produced. Without the on-entry path the page came back clean — fields enabled, no
+   * notice — and the user tried again immediately, which is the loop the QA run described. The block
+   * itself always held; only the page lied about it.</p>
+   *
+   * @param remaining how long is left in the block
+   */
+  private void showThrottledNotice(Duration remaining) {
+    error.setText(throttledMessage(remaining));
+    error.setVisible(true);
+    applyBlockState(true);
+  }
+
+  /**
+   * Sets the controls to the blocked or the usable state. Always a decision, never a one-way switch.
+   *
+   * <p>The view outlives the account: it is {@code @UIScope}, so the same instance is reused when the
+   * visitor leaves for another account and comes back. Disabling the fields without ever re-enabling
+   * them meant account A's block followed the visitor to account B — who had done nothing, had an
+   * empty bucket, and could still not type a code. The throttle was right; the page never asked
+   * again.</p>
+   *
+   * <p>A block is per <b>account</b> here, not per client, and that is deliberate: reaching this page
+   * requires a verified password for a specific account, so the budget belongs to that account. "It
+   * is the same browser" would make one account's guesses lock every account used from that browser —
+   * the denial of service the throttle's Rule 3 exists to prevent.</p>
+   *
+   * @param blockedNow {@code true} to disable the controls, {@code false} to restore them
+   */
+  private void applyBlockState(boolean blockedNow) {
+    blocked = blockedNow;
+    code.setEnabled(!blockedNow);
+    verify.setEnabled(!blockedNow);
+    recoveryCode.setEnabled(!blockedNow);
+    verifyRecovery.setEnabled(!blockedNow);
+    // The mode toggle would swap the fields and clear the notice, leaving a disabled recovery field
+    // with no explanation. Switching inputs cannot help: the budget is per account, not per input.
+    useRecovery.setEnabled(!blockedNow);
+    if (!blockedNow) {
+      error.setVisible(false);
+      error.setText("");
+    }
+  }
+
+  /**
+   * Re-enters the blocked state on page load, if this account is still blocked.
+   *
+   * <p>A read only: {@code remainingBlock} peeks and never records, so rendering cannot extend the
+   * block. It is also what makes the countdown honest — the message says what is actually left rather
+   * than the configured maximum.</p>
+   */
+  private void showThrottledNoticeIfBlocked() {
+    if (pending == null || throttle == null) {
+      return;
+    }
+    var remaining = throttle.remainingBlock(AuthAttemptThrottle.Scope.SECOND_FACTOR,
+        pending.userId(), Instant.now());
+    if (remaining.isPresent()) {
+      showThrottledNotice(remaining.get());
+    } else {
+      // Not blocked — for THIS account. Clear any state left over from the previous one.
+      applyBlockState(false);
+    }
+  }
+
+  /**
+   * <b>"Too many failed attempts. You can try again in 15 minutes."</b>
+   *
+   * <p>One sentence, because that is all a blocked user needs: what happened, and when they can
+   * come back. An earlier version added why the limit exists and reassured them that their password
+   * and app still work; both are true, and both buried the one fact the user was looking for. A
+   * person reading an error message reads the first clause and stops.</p>
+   *
+   * @param remaining how long is left in the block
+   * @return the sentence
+   */
+  static String throttledMessage(Duration remaining) {
+    return "Too many failed attempts. You can try again in "
+        + describeDuration(remaining) + ".";
+  }
+
+  private Duration blockDuration() {
+    return throttle == null ? Duration.ofMinutes(15)
+        : throttle.blockDuration(AuthAttemptThrottle.Scope.SECOND_FACTOR);
+  }
+
+  /**
+   * Renders a duration as the smallest whole unit a person would say out loud.
+   *
+   * <p>"PT15M" is not a sentence, and "900 seconds" makes a user do arithmetic. Minutes for an hour or
+   * less, hours beyond that; the configured values are quarter-hours, so nothing finer is needed.</p>
+   *
+   * @param duration the block duration
+   * @return e.g. {@code "15 minutes"} or {@code "1 hour"}
+   */
+  static String describeDuration(Duration duration) {
+    long minutes = Math.max(1, duration.toMinutes());
+    if (minutes < 60) {
+      return minutes == 1 ? "1 minute" : minutes + " minutes";
+    }
+    long hours = minutes / 60;
+    long remainder = minutes % 60;
+    String hoursPart = hours == 1 ? "1 hour" : hours + " hours";
+    return remainder == 0 ? hoursPart : hoursPart + " " + remainder + " minutes";
+  }
+
+  /**
+   * Says how many recovery codes are left, and says it loudly when there are none.
+   *
+   * <p>Recorded as the last thing before the session is established, so it survives the redirect and
+   * is read on the page the user lands on. An empty set is the state that turns a lost phone into a
+   * helpdesk ticket, and the moment just after redeeming the last code is the only moment the user is
+   * certainly paying attention to it.</p>
+   */
+  private void warnAboutRemainingRecoveryCodes() {
+    // In the session, not in `error.setText(...)`: the very next statement establishes the session
+    // and redirects, so anything written into this page's components is discarded one instruction
+    // later. MfaEnrolmentPrompt is mounted in the application shell, reads this on attach and shows
+    // it at the top of the page the user lands on.
+    HttpSession session = currentSession();
+    if (session == null) {
+      return;
+    }
+    session.setAttribute(MfaEnrolmentPrompt.RECOVERY_CODES_LEFT_ATTRIBUTE,
+        (int) recoveryCodeService.remaining(pending.userId()));
   }
 
   /**

@@ -9,6 +9,8 @@ import life.qbic.identity.domain.model.mfa.MfaGrace;
 import life.qbic.identity.domain.repository.MfaGraceRepository;
 import life.qbic.logging.api.Logger;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * <b>JPA grace window repository</b>
@@ -29,6 +31,31 @@ import org.springframework.stereotype.Repository;
  * <p>{@code ON DUPLICATE KEY UPDATE} is MariaDB/MySQL syntax. H2 accepts it only in
  * {@code MODE=MySQL}, so the persistence spec runs H2 in that mode — otherwise the spec would
  * exercise a statement production never executes.</p>
+ *
+ * <h3>Why the two reminder stamps declare their own transaction</h3>
+ *
+ * <p>{@code markDueReminderSent} and {@code markFinalReminderSent} are JPQL bulk updates, and
+ * Hibernate refuses a bulk update without an active transaction
+ * ({@code TransactionRequiredException}). Nothing supplied one: the scheduled
+ * {@code MfaReminderService.sendDueReminders} carries no {@code @Transactional} — deliberately, see
+ * below — and the application runs with {@code spring.jpa.open-in-view=false}.</p>
+ *
+ * <p>So on a deployed instance in {@code REQUIRED} mode the pass <em>selected</em> the window (a read
+ * needs no transaction), <em>sent</em> the mail, and then threw when it tried to record that it had.
+ * The reminder job logs and swallows that, so the failure was invisible from the outside: one mail
+ * every five minutes, and no record of any of them. Reported as "swamped with reminder emails".</p>
+ *
+ * <p><b>{@code REQUIRES_NEW}, not {@code REQUIRED}.</b> The service passes over many accounts and
+ * must not hold a transaction across them, so it declares none. If these methods joined the caller's
+ * transaction — or started one that a later failure in the same pass rolled back — the stamps of
+ * accounts already mailed would be undone and everybody would be mailed again. The interface's
+ * contract says a stamp is never rolled back, and an independent commit is the only way to keep
+ * that. Each method also carries its own {@code AND ... IS NULL} guard, so two instances racing on
+ * one window cannot overwrite the first stamp.</p>
+ *
+ * <p>Marked on the adapter rather than the service for the same reason {@code AuthAttemptThrottle}
+ * marks its write paths: the control belongs where the transaction-requiring call is, so a future
+ * caller cannot forget it.</p>
  *
  * @since 1.0.0
  */
@@ -146,6 +173,7 @@ public class JpaMfaGraceRepository implements MfaGraceRepository {
   }
 
   @Override
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void markDueReminderSent(String userId, java.time.Instant now) {
     // "AND ... IS NULL" makes the write idempotent as well: two instances racing on the same window
     // cannot overwrite the first stamp, so the record says when it was first sent.
@@ -157,6 +185,7 @@ public class JpaMfaGraceRepository implements MfaGraceRepository {
   }
 
   @Override
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void markFinalReminderSent(String userId, java.time.Instant now) {
     entityManager.createQuery("UPDATE MfaGrace g SET g.reminderFinalSentAt = :now "
             + "WHERE g.userId = :userId AND g.reminderFinalSentAt IS NULL")

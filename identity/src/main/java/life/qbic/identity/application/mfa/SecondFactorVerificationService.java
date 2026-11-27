@@ -9,6 +9,7 @@ import java.util.List;
 import life.qbic.identity.domain.model.mfa.SecondFactor;
 import life.qbic.identity.domain.model.mfa.SecondFactorType;
 import life.qbic.identity.domain.model.mfa.Totp;
+import life.qbic.identity.application.throttle.AuthAttemptThrottle;
 import life.qbic.identity.domain.repository.SecondFactorRepository;
 import life.qbic.logging.api.Logger;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,21 @@ import org.springframework.transaction.annotation.Transactional;
  * locked out by their older device. A code is accepted against at most one factor, and the use is
  * recorded on that one.</p>
  *
+ * <h3>Throttled per account (MFA-68)</h3>
+ * <p>A six-digit code is one guess in a million per thirty-second step. That is only a control while
+ * the attacker gets <em>one</em> guess per step: without a rate limit, a million scripted submissions
+ * turn the second factor into a formality. The QA run found exactly that — two minutes of clicking at
+ * the challenge page, nothing stopping it (MFA-68).</p>
+ *
+ * <p>The attempt is therefore recorded before the code is looked at, and cleared when a code is
+ * accepted, so a user who mistypes and then succeeds starts from zero. The budget is keyed on the
+ * account id: the password step already established which account is mid-login, and one account's
+ * failures must not spend another's allowance.</p>
+ *
+ * <p><b>The refusal is deliberately indistinguishable from a wrong code</b> (AUTH-NFR-03). The caller
+ * renders its single "not accepted" sentence for both. An attacker holding the password is the exact
+ * audience a distinct "too many attempts" would help.</p>
+ *
  * @since 1.0.0
  */
 @Service
@@ -41,12 +57,15 @@ public class SecondFactorVerificationService {
 
   private final SecondFactorRepository secondFactorRepository;
   private final SecondFactorSecretProtector secretProtector;
+  private final AuthAttemptThrottle throttle;
 
   public SecondFactorVerificationService(SecondFactorRepository secondFactorRepository,
-      SecondFactorSecretProtector secretProtector) {
+      SecondFactorSecretProtector secretProtector,
+      AuthAttemptThrottle throttle) {
     this.secondFactorRepository = requireNonNull(secondFactorRepository,
         "secondFactorRepository must not be null");
     this.secretProtector = requireNonNull(secretProtector, "secretProtector must not be null");
+    this.throttle = requireNonNull(throttle, "throttle must not be null");
   }
 
   /**
@@ -62,6 +81,16 @@ public class SecondFactorVerificationService {
     requireNonNull(userId, "userId must not be null");
     requireNonNull(code, "code must not be null");
     requireNonNull(now, "now must not be null");
+
+    // Recorded first, so the attempt is charged even if verification fails a step later, and so the
+    // configured number of attempts is exactly what a visitor gets per window. A success clears the
+    // bucket below.
+    if (throttle.recordAttempt(AuthAttemptThrottle.Scope.SECOND_FACTOR, userId, now)
+        == AuthAttemptThrottle.Decision.THROTTLED) {
+      log.warn("Second-factor verification refused for user %s: attempt limit reached"
+          .formatted(userId));
+      return new Result(Outcome.THROTTLED, null);
+    }
 
     List<SecondFactor> factors = secondFactorRepository.findActiveByUserId(userId);
     if (factors.isEmpty()) {
@@ -92,11 +121,30 @@ public class SecondFactorVerificationService {
         continue;
       }
       try {
-        if (Totp.verify(new String(seed), code, now)) {
+        var matchedStep = Totp.acceptedStep(new String(seed), code, now);
+        if (matchedStep.isPresent() && factor.acceptsStep(matchedStep.getAsLong())) {
           factor.markUsed(now);
+          // Replay protection (MFA-20). The step, not the code, is what makes this a total order:
+          // with the ±1 tolerance the same code matches three consecutive steps, so "not used before"
+          // would still let an attacker replay an older step after a newer one was accepted.
+          factor.markAcceptedStep(matchedStep.getAsLong());
           secondFactorRepository.save(factor);
-          log.info("Second factor %s of user %s verified".formatted(factor.id(), userId));
+          // The account is in again: its allowance starts over, so a later typo is not still the
+          // sixth attempt of a window that began before this login.
+          throttle.onSuccess(AuthAttemptThrottle.Scope.SECOND_FACTOR, userId);
+          log.info("Second factor %s of user %s verified at step %d"
+              .formatted(factor.id(), userId, matchedStep.getAsLong()));
           return new Result(Outcome.VERIFIED, factor.id());
+        }
+        if (matchedStep.isPresent()) {
+          // The code is right but was already used. Deliberately the same REJECTED outcome as a wrong
+          // code: telling the user "you already used that" would confirm a code to whoever presents
+          // it (AUTH-NFR-03), and it is only ever useful to an attacker.
+          log.warn(("Second factor %s of user %s presented a code from step %d, which is not newer "
+              + "than the last accepted step %s; refused as a replay")
+              .formatted(factor.id(), userId, matchedStep.getAsLong(),
+                  factor.lastAcceptedStep().isPresent()
+                      ? factor.lastAcceptedStep().getAsLong() : "none"));
         }
       } finally {
         Arrays.fill(seed, '\0');
@@ -116,6 +164,14 @@ public class SecondFactorVerificationService {
     REJECTED,
     /** No active factor exists (removed concurrently, or never enrolled). */
     NO_FACTOR,
+    /**
+     * The account has used up its attempts in the current window (MFA-68).
+     *
+     * <p>Distinct for the caller's control flow only — {@code verified()} is {@code false} for it, so
+     * every existing caller already denies. It exists so the reason is visible in a log and a test,
+     * not so a view can describe it.</p>
+     */
+    THROTTLED,
     /** At least one factor could not be decrypted; fail closed (AUTH-NFR-02). */
     UNAVAILABLE
   }

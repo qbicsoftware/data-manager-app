@@ -67,6 +67,17 @@
   flex: none;
 }
 
+/* The rejection message, under the action it belongs to.
+   It lives inside .second-factor-field rather than at the bottom of the form, because at the bottom
+   it fell below the fold on a laptop and the user saw no feedback at all (MFA-94). Scrolling to the
+   colour was the fix; moving the message to where the user already is was the better one. */
+.second-factor-error {
+  display: block;
+  color: var(--lumo-error-text-color);
+  font-size: var(--lumo-font-size-s);
+  line-height: 1.4;
+}
+
 /* Field and its primary action read as one unit, and the action spans the field. */
 .second-factor-field {
   display: flex;

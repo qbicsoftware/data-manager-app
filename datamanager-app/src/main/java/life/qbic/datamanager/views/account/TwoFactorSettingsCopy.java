@@ -1,5 +1,12 @@
 package life.qbic.datamanager.views.account;
 
+import static java.util.Objects.requireNonNull;
+
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.Locale;
 import life.qbic.identity.domain.model.mfa.MfaPolicyMode;
 
 /**
@@ -126,6 +133,43 @@ public final class TwoFactorSettingsCopy {
   }
 
   /**
+   * The heading of the notice shown right after a recovery code was redeemed (MFA-41b).
+   *
+   * <p>This is an <em>event</em> notice, not a state summary — the state summary is
+   * {@link #recoverySummary}. The distinction is what the QA run found missing: an account that spent
+   * its last code is in a materially different situation from one that has five left, and only the
+   * event tells it so at the moment it becomes true.</p>
+   *
+   * @param unusedCodes how many codes are left; {@code 0} means the set is spent
+   * @return the heading
+   */
+  static String recoveryCodesLeftTitle(long unusedCodes) {
+    return unusedCodes <= 0 ? "No recovery codes left" : "Recovery code used";
+  }
+
+  /**
+   * The body of the notice shown right after a recovery code was redeemed.
+   *
+   * <p>For an empty set it names the loss and the one action that still exists: enrolling a new
+   * authenticator issues a fresh set. It says nothing about e-mail, because mailbox control must never
+   * read as the way past a factor (ADR 0011 B1) — and a user in exactly this state is the one most
+   * likely to go looking for that shortcut.</p>
+   *
+   * @param unusedCodes how many codes are left; negative is treated as none
+   * @return the body text
+   */
+  static String recoveryCodesLeftBody(long unusedCodes) {
+    if (unusedCodes <= 0) {
+      return "You signed in with your last recovery code, so none are left. Set up a new "
+          + "authenticator app to get a fresh set — without one, losing access to your app means you "
+          + "cannot sign in by yourself.";
+    }
+    return "You signed in with a recovery code. " + unusedCodes
+        + (unusedCodes == 1 ? " code is" : " codes are")
+        + " still unused. Set up a new authenticator app to get a fresh set.";
+  }
+
+  /**
    * @param unusedCodes unused codes on the account
    * @param hasFactor   whether the account has an active factor
    * @return the label of the recovery-code action
@@ -136,6 +180,135 @@ public final class TwoFactorSettingsCopy {
 
   /** What a factor is called when the user does not choose a name. */
   static final String DEFAULT_FACTOR_NAME = "Authenticator app";
+
+  // ── Enrolment page copy ────────────────────────────────────────────────────
+  //
+  // Here rather than inline in the page for the same reason everything else on this subject is: the
+  // enrolment screen exists twice (settings and mandatory-at-login), and two copies of the same
+  // sentence is how they drift into saying different things.
+
+  /** Title of the enrolment screen. Shared by both entry points. */
+  static final String ENROL_TITLE = "Set up an authenticator app";
+
+  /** The instruction above the QR code. */
+  static final String ENROL_INTRO =
+      "Scan the QR code with your authenticator app, then type the six-digit code it shows.";
+
+  /** Shown when a phone camera cannot be used. */
+  static final String ENROL_SETUP_KEY_LABEL = "Setup key (if you can't scan)";
+
+  /** The primary action: verify the code, which is what creates the factor. */
+  static final String ENROL_CONFIRM_LABEL = "Verify and enable";
+
+  /** Labels the optional naming field; the word "optional" is load-bearing. */
+  static final String ENROL_NAME_LABEL = "Name this app (optional)";
+
+  /** Explains what the name is for, in one line. */
+  static final String ENROL_NAME_HELPER = "Only used to tell your apps apart in settings.";
+
+  /** Label of the code field. */
+  static final String ENROL_CODE_LABEL = "Code from the app";
+
+  // ── Recovery codes at enrolment ────────────────────────────────────────────
+
+  /**
+   * <b>Whether confirming an enrolment should also issue a recovery-code sheet.</b>
+   *
+   * <p>Only when the account has none left. A sheet is not a souvenir of adding an app: issuing one is
+   * destructive, because {@code RecoveryCodeService.generate} retires every existing code in the same
+   * transaction. A user adding a second authenticator <em>for redundancy</em> — the intended reason to
+   * add one — would otherwise be handed a fresh sheet that silently kills the one they printed. Dismiss
+   * it believing the old codes still work, and they hold ten dead codes and no way back in.</p>
+   *
+   * <p>So the rule is: first enrolment, or every code spent, or the user explicitly asks for a new set
+   * on the settings page. Nothing else.</p>
+   *
+   * @param unusedCodes how many codes are still usable on the account
+   * @return {@code true} if confirming this enrolment must show a new sheet
+   */
+  static boolean recoverySheetNeededOnEnrolment(long unusedCodes) {
+    return unusedCodes <= 0;
+  }
+
+  /**
+   * Title of the confirmation shown after an enrolment that issued no new sheet.
+   *
+   * <p>Deliberately not {@link #ENROL_TITLE}: the page was still headed "Set up an authenticator app"
+   * after the app had been set up, which reads as work not yet done. A confirmation states what
+   * happened.</p>
+   */
+  static final String ENROL_DONE_TITLE = "Authenticator app is ready";
+
+  /** The way back from the confirmation. A named destination, not a bare "Done". */
+  static final String ENROL_DONE_ACTION = "Back to two-factor settings";
+
+  /**
+   * What the user is told after enrolling when no new sheet was issued.
+   *
+   * <p>The absence of a sheet is itself a message, and it must not be read as "you have no codes". The
+   * user has just replaced or added an app; the sentence has to confirm that the codes they saved
+   * earlier are untouched, and name the action that <em>does</em> replace them, so a deliberate
+   * replacement stays one click away.</p>
+   *
+   * @param hasUnusedCodes whether the account actually has codes left
+   * @return the notice under the enrolment confirmation
+   */
+  static String enrolmentDoneWithoutNewCodesBody(boolean hasUnusedCodes) {
+    if (!hasUnusedCodes) {
+      // Should not be reachable: no codes means a sheet was due. Say something true rather than
+      // reproduce the sentence above, which would claim codes the account does not have.
+      return "You have no unused recovery codes. Set them up from the two-factor settings page.";
+    }
+    return "Your existing recovery codes still work — adding an app does not change them. "
+        + "If you ever want a fresh set, generate new recovery codes from the two-factor settings "
+        + "page.";
+  }
+
+  // ── Deadlines ──────────────────────────────────────────────────────────────
+
+  /**
+   * How a grace deadline is shown: full date <b>and time of day</b>, in the user's zone.
+   *
+   * <p>The time is the point. A deadline is an instant, but "28 November 2026" renders half of it and
+   * invites the reader to supply the rest — which they do generously, planning to enrol "that
+   * evening". The window often ends mid-afternoon, and the user is locked out having believed they
+   * had hours left. Reported from testing under {@code REQUIRED}.</p>
+   *
+   * <p>Local time, not UTC: the user is planning their day in the zone they are sitting in. Factor
+   * timestamps elsewhere on the settings page keep their own date formatter — those are history, not
+   * deadlines, and the distinction is deliberate.</p>
+   */
+  private static final DateTimeFormatter DEADLINE_FORMAT =
+      DateTimeFormatter.ofPattern("d MMMM yyyy, HH:mm", Locale.ROOT)
+          .withZone(ZoneId.systemDefault());
+
+  /**
+   * Formats a deadline for display, including the time of day.
+   *
+   * @param deadline the instant the grace window ends
+   * @return e.g. {@code "28 November 2026, 15:42"}
+   */
+  static String formattedDeadline(Instant deadline) {
+    requireNonNull(deadline, "deadline must not be null");
+    return DEADLINE_FORMAT.format(deadline);
+  }
+
+  /**
+   * Formats an instant as a date only.
+   *
+   * <p>For history — when a factor was added, when it was last used — where the time of day is noise
+   * rather than information. Deliberately separate from {@link #formattedDeadline}, so a deadline
+   * cannot be rendered with the date formatter by accident.</p>
+   *
+   * @param instant the instant to format
+   * @return e.g. {@code "28 Nov 2026"}
+   */
+  static String formattedDate(Instant instant) {
+    requireNonNull(instant, "instant must not be null");
+    return DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+        .withZone(ZoneId.systemDefault())
+        .format(instant);
+  }
 
   /**
    * The label a factor gets, given what the user typed in the optional name field.

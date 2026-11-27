@@ -182,7 +182,20 @@ public class AuthAttemptThrottle {
      * application send notification mail, and can repeatedly invalidate a victim's outstanding reset
      * link, since each newly issued token supersedes the previous one.</p>
      */
-    REGISTRATION
+    REGISTRATION,
+    /**
+     * Submissions of a second-factor code at the login challenge or on the mandatory-enrolment page.
+     *
+     * <p>The flow MILESTONE-MFA M5-4 names, and the reason {@link Scope} was made an open set: a
+     * six-digit code is one guess in a million per thirty-second step, which holds only while an
+     * attacker gets <em>one</em> guess per step. Without this bucket the same million guesses are a
+     * few minutes of scripted submissions and the second factor is worth no more than the password
+     * (MFA-68).</p>
+     *
+     * <p>Keyed on the account id rather than an address: the password step already established which
+     * account is mid-login, and one account's failures must not spend another's allowance.</p>
+     */
+    SECOND_FACTOR
   }
 
   /** Whether the caller may perform the work. Never render this; see Rule 2. */
@@ -228,8 +241,27 @@ public class AuthAttemptThrottle {
   private final AuthAttemptCounter counter;
   private final Policy loginPolicy;
   private final Policy resendPolicy;
+  private final Policy secondFactorPolicy;
 
   /**
+
+   * Convenience constructor with the default second-factor policy.
+   *
+   * <p>Exists so the many specs and the two flows that never touch a second factor do not have to
+   * repeat three values. Spring uses the annotated constructor below.</p>
+   */
+  public AuthAttemptThrottle(AuthAttemptCounter counter, int loginMaxAttempts,
+      Duration loginWindow, Duration loginBlockDuration, int resendMaxAttempts,
+      Duration resendWindow, Duration resendBlockDuration) {
+    this(counter, loginMaxAttempts, loginWindow, loginBlockDuration, resendMaxAttempts,
+        resendWindow, resendBlockDuration, 5, Duration.ofMinutes(15), Duration.ofMinutes(15));
+  }
+
+  /**
+   * Spring's constructor.
+   *
+   * <p>Annotated explicitly because the class now has two constructors; without it Spring cannot
+   * choose. Same reason as {@code MfaLoginSuccessHandler}.</p>
    * Per-flow origin policies, or {@code null} when origin scope is switched off.
    *
    * <p>Null rather than a disabled {@link Policy} because "off" and "allowed zero attempts" must not
@@ -262,16 +294,36 @@ public class AuthAttemptThrottle {
    * @param resendWindow      counting window for the resend buckets
    * @param resendBlockDuration how long a resend block lasts
    */
+  /**
+   * Account-scoped configuration with an explicit second-factor policy.
+   *
+   * <p>For specs that exercise the throttle's second-factor budget without caring about origin
+   * scoping. Production uses the full constructor.</p>
+   *
+   * @param counter                 persistence port
+   * @param loginMaxAttempts        failures per account before the login block
+   * @param loginWindow             counting window for the login bucket
+   * @param loginBlockDuration      how long the login block lasts
+   * @param resendMaxAttempts       failures per account before the resend block
+   * @param resendWindow            counting window for the resend buckets
+   * @param resendBlockDuration     how long a resend block lasts
+   * @param secondFactorMaxAttempts code submissions per account before the second-factor block
+   * @param secondFactorWindow      counting window for the second-factor bucket
+   * @param secondFactorBlockDuration how long the second-factor block lasts
+   */
   public AuthAttemptThrottle(AuthAttemptCounter counter,
       int loginMaxAttempts, Duration loginWindow, Duration loginBlockDuration,
-      int resendMaxAttempts, Duration resendWindow, Duration resendBlockDuration) {
+      int resendMaxAttempts, Duration resendWindow, Duration resendBlockDuration,
+      int secondFactorMaxAttempts, Duration secondFactorWindow,
+      Duration secondFactorBlockDuration) {
     this(counter,
         loginMaxAttempts, loginWindow, loginBlockDuration,
         resendMaxAttempts, resendWindow, resendBlockDuration,
         false,
         0, Duration.ofMinutes(15), Duration.ofMinutes(10),
         0, Duration.ofMinutes(15), Duration.ofMinutes(15),
-        0, Duration.ofMinutes(15), Duration.ofMinutes(10));
+        0, Duration.ofMinutes(15), Duration.ofMinutes(10),
+        secondFactorMaxAttempts, secondFactorWindow, secondFactorBlockDuration);
   }
 
   /**
@@ -307,6 +359,48 @@ public class AuthAttemptThrottle {
   }
 
   /**
+   * Origin-scoped configuration with each flow's origin limit given separately.
+   *
+   * <p>For callers and specs that exercise the mail or registration origin buckets but do not care
+   * about the second-factor policy, which falls back to its defaults here.</p>
+   *
+   * @param counter                          persistence port
+   * @param loginMaxAttempts                 failures per account before the account block
+   * @param loginWindow                      counting window for the account bucket
+   * @param loginBlockDuration               how long the account block lasts
+   * @param resendMaxAttempts                failures per account before the resend block
+   * @param resendWindow                     counting window for the resend buckets
+   * @param resendBlockDuration              how long a resend block lasts
+   * @param originEnabled                    whether origin buckets are written and consulted at all
+   * @param loginOriginMaxAttempts           failed logins per origin before the origin block
+   * @param loginOriginWindow                counting window for the login origin bucket
+   * @param loginOriginBlockDuration         how long a login origin block lasts
+   * @param mailOriginMaxAttempts            link resends per origin before the origin block
+   * @param mailOriginWindow                 counting window for the mail origin bucket
+   * @param mailOriginBlockDuration          how long a mail origin block lasts
+   * @param registrationOriginMaxAttempts    registrations per origin before the origin block
+   * @param registrationOriginWindow         counting window for the registration origin bucket
+   * @param registrationOriginBlockDuration  how long a registration origin block lasts
+   */
+  public AuthAttemptThrottle(AuthAttemptCounter counter,
+      int loginMaxAttempts, Duration loginWindow, Duration loginBlockDuration,
+      int resendMaxAttempts, Duration resendWindow, Duration resendBlockDuration,
+      boolean originEnabled,
+      int loginOriginMaxAttempts, Duration loginOriginWindow,
+      Duration loginOriginBlockDuration,
+      int mailOriginMaxAttempts, Duration mailOriginWindow, Duration mailOriginBlockDuration,
+      int registrationOriginMaxAttempts, Duration registrationOriginWindow,
+      Duration registrationOriginBlockDuration) {
+    this(counter, loginMaxAttempts, loginWindow, loginBlockDuration,
+        resendMaxAttempts, resendWindow, resendBlockDuration, originEnabled,
+        loginOriginMaxAttempts, loginOriginWindow, loginOriginBlockDuration,
+        mailOriginMaxAttempts, mailOriginWindow, mailOriginBlockDuration,
+        registrationOriginMaxAttempts, registrationOriginWindow,
+        registrationOriginBlockDuration,
+        5, Duration.ofMinutes(15), Duration.ofMinutes(15));
+  }
+
+  /**
    * Full configuration, including origin scope.
    *
    * @param counter                  persistence port
@@ -332,6 +426,7 @@ public class AuthAttemptThrottle {
    *                                        semester start is a legitimate burst
    * @param registrationOriginWindow        counting window for the registration origin bucket
    * @param registrationOriginBlockDuration how long the registration origin block lasts
+
    */
   @Autowired
   public AuthAttemptThrottle(AuthAttemptCounter counter,
@@ -341,6 +436,7 @@ public class AuthAttemptThrottle {
       @Value("${qbic.auth-throttle.resend.max-attempts:3}") int resendMaxAttempts,
       @Value("${qbic.auth-throttle.resend.window:PT15M}") Duration resendWindow,
       @Value("${qbic.auth-throttle.resend.block-duration:PT15M}") Duration resendBlockDuration,
+
       // One switch, named after login because that is where it started. It governs every origin
       // bucket: a deployment that enabled it for login gets the mail buckets too, which is the safe
       // direction. Keeping it a single flag is deliberate — a per-flow flag would let origin scope be
@@ -359,10 +455,23 @@ public class AuthAttemptThrottle {
       @Value("${qbic.auth-throttle.registration-origin.window:PT15M}")
       Duration registrationOriginWindow,
       @Value("${qbic.auth-throttle.registration-origin.block-duration:PT10M}")
-      Duration registrationOriginBlockDuration) {
+      Duration registrationOriginBlockDuration,
+      // Second-factor code attempts (MFA-68). Last, so the origin parameters above keep the order the
+      // deployment template mirrors. Account-scoped only: the origin buckets cover the flows that are
+      // reachable anonymously, and this one is behind a password.
+      @Value("${qbic.auth-throttle.second-factor.max-attempts:5}") int secondFactorMaxAttempts,
+      @Value("${qbic.auth-throttle.second-factor.window:PT15M}") Duration secondFactorWindow,
+      @Value("${qbic.auth-throttle.second-factor.block-duration:PT15M}")
+      Duration secondFactorBlockDuration) {
     this.counter = requireNonNull(counter, "counter must not be null");
     this.loginPolicy = new Policy(loginMaxAttempts, loginWindow, loginBlockDuration, "login");
     this.resendPolicy = new Policy(resendMaxAttempts, resendWindow, resendBlockDuration, "resend");
+    // Tighter than the password on purpose. A password guess is one of an unbounded space, so ten per
+    // window is already generous; a TOTP guess is one of a million per thirty-second step and a
+    // recovery code one of about 2^60 that never rotates, so a handful of submissions per window is
+    // what keeps an online brute force uninteresting (MFA-68).
+    this.secondFactorPolicy = new Policy(secondFactorMaxAttempts, secondFactorWindow,
+        secondFactorBlockDuration, "second-factor");
     // +1, because the account bucket blocks on attempt maxAttempts + 1 (see Policy: the comparison is
     // a strict `>`). Filling an account bucket therefore costs an attacker exactly maxAttempts + 1
     // failures, and that is the number that must implicate their origin.
@@ -535,6 +644,64 @@ public class AuthAttemptThrottle {
     return doIsThrottled(scope, identifier, origin, now);
   }
 
+  /**
+   * <b>How long until this identifier may try again, if it is currently blocked.</b>
+   *
+   * <p>For rendering a blocked state on page load. A refresh is not an attempt, and the page must be
+   * able to say so without becoming one: this method only {@code peek}s, so calling it on every render
+   * leaves the counter and the block exactly as it found them. An earlier version of the challenge
+   * only knew it was blocked <em>after</em> a submission, so a refresh rendered a clean form and the
+   * user immediately tried again — not a security problem (the block still held), but a page that
+   * lies about its own state.</p>
+   *
+   * <p>Account scope only, matching the second-factor flow: this is used where the caller is already
+   * identified by a verified password, and no origin bucket exists for the flow. Use the origin-aware
+   * overload where one does.</p>
+   *
+   * @param scope      the flow
+   * @param identifier the account
+   * @param now        the instant to evaluate against
+   * @return the time left in the block, or empty when the identifier is not blocked
+   */
+  @Transactional(readOnly = true)
+  public Optional<Duration> remainingBlock(Scope scope, String identifier, Instant now) {
+    return doRemainingBlock(scope, identifier, ClientOrigin.unknown(), now);
+  }
+
+  /** The read path for {@link #remainingBlock}; never writes. See {@link #doRecordAndReport}. */
+  private Optional<Duration> doRemainingBlock(Scope scope, String identifier, ClientOrigin origin,
+      Instant now) {
+    requireNonNull(scope, "scope must not be null");
+    requireNonNull(origin, "origin must not be null");
+    requireNonNull(now, "now must not be null");
+    if (identifier == null || identifier.isBlank()) {
+      return Optional.empty();
+    }
+    if (!doIsThrottled(scope, identifier, origin, now)) {
+      return Optional.empty();
+    }
+    // Blocked by the combined rule. Report the block that caused it, which is the account bucket's
+    // when this flow has no origin bucket (second factor), and the later of the two otherwise.
+    AuthAttemptCounter.Counter account = counter.peek(scope.name(), attemptKey(scope, identifier));
+    Instant accountUntil = isBlocked(account, now) ? account.blockedUntil() : null;
+    Instant originUntil = peekOrigin(scope, origin)
+        .filter(state -> isBlocked(state, now))
+        .map(AuthAttemptCounter.Counter::blockedUntil)
+        .orElse(null);
+    Instant until = latest(accountUntil, originUntil);
+    return until == null ? Optional.empty() : Optional.of(Duration.between(now, until));
+  }
+
+  private static Instant latest(Instant first, Instant second) {
+    if (first == null) {
+      return second;
+    }
+    if (second == null) {
+      return first;
+    }
+    return first.isAfter(second) ? first : second;
+  }
+
   /** The read path, without a transaction annotation. See {@link #doRecordAndReport} for why. */
   private boolean doIsThrottled(Scope scope, String identifier, ClientOrigin origin, Instant now) {
     requireNonNull(scope, "scope must not be null");
@@ -669,6 +836,11 @@ public class AuthAttemptThrottle {
       case EMAIL_CONFIRMATION_RESEND, PASSWORD_RESET_RESEND ->
           binding(Scope.MAIL_ORIGIN, mailOriginPolicy);
       case REGISTRATION -> binding(Scope.REGISTRATION_ORIGIN, registrationOriginPolicy);
+      // No origin bucket for the second factor, and that is deliberate rather than an oversight: the
+      // flow is only reachable after a correct password for a specific account, so an attacker has to
+      // spend the account's budget to reach it and a per-origin bucket would mostly punish NAT'd
+      // institutions. Adding one later is a policy decision, not a wiring change (MFA-68).
+      case SECOND_FACTOR -> Optional.empty();
       case LOGIN_ORIGIN, MAIL_ORIGIN, REGISTRATION_ORIGIN -> Optional.empty();
     };
   }
@@ -713,6 +885,7 @@ public class AuthAttemptThrottle {
           "%s is derived from a caller-facing scope and must not be used directly"
               .formatted(scope));
       case EMAIL_CONFIRMATION_RESEND, PASSWORD_RESET_RESEND, REGISTRATION -> resendPolicy;
+      case SECOND_FACTOR -> secondFactorPolicy;
     };
   }
 

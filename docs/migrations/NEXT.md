@@ -25,8 +25,14 @@ For the migration documentation structure, see [`README.md`](README.md).
 > - **`FEAT-AUTH-FLOWS-05` / #1683** — ~~ORCID-only accounts still have `encryptedPassword IS NULL`.~~
 >   **Now resolved, see "ORCID is no longer a login" below.** No schema change was needed: a plain
 >   password reset gives such an account a password, verified on a running build (2026-11-17).
-> - **#1691** — per-origin throttling. Needs HAProxy and a trusted-proxy configuration; not in this
->   repository.
+> - **#1691** — per-origin throttling. **The code and the schema impact are complete** (no schema change:
+>   origin buckets are rows in the existing `auth_attempt` with `scope = 'LOGIN_ORIGIN'`). What remains
+>   is the deployment half, which is not in this repository: HAProxy must *replace* `X-Forwarded-For`,
+>   and `server.forward-headers-strategy=native` plus
+>   `qbic.auth-throttle.login.origin.enabled=true` must be set. Both ship **off**, so merging this
+>   changes nothing in production until an operator acts. See
+>   [`docs/operations/installation-and-administration.md`](../operations/installation-and-administration.md)
+>   §1.7.
 > - **#1669** — retention/purge for `user_verification_token` and `auth_attempt`. Both tables grow
 >   without bound until it lands.
 
@@ -40,12 +46,19 @@ For the migration documentation structure, see [`README.md`](README.md).
 | # | Script | Description | Risk |
 |---|---|---|---|
 | 1 | [`mfa-second-factor.sql`](../../sql/migrations/drafts/mfa-second-factor.sql) | Create `user_second_factor`, `user_recovery_code` and `user_mfa_grace` for the self-governed second factor (MILESTONE-MFA M2-1). No existing table is altered | Medium — three additive tables; destructive to roll back once factors exist |
+| 2 | [`add-second-factor-accepted-step.sql`](../../sql/migrations/add-second-factor-accepted-step.sql) | Add `user_second_factor.lastAcceptedStep` for TOTP replay protection (MFA-20). **Required for any instance that already ran script 1** — that script is initial-install only and will not add the column to an existing table | Low — one nullable column, no row touched, idempotent, reversible |
+
 
 Each row links to its incremental script. The sections below expand each entry
 with apply / verify / rollback detail.
 
 The hardening release's `user_verification_token` and `auth_attempt` are documented in
-[`released/v1.20.4.md`](released/v1.20.4.md); nothing in this release changes them.
+[`released/v1.20.4.md`](released/v1.20.4.md); nothing in this release changes them. In particular,
+second-factor throttling (MFA-68) reuses the existing `auth_attempt` table and adds no migration —
+it only introduces a fourth `scope` value, which the table's design anticipated
+(`sql/migrations/released/v1.20.4/auth-attempt-throttling.sql`). No operator action is required
+beyond optionally tuning `qbic.auth-throttle.second-factor.*`; the defaults are 5 attempts per
+15-minute window with a 15-minute block.
 
 ---
 
@@ -448,7 +461,120 @@ If there are none this release, delete this section.*
 Both are documented with provisioning commands under *Migration 1* above. Neither is validated at
 startup: a missing key fails the second-factor operation (closed), not the process.
 
-### Behaviour change for error notification mail
+### New keys for second-factor throttling (MFA-68) — inert without a factor
+
+The login challenge now rate-limits code submissions, including recovery codes. Reuses the existing
+`auth_attempt` table (`scope = 'SECOND_FACTOR'`), so **no schema change**.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `qbic.auth-throttle.second-factor.max-attempts` | `5` | Code submissions per account before the block |
+| `qbic.auth-throttle.second-factor.window` | `PT15M` | Counting window |
+| `qbic.auth-throttle.second-factor.block-duration` | `PT15M` | How long the block lasts |
+
+Lower than the login limit on purpose: a password guess is one of an unbounded space, while a TOTP
+code is one of a million per thirty-second step and a recovery code one of about 2^60 that never
+rotates. The bucket is keyed on the account, not the origin — reaching it requires that account's
+password, so it is not an anonymous surface, and being told you hit it is not an enumeration oracle.
+
+### Replay protection: one new column on `user_second_factor` (MFA-20)
+
+A TOTP code is valid for its 30-second step, and verification tolerates one step either side for
+clock drift — so a code that has been seen once stays usable for **ninety seconds**, and any number of
+times within it. `user_second_factor.lastAcceptedStep` records the highest step a factor has ever
+accepted; a code whose step is not strictly newer is refused.
+
+| Column | Type | Meaning |
+|---|---|---|
+| `lastAcceptedStep` | `bigint(20)` NULL | Highest RFC 6238 step accepted; NULL = never used |
+
+**Applying it to an existing instance.** The draft in section 1 is an initial-install script
+(`CREATE TABLE IF NOT EXISTS`), so re-running it will **not** add this column to tables that already
+exist. Use the incremental script:
+
+```bash
+mysql --defaults-extra-file=<credentials> <data_management_db> \
+  < sql/migrations/add-second-factor-accepted-step.sql
+```
+
+| Step | Effect on your data |
+|---|---|
+| Pre-flight `SELECT` | reads `information_schema` only |
+| Guarded `ALTER … ADD COLUMN` | adds one nullable `bigint`; **no row is read, rewritten or deleted** |
+| Verify `SELECT` | reads `information_schema`, then prints a count |
+
+Idempotent: guarded on `information_schema`, so a second run prints "already present — nothing to do".
+Reversible with a single `DROP COLUMN`, which drops the protection and not a single account or factor.
+**No backfill, deliberately** — NULL is the correct initial state, and the mark only has to be right
+from the next verification onwards.
+
+Verified against a MariaDB 12.3 server on an instance shaped like an existing test database (one factor
+already enrolled, no such column): the row survives, `lastAcceptedStep` is added as `bigint(20) NULL`,
+its value is readable and writable by the application, the second run is a no-op, and the rollback
+drops the column with the row intact.
+
+**Behaviour change to expect.** Two logins inside the same 30-second step cannot both succeed — both
+carry the same code, and the second is a replay by definition. A user signing in twice in quick
+succession waits at most 30 seconds for the next code. This is the intended trade: the alternative
+(permitting a step for a few seconds after its first use) reopens a smaller but real replay window.
+
+**Not a replacement for throttling.** This stops *reuse* of a code. It does not stop someone using a
+fresh code they obtained — that is theft of a live credential, which the attempt limit and the
+30-second lifetime bound.
+
+
+### New keys for origin-scope throttling (#1691) — all inert by default
+
+`AUTH-NFR-03` asks for throttling per account **and** per request origin. Account scope shipped in
+v1.20.4; this release adds the origin half. **Nothing changes on deploy**, because origin scope ships
+disabled and the header strategy is unchanged.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `qbic.auth-throttle.login.origin.enabled` | `false` | **Single switch for every origin bucket** |
+| `qbic.auth-throttle.login.origin.max-attempts` | `60` | Failed logins per origin before the origin block |
+| `qbic.auth-throttle.login.origin.window` | `PT15M` | Counting window for the login origin bucket |
+| `qbic.auth-throttle.login.origin.block-duration` | `PT10M` | How long a login origin block lasts |
+| `qbic.auth-throttle.mail-origin.max-attempts` | `20` | Link resends per origin before the origin block |
+| `qbic.auth-throttle.mail-origin.window` | `PT15M` | Counting window for the mail origin bucket |
+| `qbic.auth-throttle.mail-origin.block-duration` | `PT15M` | How long a mail origin block lasts |
+| `qbic.auth-throttle.registration-origin.max-attempts` | `100` | Registrations per origin before the origin block |
+| `qbic.auth-throttle.registration-origin.window` | `PT15M` | Counting window for the registration origin bucket |
+| `qbic.auth-throttle.registration-origin.block-duration` | `PT10M` | How long a registration origin block lasts |
+
+> **Origin scope now covers the mail-sending flows, not just login.** Discovered in production: login
+> was throttled per origin, but a single source could still request password resets for arbitrary
+> addresses indefinitely. Account scope cannot bound that — one mail per address means no account
+> bucket is ever reused — so the reset, confirmation-resend and registration flows now each write an
+> origin bucket. The two resend flows share `MAIL_ORIGIN`; registration has its own, larger bucket
+> because it is legitimately bursty. **Still no schema change**: they are more rows in the existing
+> `auth_attempt` table with different `scope` values.
+
+Unchanged but now load-bearing: `server.forward-headers-strategy`. It stays **unset (`NONE`)** in this
+release. Setting `origin.enabled=true` without `server.forward-headers-strategy=native` is a **startup
+failure**, deliberately — see ops doc §1.2/§1.7.
+
+**To turn it on** (only after the HAProxy change below):
+
+```properties
+server.forward-headers-strategy=native
+qbic.auth-throttle.login.origin.enabled=true
+```
+
+**Proxy prerequisite, not a property:** HAProxy must **replace** `X-Forwarded-For`
+(`http-request set-header X-Forwarded-For %[src]`). `option forwardfor` alone appends, which leaves the
+client's own entry at the front of the list.
+
+**No schema change, so there is no migration script for this.** Origin buckets are additional rows in
+the existing `auth_attempt` table with `scope = 'LOGIN_ORIGIN'`; `scope` is an open `varchar` and
+`attemptKey` is already an opaque hash. Existing rows are untouched and no backfill is needed.
+
+> **Do not enable this during a release deploy.** It is a separate, independently revertable operator
+> step because `server.forward-headers-strategy=native` also changes how absolute links
+> (confirmation/reset mail) and the ORCID redirect URI are built. Canary one node first — ops doc §1.7.
+
+### One behaviour change for error notification mail
+
 
 `spring.mail.*` and `qbic.mail.verify-connection-on-startup` are unchanged. What changes is what the
 **logback error-notification appender** does when the SMTP server will not upgrade to TLS.

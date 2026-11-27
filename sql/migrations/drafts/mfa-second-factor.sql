@@ -152,6 +152,8 @@ CREATE TABLE IF NOT EXISTS `user_second_factor`
         COMMENT 'User-facing label, e.g. "iPhone (passkey)" or "YubiKey 5". Not unique: rows are soft-deleted, so a removed factor must be re-addable under the same name.',
     `createdAt`          datetime(6)  NOT NULL,
     `lastUsedAt`         datetime(6)  DEFAULT NULL,
+    `lastAcceptedStep`   bigint(20)   DEFAULT NULL
+        COMMENT 'Highest RFC 6238 time step this factor has accepted. Replay protection (MFA-20): a code is valid for 30s and tolerated +/-1 step, so an already-seen code stays usable for 90s unless the step it matched is refused once it is not newer than this. A step counter, not a timestamp — every datetime column here has no zone.',
     `disabledAt`         datetime(6)  DEFAULT NULL
         COMMENT 'Soft delete. A removed factor is never hard-deleted, so the audit trail (AUTH-R-04) keeps showing when it existed and when it stopped.',
 
@@ -162,6 +164,15 @@ CREATE TABLE IF NOT EXISTS `user_second_factor`
                 `secretCiphertext` IS NULL))
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
+
+-- Upgrading a database that already ran an earlier draft of this file (which lacked the
+-- replay-protection column) needs only this one statement:
+--
+--   ALTER TABLE `user_second_factor` ADD COLUMN `lastAcceptedStep` bigint(20) DEFAULT NULL
+--       COMMENT 'Highest RFC 6238 time step accepted by this factor; replay protection (MFA-20)';
+--
+-- Existing rows are NULL, which means "no code accepted yet" — correct, and it does not need a
+-- backfill: the mark only has to be right from the next verification onwards.
 
 -- -----------------------------------------------------------------------------
 -- 2. user_recovery_code: single-use break-glass codes (hashed, never plaintext)
@@ -269,15 +280,26 @@ EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
 -- =============================================================================
--- Rollback
+-- Rollback / re-applying this draft
 -- =============================================================================
+-- To add `lastAcceptedStep` to tables that already exist, use
+-- sql/migrations/add-second-factor-accepted-step.sql. This file is initial-install
+-- only: CREATE TABLE IF NOT EXISTS skips a table that is already there, so it will
+-- not alter one.
+--
 -- DROP TABLE IF EXISTS `user_mfa_grace`;
 -- DROP TABLE IF EXISTS `user_recovery_code`;
 -- DROP TABLE IF EXISTS `user_second_factor`;
 --
+-- Drop order does not need to mirror the create order: all three reference `users`,
+-- never each other.
+--
 -- Safe while nothing is enrolled: the tables are empty and no other table references them.
 -- Destructive once factors exist — every enrolled user must re-enrol, and a user with no
 -- recovery code and no factor cannot log in until an administrator re-enrols them (M6-1).
+--
+-- ONCE THIS SHIPS, the rules change: a future column becomes a normal incremental
+-- script in sql/migrations/, because by then a dropped table is someone's lost factor.
 -- Rolling back is therefore a decision about the population, not just about code:
 -- announce it, and keep a copy of `user_second_factor` before dropping it if re-enrolment
 -- has to be avoided.

@@ -395,6 +395,16 @@ qbic.auth-throttle.resend.max-attempts=3
 qbic.auth-throttle.resend.window=PT15M
 qbic.auth-throttle.resend.block-duration=PT15M
 
+
+# Second-factor code submissions at the login challenge. Tighter than the password on purpose: a
+# password is one guess at an unbounded secret, whereas a six-digit TOTP code is one guess in a
+# million per thirty-second step -- five submissions per window is what keeps an online brute force
+# uninteresting (MFA-68). Keyed on the account id, since the password step already established it.
+qbic.auth-throttle.second-factor.max-attempts=5
+qbic.auth-throttle.second-factor.window=PT15M
+qbic.auth-throttle.second-factor.block-duration=PT15M
+
+
 # Origin-scope throttling (#1691).
 #
 # Leave `enabled=false` unless ALL of the following hold, or the control is present and ineffective:
@@ -459,6 +469,7 @@ server.forward-headers-strategy=none
 #server.tomcat.remoteip.remote-ip-header=X-Forwarded-For
 #server.tomcat.remoteip.protocol-header=X-Forwarded-Proto
 #server.tomcat.remoteip.internal-proxies=10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8, ::1/128
+
 
 ###############################################################################
 ### Data Server / Download ####################################################

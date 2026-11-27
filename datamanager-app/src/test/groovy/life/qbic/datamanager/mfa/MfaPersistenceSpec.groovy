@@ -11,6 +11,8 @@ import life.qbic.identity.domain.model.mfa.RecoveryCode
 import life.qbic.identity.domain.model.mfa.SecondFactor
 import life.qbic.identity.domain.repository.MfaGraceRepository
 import life.qbic.identity.domain.repository.RecoveryCodeRepository
+import life.qbic.identity.application.throttle.AuthAttemptThrottle
+import life.qbic.identity.domain.repository.AuthAttemptCounter
 import life.qbic.identity.domain.repository.SecondFactorRepository
 import life.qbic.identity.infrastructure.mfa.JpaMfaGraceRepository
 import life.qbic.identity.infrastructure.mfa.JpaRecoveryCodeRepository
@@ -210,6 +212,41 @@ class MfaPersistenceSpec extends Specification {
         new JpaMfaGraceRepository(em)
     }
 
+    /**
+     * A second-factor throttle with an allowance wide enough that it never interferes.
+     *
+     * <p>The recovery-code service now takes the throttle (MFA-68), and these cases are about the
+     * store — that a hash redeems once, that a foreign code is refused unspent. A throttle that
+     * blocked mid-spec would turn a storage assertion into a rate-limit assertion; the limiter's own
+     * behaviour is pinned in {@code RecoveryCodeThrottleSpec}.</p>
+     */
+    private static AuthAttemptThrottle permissiveSecondFactorThrottle() {
+        def neverBlocks = new AuthAttemptCounter() {
+            @Override
+            AuthAttemptCounter.Counter increment(String scope, String key, Instant now, Duration window) {
+                return new AuthAttemptCounter.Counter(1, null)
+            }
+
+            @Override
+            void block(String scope, String key, Instant blockedUntil) {
+                throw new AssertionError("a permissive counter must never block")
+            }
+
+            @Override
+            AuthAttemptCounter.Counter peek(String scope, String key) {
+                return new AuthAttemptCounter.Counter(0, null)
+            }
+
+            @Override
+            void clear(String scope, String key) {
+            }
+        }
+        new AuthAttemptThrottle(neverBlocks,
+                10, Duration.ofMinutes(15), Duration.ofMinutes(15),
+                5, Duration.ofMinutes(15), Duration.ofMinutes(15),
+                1000, Duration.ofMinutes(15), Duration.ofMinutes(15))
+    }
+
     // ---------------------------------------------------------------- 1. factors
 
     def "a TOTP seed survives the round trip as a protected secret, byte for byte"() {
@@ -369,11 +406,12 @@ class MfaPersistenceSpec extends Specification {
         given: "the service, the encoder and the JPA adapter wired as production will wire them"
         def encoder = new life.qbic.identity.domain.model.mfa.RecoveryCodeEncoder(
                 "p".repeat(life.qbic.identity.domain.model.mfa.RecoveryCodeEncoder.MIN_PEPPER_LENGTH))
+        def throttle = permissiveSecondFactorThrottle()
 
         when: "a set is generated"
         def set = inTransaction { em ->
             new life.qbic.identity.application.mfa.RecoveryCodeService(
-                    recoveryCodes(em), encoder).generate(USER, NOW)
+                    recoveryCodes(em), encoder, throttle).generate(USER, NOW)
         }
 
         then: "only hashes reached the store"
@@ -382,14 +420,14 @@ class MfaPersistenceSpec extends Specification {
 
         and: "a printed code redeems by hash alone, without the account"
         inTransaction { em ->
-            new life.qbic.identity.application.mfa.RecoveryCodeService(recoveryCodes(em), encoder)
-                    .redeem(set.formattedCodes()[0].toLowerCase(), NOW.plusSeconds(60))
+            new life.qbic.identity.application.mfa.RecoveryCodeService(recoveryCodes(em), encoder,
+                    throttle).redeem(set.formattedCodes()[0].toLowerCase(), NOW.plusSeconds(60))
         }
 
         and: "and never again"
         !inTransaction { em ->
-            new life.qbic.identity.application.mfa.RecoveryCodeService(recoveryCodes(em), encoder)
-                    .redeem(set.codes()[0], NOW.plusSeconds(120))
+            new life.qbic.identity.application.mfa.RecoveryCodeService(recoveryCodes(em), encoder,
+                    throttle).redeem(set.codes()[0], NOW.plusSeconds(120))
         }
 
         and: "the count reflects it"
@@ -403,7 +441,7 @@ class MfaPersistenceSpec extends Specification {
                 "p".repeat(life.qbic.identity.domain.model.mfa.RecoveryCodeEncoder.MIN_PEPPER_LENGTH))
         def set = inTransaction { em ->
             new life.qbic.identity.application.mfa.RecoveryCodeService(
-                    recoveryCodes(em), encoder).generate("u-2", NOW)
+                    recoveryCodes(em), encoder, permissiveSecondFactorThrottle()).generate("u-2", NOW)
         }
         def hash = encoder.hash(set.codes()[0])
 

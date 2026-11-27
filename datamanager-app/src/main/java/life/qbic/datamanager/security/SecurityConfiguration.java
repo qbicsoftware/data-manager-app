@@ -28,6 +28,7 @@ import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorH
 import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationCodeGrantFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.client.RestClient;
@@ -96,6 +97,7 @@ public class SecurityConfiguration {
       @Autowired org.springframework.security.oauth2.client.OAuth2AuthorizedClientService authorizedClientService,
       @Autowired life.qbic.datamanager.security.mfa.MfaLoginSuccessHandler mfaLoginSuccessHandler,
       @Autowired life.qbic.identity.application.mfa.MfaLoginGuard mfaLoginGuard,
+      // #1691: the trusted client identity, used by the login throttle for origin buckets.
       @Autowired ClientOriginResolver clientOriginResolver) {
     this.defaultRequestCache = requireNonNull(defaultRequestCache,
         "defaultRequestCache must not be null");

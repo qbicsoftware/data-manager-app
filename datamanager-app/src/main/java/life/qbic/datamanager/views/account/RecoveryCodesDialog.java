@@ -78,6 +78,9 @@ public class RecoveryCodesDialog extends Div {
   private final java.util.List<com.vaadin.flow.component.ComponentEventListener<CodesSavedEvent>>
       savedListeners = new java.util.ArrayList<>();
 
+  /** Whether the user pressed "I have saved them". False also after a refresh, which is the point. */
+  private boolean acknowledged;
+
   /**
    * @param codeSet      the one-time plaintext set, straight from generation
    * @param accountEmail the account the codes belong to, so a printed sheet is identifiable
@@ -146,6 +149,7 @@ public class RecoveryCodesDialog extends Div {
     DialogFooter.withConfirmOnly(dialog,
         firstFactor ? "I have saved my recovery codes" : "I have saved them");
     dialog.registerConfirmAction(() -> {
+      acknowledged = true;
       dialog.close();
       // Fired for the login-time enrolment page, which must not create a session before the user has
       // acknowledged the only copy of these codes. The settings page has no listener, so it behaves
@@ -177,6 +181,43 @@ public class RecoveryCodesDialog extends Div {
 
   public void open() {
     dialog.open();
+  }
+
+  /**
+   * @return {@code true} only if the user pressed "I have saved them"
+   *
+   * <p>False means the sheet was closed some other way — most often a browser refresh, or a navigate
+   * away, both of which discard the dialog and with it the only copy of the codes. The page cannot
+   * prevent that, but it can stop being silent about it (MFA-91).</p>
+   */
+  public boolean isAcknowledged() {
+    return acknowledged;
+  }
+
+  /**
+   * <b>"Your recovery codes were not saved."</b>
+   *
+   * <p>The sentence the QA run found missing (MFA-91): the user can refresh without pressing "I have
+   * saved my keys" and the codes are never shown again, with nothing said. Three facts belong in the
+   * notice and nothing else:</p>
+   *
+   * <ul>
+   *   <li>the codes are gone — do not imply they can be looked up, because the application stores only
+   *       hashes (AUTH-R-03);</li>
+   *   <li>what that costs: without them, losing the app means no self-service sign-in;</li>
+   *   <li>the one action that still exists: generate a new set, which retires whatever was lost.</li>
+   * </ul>
+   *
+   * <p>There is deliberately no mention of e-mail. "Ask support and they will mail you a link" is the
+   * cheapest way past a factor, and the milestone forbids mailbox control becoming the identity proof
+   * (ADR 0011 B1). A notice that names it would teach exactly the wrong next step.</p>
+   *
+   * @return the notice shown on the two-factor settings page after an unacknowledged sheet
+   */
+  public static String unacknowledgedCodesNotice() {
+    return "Your recovery codes were not saved. They cannot be shown again — the application keeps "
+        + "only their hashes. If you lose access to your authenticator app without them, you cannot "
+        + "sign in by yourself. Generate a new set now and store it somewhere safe.";
   }
 
   /**

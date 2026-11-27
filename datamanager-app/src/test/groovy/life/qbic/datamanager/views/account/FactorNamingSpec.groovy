@@ -50,6 +50,6 @@ class FactorNamingSpec extends Specification {
 
     def "the dialog's default is the shared constant, not a second copy of the string"() {
         expect: "two literals drift; one reference cannot"
-        TotpEnrolmentDialog.DEFAULT_DISPLAY_NAME == TwoFactorSettingsCopy.DEFAULT_FACTOR_NAME
+        TwoFactorEnrolmentMain.DEFAULT_DISPLAY_NAME == TwoFactorSettingsCopy.DEFAULT_FACTOR_NAME
     }
 }

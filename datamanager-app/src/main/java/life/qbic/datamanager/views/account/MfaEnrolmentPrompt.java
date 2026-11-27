@@ -68,8 +68,23 @@ public class MfaEnrolmentPrompt extends Div implements Serializable {
   /** Session key: the user said "not now" in this sitting. */
   static final String DISMISSED_ATTRIBUTE = MfaEnrolmentPrompt.class.getName() + ".dismissed";
 
-  private static final DateTimeFormatter DEADLINE =
-      DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withZone(ZoneId.systemDefault());
+  /**
+   * Session key: how many recovery codes were left when the last one was spent (MFA-41b).
+   *
+   * <p>Set at the login challenge, read here. It cannot be a message on the challenge page itself:
+   * redeeming a code establishes the session and redirects, so anything written into that page's
+   * components is discarded one instruction later. The prompt is mounted in the application shell, so
+   * it survives the redirect and is the first thing the user sees after signing in.</p>
+   *
+   * <p>Stored as the count (typically {@code 0}) rather than a flag so the sentence can be specific,
+   * and removed on read so it is shown once rather than on every navigation.</p>
+   */
+  public static final String RECOVERY_CODES_LEFT_ATTRIBUTE =
+      MfaEnrolmentPrompt.class.getName() + ".recovery-codes-left";
+
+  // Deliberately gone: this used to hold its own date-only formatter, which is how the banner came to
+  // say "on 28 November 2026" while the settings page could say something slightly different. The
+  // format now lives in TwoFactorSettingsCopy with the other deadline copy.
 
   private final transient MfaPolicy mfaPolicy;
   private final transient SecondFactorService secondFactorService;
@@ -131,6 +146,12 @@ public class MfaEnrolmentPrompt extends Div implements Serializable {
     boolean dismissed = Boolean.TRUE.equals(
         VaadinSession.getCurrent().getAttribute(DISMISSED_ATTRIBUTE));
 
+    // The recovery-code warning outranks everything: it is a consequence of an action the user just
+    // took, and — unlike the enrolment offer — it concerns an account that already has a factor.
+    if (showRecoveryCodesLeft()) {
+      return;
+    }
+
     if (mode == MfaPolicyMode.OFF || dismissed || onTwoFactorPage()) {
       setVisible(false);
       return;
@@ -158,6 +179,45 @@ public class MfaEnrolmentPrompt extends Div implements Serializable {
   }
 
   /**
+   * Reports the recovery-code count left by the challenge, once, and returns whether it did.
+   *
+   * <p>Two shapes: the last code was just spent (the state that turns a lost phone into a helpdesk
+   * ticket), or some remain and the count is the user's only way to judge how much time they have.
+   * The attribute is consumed either way — a notice about an event must not become a permanent banner.</p>
+   *
+   * @return {@code true} if a notice was rendered
+   */
+  private boolean showRecoveryCodesLeft() {
+    VaadinSession session = VaadinSession.getCurrent();
+    if (session == null) {
+      return false;
+    }
+    Object value = session.getAttribute(RECOVERY_CODES_LEFT_ATTRIBUTE);
+    if (!(value instanceof Integer left)) {
+      return false;
+    }
+    session.setAttribute(RECOVERY_CODES_LEFT_ATTRIBUTE, null);
+
+    if (onTwoFactorPage()) {
+      // The settings page states the count itself, one line above the action that fixes it.
+      setVisible(false);
+      return true;
+    }
+
+    boolean noneLeft = left <= 0;
+    // Every sentence this page can show is decided in TwoFactorSettingsCopy, so the event notice is
+    // too — including the one that must never mention e-mail.
+    title.setText(TwoFactorSettingsCopy.recoveryCodesLeftTitle(left));
+    body.setText(TwoFactorSettingsCopy.recoveryCodesLeftBody(left));
+    // Not dismissible: this is the account's own safety net running out, not an offer.
+    dismiss.setVisible(false);
+    enrol.setVisible(true);
+    enrol.setText(noneLeft ? "Set up an authenticator app" : "Manage two-factor authentication");
+    setVisible(true);
+    return true;
+  }
+
+  /**
    * The grace deadline, when there is one to name.
    *
    * <p>Only {@code REQUIRED} has a deadline, and only for an account without a factor. An absent row
@@ -170,7 +230,7 @@ public class MfaEnrolmentPrompt extends Div implements Serializable {
     }
     return graceRepository.findByUserId(userId)
         .map(MfaGrace::graceUntil)
-        .map(DEADLINE::format)
+        .map(TwoFactorSettingsCopy::formattedDeadline)
         .orElse(null);
   }
 

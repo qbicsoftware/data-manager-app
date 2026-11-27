@@ -2129,6 +2129,88 @@ a.project-dataset-footer, a.project-dataset-footer:hover {
   gap: var(--lumo-space-m);
 }
 
+/* QR beside the verification, not above it. Side by side, scanning and typing are both visible at
+   once — the stacked version needed vertical room a fixed-height dialog never had, and this is what
+   made the footer fall below the fold. */
+.mfa-enrol-pair {
+  display: flex;
+  align-items: center;
+  gap: var(--lumo-space-xl);
+  flex-wrap: wrap;
+}
+
+.mfa-enrol-verify {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  flex: 1 1 18rem;
+  min-width: 18rem;
+}
+
+/* The page's actions, in the content flow rather than pinned in a dialog footer. */
+.mfa-enrol-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--lumo-space-s);
+}
+
+/* The way back from the enrolment confirmation. Breadcrumb-shaped, matching the back link at the top
+   of the page: the flow is finished, and a full-width primary button here read as the next required
+   step when there is none. */
+.mfa-enrol-done-link {
+  align-self: flex-start;
+  font-size: var(--lumo-font-size-s);
+}
+
+/* Says the setup timed out and what to do about it. */
+.mfa-enrol-session-notice {
+  color: var(--lumo-secondary-text-color);
+  font-size: var(--lumo-font-size-s);
+}
+
+/* The code step is the one that gates the action, so it gets a separator from the setup material
+   above it: scan (or type the key), then prove it worked. Without this the three inputs stacked at
+   equal spacing and the code read as one more optional field.
+
+   Now that enrolment is a page rather than a fixed-height dialog, the separator can keep its padding:
+   the constraint that forced the dialog to trade hierarchy against height is gone. */
+.mfa-enrol-code-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lumo-space-s);
+  padding-top: var(--lumo-space-m);
+  border-top: 1px solid var(--lumo-contrast-10pct);
+}
+
+/* The page's own actions, kept in the content flow rather than pinned in a dialog footer. */
+.mfa-enrol-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--lumo-space-s);
+  padding-top: var(--lumo-space-s);
+}
+
+/* The optional name, demoted deliberately.
+   Three things made it look required before: it sat ABOVE the code, its label carried the primary
+   colour (an accent-blue "optional" is a contradiction), and it was full width like the two fields
+   above it. Order and the label colour are fixed in the component; width and weight are fixed here.
+   It stays reachable and usable — the clear button and helper text are untouched — but it no longer
+   competes with the step that actually finishes the task. */
+.mfa-enrol-name {
+  max-width: 22rem;
+  margin-top: var(--lumo-space-s);
+  opacity: 0.85;
+}
+
+.mfa-enrol-name::part(label) {
+  color: var(--lumo-secondary-text-color);
+  font-weight: 400;
+}
+
+.mfa-enrol-name::part(helper-text) {
+  font-size: var(--lumo-font-size-xs);
+}
+
 /* The lockout consequence, shown only on the sheet issued right after the first factor. It carries
    the weight the ordinary helper text does not: this is the one sentence on the screen that decides
    whether the user keeps the codes. */

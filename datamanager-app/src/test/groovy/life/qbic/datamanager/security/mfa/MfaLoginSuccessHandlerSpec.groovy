@@ -125,7 +125,9 @@ class MfaLoginSuccessHandlerSpec extends Specification {
         then: "the delegate owns the redirect and the request cache, exactly as without MFA"
         1 * delegate.onAuthenticationSuccess(request, response, _)
         0 * session.setAttribute(MfaPendingLogin.SESSION_ATTRIBUTE, _)
-        0 * session.removeAttribute(_)
+
+        and: "the authentication is not withdrawn — only stale login state from an earlier attempt is"
+        0 * session.removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY)
     }
 
     def "an unenrolled account under OPTIONAL proceeds"() {

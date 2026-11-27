@@ -76,6 +76,21 @@ public class SecondFactor {
   @Column(name = "lastUsedAt")
   private Instant lastUsedAt;
 
+  /**
+   * The highest TOTP time step this factor has ever accepted ({@code null} until the first login).
+   *
+   * <p><b>Replay protection (MFA-20).</b> A code is valid for its 30-second step, and verification
+   * tolerates one step either side, so an already-seen code stays usable for ninety seconds — and any
+   * number of times within it. The counter is fed from the RFC 6238 step number, so this value along
+   * with the rule {@code acceptedStep > lastAcceptedStep} makes every used code unusable for good.</p>
+   *
+   * <p>It is a monotonic counter with no expiry: no sweeper, no window to clean up, and it cannot be
+   * rolled back by a clock change on the client. {@code datetime(6)} with no zone would have inherited
+   * the database session's timezone had this been a timestamp — a step number sidesteps that.</p>
+   */
+  @Column(name = "lastAcceptedStep")
+  private Long lastAcceptedStep;
+
   @Column(name = "disabledAt")
   private Instant disabledAt;
 
@@ -236,5 +251,49 @@ public class SecondFactor {
           "a disabled second factor cannot be used (factor " + id + " of user " + userId + ")");
     }
     this.lastUsedAt = now;
+  }
+
+  /**
+   * @return the highest time step this factor has accepted, or empty if it has never been used
+   */
+  public java.util.OptionalLong lastAcceptedStep() {
+    return lastAcceptedStep == null
+        ? java.util.OptionalLong.empty()
+        : java.util.OptionalLong.of(lastAcceptedStep);
+  }
+
+
+  /**
+   * Whether a code from this step may be accepted, i.e. it is strictly newer than anything used so far.
+   *
+   * <p>Strictly greater, not "different": the tolerance window means steps {@code n-1}, {@code n} and
+   * {@code n+1} all match the same code, so '<i>not already used</i>' would let an attacker replay
+   * step {@code n-1} after a legitimate login at {@code n}.</p>
+   *
+   * <p>The cost, stated plainly: two logins inside one 30-second step cannot both succeed, because
+   * both carry the same code and the second is a replay by definition. A user logging in twice in
+   * quick succession waits at most 30 seconds for the next code.</p>
+   *
+   * @param step the step a presented code matched
+   * @return {@code true} if this step is newer than every step accepted so far
+   */
+  public boolean acceptsStep(long step) {
+    return lastAcceptedStep == null || step > lastAcceptedStep;
+  }
+
+  /**
+   * Records that a code from this step was accepted, so it — and everything older — cannot be used
+   * again.
+   *
+   * @param step the matched time step; must be strictly newer than the current mark
+   * @throws IllegalArgumentException if the step would move the mark backwards
+   */
+  public void markAcceptedStep(long step) {
+    if (!acceptsStep(step)) {
+      throw new IllegalArgumentException(
+          "refusing to move the accepted-step mark backwards: step " + step
+              + " is not newer than " + lastAcceptedStep);
+    }
+    this.lastAcceptedStep = step;
   }
 }

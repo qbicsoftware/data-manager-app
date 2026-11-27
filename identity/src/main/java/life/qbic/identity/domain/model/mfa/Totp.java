@@ -95,11 +95,33 @@ public final class Totp {
    * @return {@code true} only if the code matches a tolerated step and is well-formed
    */
   public static boolean verify(String base32Seed, String presented, Instant at) {
+    return acceptedStep(base32Seed, presented, at).isPresent();
+  }
+
+  /**
+   * Verifies a presented code and reports <b>which time step it matched</b>.
+   *
+   * <p>The step is the identity of the 30-second window that produced the code: the value fed into the
+   * HMAC counter, not a proxy for it. Callers need it for replay protection — "this code is valid" is
+   * not enough to tell a fresh code from one that was accepted a minute ago, because the tolerance
+   * window makes the same code match three consecutive steps.</p>
+   *
+   * <p>Recording the <em>matched</em> step rather than the current one matters: a phone whose clock is
+   * behind matches the previous step, and recording the current step would then permanently block that
+   * phone's next code — derived from a step it never used.</p>
+   *
+   * @param base32Seed the shared seed
+   * @param presented  the code the user typed; surrounding whitespace is ignored
+   * @param at         the instant of verification
+   * @return the matched step, or empty when the code is malformed, wrong, or outside the tolerated skew
+   */
+  public static java.util.OptionalLong acceptedStep(String base32Seed, String presented,
+      Instant at) {
     requireNonNull(presented, "presented must not be null");
     requireNonNull(at, "at must not be null");
     String candidate = presented.strip();
     if (!candidate.matches("\\d{" + DIGITS + "}")) {
-      return false;
+      return java.util.OptionalLong.empty();
     }
     long step = stepAt(at);
     for (int offset = -ALLOWED_STEP_SKEW; offset <= ALLOWED_STEP_SKEW; offset++) {
@@ -109,10 +131,10 @@ public final class Totp {
       }
       byte[] expected = codeForStep(base32Seed, candidateStep).getBytes(StandardCharsets.US_ASCII);
       if (MessageDigest.isEqual(expected, candidate.getBytes(StandardCharsets.US_ASCII))) {
-        return true;
+        return java.util.OptionalLong.of(candidateStep);
       }
     }
-    return false;
+    return java.util.OptionalLong.empty();
   }
 
   /**
