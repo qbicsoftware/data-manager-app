@@ -209,6 +209,49 @@ public final class TwoFactorSettingsCopy {
   /** Label of the code field. */
   static final String ENROL_CODE_LABEL = "Code from the app";
 
+  // ── Recovery codes at enrolment ────────────────────────────────────────────
+
+  /**
+   * <b>Whether confirming an enrolment should also issue a recovery-code sheet.</b>
+   *
+   * <p>Only when the account has none left. A sheet is not a souvenir of adding an app: issuing one is
+   * destructive, because {@code RecoveryCodeService.generate} retires every existing code in the same
+   * transaction. A user adding a second authenticator <em>for redundancy</em> — the intended reason to
+   * add one — would otherwise be handed a fresh sheet that silently kills the one they printed. Dismiss
+   * it believing the old codes still work, and they hold ten dead codes and no way back in.</p>
+   *
+   * <p>So the rule is: first enrolment, or every code spent, or the user explicitly asks for a new set
+   * on the settings page. Nothing else.</p>
+   *
+   * @param unusedCodes how many codes are still usable on the account
+   * @return {@code true} if confirming this enrolment must show a new sheet
+   */
+  static boolean recoverySheetNeededOnEnrolment(long unusedCodes) {
+    return unusedCodes <= 0;
+  }
+
+  /**
+   * What the user is told after enrolling when no new sheet was issued.
+   *
+   * <p>The absence of a sheet is itself a message, and it must not be read as "you have no codes". The
+   * user has just replaced or added an app; the sentence has to confirm that the codes they saved
+   * earlier are untouched, and name the action that <em>does</em> replace them, so a deliberate
+   * replacement stays one click away.</p>
+   *
+   * @param hasUnusedCodes whether the account actually has codes left
+   * @return the notice under the enrolment confirmation
+   */
+  static String enrolmentDoneWithoutNewCodesBody(boolean hasUnusedCodes) {
+    if (!hasUnusedCodes) {
+      // Should not be reachable: no codes means a sheet was due. Say something true rather than
+      // reproduce the sentence above, which would claim codes the account does not have.
+      return "You have no unused recovery codes. Set them up from the two-factor settings page.";
+    }
+    return "Your existing recovery codes still work — adding an app does not change them. "
+        + "If you ever want a fresh set, generate new recovery codes from the two-factor settings "
+        + "page.";
+  }
+
   // ── Deadlines ──────────────────────────────────────────────────────────────
 
   /**

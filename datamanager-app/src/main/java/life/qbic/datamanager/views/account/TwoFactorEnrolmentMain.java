@@ -295,9 +295,17 @@ public class TwoFactorEnrolmentMain extends Main implements BeforeEnterObserver 
 
     renameIfChosen(created);
 
-    // Issue the codes now, in the same breath as the factor: this is the only moment the user is
-    // guaranteed to be looking, and a lost phone without codes means an identity check.
+    // Issue a sheet ONLY if the account has none left. A sheet is destructive: generating retires
+    // every existing code in the same transaction, so issuing one on every enrolment would kill the
+    // codes a redundancy-minded user printed when they added their second app. That is a regression
+    // this page introduced — the dialog-based flow had the guard and the conversion dropped it.
     String userId = pending.userId();
+    long unusedCodes = recoveryCodeService.remaining(userId);
+    if (!TwoFactorSettingsCopy.recoverySheetNeededOnEnrolment(unusedCodes)) {
+      showEnrolledWithoutNewCodes(accountEmail, unusedCodes > 0);
+      return;
+    }
+
     var codeSet = recoveryCodeService.generate(userId, Instant.now());
     String chosenEmail = accountEmail;
     RecoveryCodesDialog sheet = new RecoveryCodesDialog(codeSet, chosenEmail,
@@ -338,6 +346,26 @@ public class TwoFactorEnrolmentMain extends Main implements BeforeEnterObserver 
     code.setEnabled(false);
     sessionNotice.setText("Reload the page to start a fresh enrolment.");
     sessionNotice.setVisible(true);
+  }
+
+  /**
+   * Confirms the enrolment and says the saved codes are untouched.
+   *
+   * <p>Replaces the page content rather than navigating straight back: the user needs one sentence
+   * confirming that adding this app did not invalidate the codes they already have, and then a way
+   * back. Navigating immediately would leave them wondering whether they just lost their sheet.
+   * </p>
+   */
+  private void showEnrolledWithoutNewCodes(String accountEmail, boolean hasUnusedCodes) {
+    content.removeAll();
+    SettingsSection section = new SettingsSection(TwoFactorSettingsCopy.ENROL_TITLE,
+        TwoFactorSettingsCopy.enrolmentDoneWithoutNewCodesBody(hasUnusedCodes));
+    Button done = new Button("Done",
+        event -> UI.getCurrent().navigate(TwoFactorAuthenticationMain.class));
+    done.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    done.setId("enrolment-done");
+    section.addContent(done);
+    content.add(section);
   }
 
   private void showError(String message) {
