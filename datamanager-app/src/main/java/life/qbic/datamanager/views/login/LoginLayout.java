@@ -191,8 +191,26 @@ public class LoginLayout extends VerticalLayout implements HasUrlParameter<Strin
     clearNotifications();
   }
 
+  /**
+   * The one sentence every login failure produces.
+   *
+   * <p><b>Email address, not username.</b> The only login identifier is the e-mail address —
+   * {@code UserDetailsServiceImpl} looks the account up by {@code findByEmail} and nothing else. The
+   * old wording said "username", which sent users looking for a field that does not exist and implied
+   * a second login path this application does not support (reported as MFA-94).</p>
+   *
+   * <p><b>Still one message for every cause</b> — wrong password, unknown address, unconfirmed
+   * account, throttled attempt. Naming the cause would rebuild the enumeration oracle AUTH-NFR-03
+   * forbids, and the throttle relies on this wording being indistinguishable. Correcting which field
+   * is named is not a step toward being more specific.</p>
+   */
+  static final String INVALID_CREDENTIALS_TITLE = "Incorrect email address or password";
+
+  /** The second line, deliberately uninformative. */
+  static final String INVALID_CREDENTIALS_DESCRIPTION = "Please try again.";
+
   private void showInvalidCredentialsError() {
-    showError("Incorrect username or password", "Please try again.");
+    showError(INVALID_CREDENTIALS_TITLE, INVALID_CREDENTIALS_DESCRIPTION);
   }
 
   public void clearNotifications() {

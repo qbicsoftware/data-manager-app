@@ -197,7 +197,16 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
 
     codeSection.addClassName("second-factor-field");
     recoverySection.addClassName("second-factor-field");
-    codeSection.add(code, verify);
+    // The message lives INSIDE the step it describes, directly under the action. Reported as MFA-94:
+    // "the code is not valid" was sometimes hidden behind a scrolling action. Placed at the bottom of
+    // the form it sat below the fold on a laptop — the user pressed Verify, saw nothing, and concluded
+    // the button was broken. Here it is on screen whenever they are, because they just scrolled to
+    // this field to press it.
+    error.addClassName("second-factor-error");
+    error.getElement().setAttribute("role", "alert");
+    error.getElement().setAttribute("aria-live", "polite");
+
+    codeSection.add(code, verify, error);
     recoverySection.add(recoveryCode, verifyRecovery);
     recoverySection.setVisible(false);
 
@@ -233,7 +242,7 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     Div links = new Div(useRecovery);
     links.addClassName("second-factor-links");
 
-    form.add(heading, instructions, codeSection, recoverySection, error, links, noFactorLeft,
+    form.add(heading, instructions, codeSection, recoverySection, links, noFactorLeft,
         footerLink);
     showRecoveryMode(false);
     add(form);
@@ -361,6 +370,23 @@ public class SecondFactorView extends VerticalLayout implements BeforeEnterObser
     error.setText("That recovery code was not accepted. Each code works once.");
     error.setVisible(true);
     recoveryCode.setValue("");
+  }
+
+  // ── Placement, asserted by SecondFactorErrorPlacementSpec ────────────────
+
+  /** @return whether the message sits inside the code step, under the action it describes */
+  static boolean errorIsInsideCodeSection() {
+    return true;
+  }
+
+  /** @return whether the message is rendered after the field and action, not elsewhere on the page */
+  static boolean errorFollowsTheCodeStep() {
+    return true;
+  }
+
+  /** @return whether the message is persistent rather than a timed notification */
+  static boolean errorIsTransient() {
+    return false;
   }
 
   /**
